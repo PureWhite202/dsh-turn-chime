@@ -1,0 +1,17 @@
+# dsh-turn-chime 的 bundle 层：把插件插进宿主配置树。
+# 需要改配置时直接改下面的 config（全部字段都可省略）。
+- insert:
+    - id: turn-chime
+      name: dsh-turn-chime
+      config:
+        # 启动后先响一次，用来确认加载的确实是这个音效；嫌吵就改成 false
+        announce: true
+      #   sound: 1               # 结束音：内置 1（下行）/ 2（上行），或任意音频路径（wav/mp3/m4a…）
+      #   errorSound: 2          # 失败轮次单独用另一个；不填就跟 sound 一样
+      #   askSound: 2            # 模型问你（ask_user_question / exit_plan_mode）时响这个；false 关闭提问音
+      #   askTools: [ask_user_question, exit_plan_mode]   # 哪些工具调用算「在问你」
+      #   volume: 85             # 0–100，只对非 wav 生效（wav 跟随系统音量）
+      #   skipSubagents: true
+      #   debounceMs: 800        # 结束音、提问音各自去抖
+      #   debug: false
+      #   # command: 'powershell -NoProfile -Command "[console]::beep(880,150)"'

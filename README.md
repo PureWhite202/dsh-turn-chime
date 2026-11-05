@@ -31,31 +31,36 @@
 
 两者是同一段音高序列的正反两版，音色、间隔、每个音的时长和响度一一对应，所以一听就能分出「往上」还是「往下」。
 
-也可以直接写任意音频文件的绝对路径：wav 走 SoundPlayer（起播快，音量跟系统），
+也可以直接写任意音频文件的路径（绝对路径最稳）：wav 走 SoundPlayer（起播快，音量跟系统），
 mp3/m4a/ogg 等走 Windows Media Player（起播慢约 1 秒，但 `volume` 生效）。
 想自己捏音色就编辑 `scripts/make-sounds.py` 再跑一次（需要 numpy）。
 
 ### 用别人的音效
 
-把下载的一堆候选丢进一个文件夹，逐个试听：
+把下载的一堆候选丢进一个文件夹（比如仓库根目录下的 `sfx\`），逐个试听：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools\audition.ps1 -Path 'D:\Downloads\sfx'
+powershell -ExecutionPolicy Bypass -File tools\audition.ps1 -Path '.\sfx'
 ```
 
 它会按文件名顺序播放，播之前打印 `[序号/总数] 文件名`。听到中意的，把路径抄进配置：
 
 ```yaml
 config:
-  sound: 'D:\Downloads\sfx\中意的那个.wav'
+  sound: '.\sfx\中意的那个.wav'
 ```
+
+相对路径按当前工作目录解析，拿不准就直接写绝对路径，两种都认。
 
 ## 安装
 
 profile 目录 `~/.dsh/profiles/desktop`，两处改动：
 
-1. `package.json` 的 `dsh.profile.bundles` 里加 `"dsh-turn-chime"`，
-   `dependencies` 加 `"dsh-turn-chime": "link:D:\\Document\\deepseek-harness\\default-workspace\\dsh-turn-chime"`；
+1. 把仓库放到 `~/.dsh/plugins/dsh-turn-chime`（克隆或直接搬过去都行）；
+   `package.json` 的 `dsh.profile.bundles` 里加 `"dsh-turn-chime"`，`dependencies` 加
+   `"dsh-turn-chime": "link:../../plugins/dsh-turn-chime"`。
+   `link:` 后面是相对 profile 目录的路径，`../../plugins/dsh-turn-chime` 正好指到
+   `~/.dsh/plugins/dsh-turn-chime`；仓库放别处就照实际位置改，不用写绝对路径；
 2. 在 profile 目录跑一次 `dsh plugin --profile desktop install`，然后**完全退出** DSH
    （托盘图标右键 → 退出，不是关窗口）再启动。
 

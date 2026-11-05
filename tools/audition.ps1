@@ -3,13 +3,14 @@
   按顺序试听一个文件夹里的所有音频文件，边播边打印文件名。
 
 .EXAMPLE
-  powershell -ExecutionPolicy Bypass -File tools\audition.ps1 -Path 'D:\Downloads\sfx'
+  powershell -ExecutionPolicy Bypass -File tools\audition.ps1 -Path '.\sfx'
 
 .NOTES
   下载来的音效丢进一个文件夹就行，wav/mp3/m4a/ogg/flac/wma 都能放。
   听完把中意的文件名填到 profile 的 cordis.patch.yml：
       config:
-        sound: 'D:\Downloads\sfx\中意的.wav'
+        sound: '.\sfx\中意的.wav'
+  相对路径按当前工作目录解析，拿不准就写绝对路径。
 #>
 param(
   [Parameter(Mandatory = $true)][string]$Path,

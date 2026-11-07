@@ -14,7 +14,8 @@
     "cordis.patch.yml",
     "assets",
     "scripts",
-    "README.md"
+    "README.md",
+    "INSTALL.md"
   ],
   "dsh": {
     "bundle": {

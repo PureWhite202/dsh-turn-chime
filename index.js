@@ -53,7 +53,7 @@ const DEFAULT_REASONS = ['completed', 'error', 'blocked', 'max-tokens', 'interru
 /**
  * 插件入口。
  * @param ctx Cordis 上下文。
- * @param config 见 README 的配置表；全部可选。
+ * @param config 见 INSTALL.md 的配置表；全部可选。
  */
 export function apply(ctx, config = {}) {
   const options = resolveConfig(config ?? {})

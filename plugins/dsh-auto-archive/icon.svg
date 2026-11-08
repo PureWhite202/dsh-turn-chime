@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Auto-archive old chats">
+  <rect x="6" y="9" width="52" height="13" rx="4" fill="#4C6FFF" />
+  <path d="M10 22h44v27a6 6 0 0 1-6 6H16a6 6 0 0 1-6-6z" fill="#7C93FF" />
+  <path d="M32 27v15" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" />
+  <path d="M24 36l8 8 8-8" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+  <circle cx="47" cy="45" r="11" fill="#1F2A44" stroke="#FFFFFF" stroke-width="2.5" />
+  <path d="M47 38v7l4 3" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

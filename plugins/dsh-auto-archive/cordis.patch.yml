@@ -1,0 +1,23 @@
+# dsh-auto-archive 的 bundle 层：把插件插进宿主配置树。
+# 需要改策略时直接改下面的 config（全部字段都可省略，省略就取默认值）。
+- insert:
+    - id: auto-archive
+      name: dsh-auto-archive
+      config:
+        # 判定“超过多久没聊过”的阈值，单位小时；24 = 1 天
+        minAgeHours: 24
+        # 启动后等多久再扫描，给界面恢复上次会话留时间；单位毫秒
+        startupDelayMs: 8000
+        # 空对话（创建后一轮都没聊过）是否也归档
+        archiveBlank: true
+        # true 时只写报告不落归档，用来观察将要归档的对象
+        dryRun: false
+        # 每次扫描的运行报告（便于事后核对；填 false 可关闭）
+        reportPath: 'C:\Users\Administrator\.dsh\cache\dsh-auto-archive\last-run.json'
+      #   # 可选：只处理指定目录对应的工作区（默认按默认工作区走）
+      #   workspacePath: 'D:\Document\deepseek-harness\default-workspace'
+      #   # 可选：false 关闭运行报告；字符串则写到该绝对路径
+      #   reportPath: 'D:\Document\deepseek-harness\default-workspace\.dsh-auto-archive.json'
+      #   # 可选：对“没有缓存、无法判断最后活动时间”的会话也归档（默认不归档，偏保守）
+      #   archiveUnverified: false
+      #   # 可选：enabled: false 临时停用本插件

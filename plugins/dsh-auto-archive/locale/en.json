@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Auto-archive old chats",
+    "description": "Archives unpinned conversations in the default workspace that have been inactive for longer than the configured time, once each time DeepSeek Harness starts."
+  }
+}

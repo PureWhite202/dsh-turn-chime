@@ -17,7 +17,7 @@
 
 ## 技能
 
-仓库内暂无技能条目。`humanizer-zh` 已于 2026-11-09 移除，正文并入 `config/AGENTS.md` 与 `~/.dsh/AGENTS.md`；需要时 `git checkout HEAD -- skills/humanizer-zh` 可取回。
+仓库内暂无技能条目。`humanizer-zh` 已于 2026-11-09 移除，正文并入 `config/AGENTS.md` 与 `~/.dsh/AGENTS.md`；需要时 `git checkout c8b7fa5 -- skills/humanizer-zh` 可取回。
 
 codex/grok/hermes/kimi-cli-calling 和 memory-consolidate 由 `dsh-memory-evolve` 启动时自动同步到 `~/.agents/skills`，不在仓库存储。
 

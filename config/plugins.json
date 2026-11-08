@@ -1,7 +1,7 @@
 {
   "host": "0.2.2-rc.1",
   "profile": "desktop",
-  "note": "link: 后的路径是占位，真实 profile 里指向本仓库 plugins/ 下的同名目录，按 profile 相对位置写（例如 link:../../dsh-plugins/plugins/dsh-turn-chime）。",
+  "note": "link:/file: 后的路径是占位，真实 profile 里指向本仓库 plugins/ 下的同名目录，按 profile 相对位置写（例如 link:../../my-dsh/plugins/dsh-turn-chime）。dsh-talk-map-local 在宿主里用 link: 会触发 peer 依赖问题，实际是 pnpm pack 后以 file:<tgz 绝对路径> 安装。",
   "bundles": [
     "@deepseek-ai/dsh-base",
     "@deepseek-ai/dsh-web-app",
@@ -20,7 +20,7 @@
     "@deepseek-ai/dsh-experimental-forge-bundle",
     "dsh-auto-archive",
     "dsh-ops",
-    "dsh-talk-map"
+    "dsh-talk-map-local"
   ],
   "dependencies": {
     "@deepseek-ai/dsh-experimental-plugin-market-bundle": "0.2.2-rc.1",
@@ -28,7 +28,7 @@
     "dsh-auto-archive": "link:plugins/dsh-auto-archive",
     "dsh-memory-evolve": "github:csyangwen/dsh-memory-evolve",
     "dsh-ops": "0.5.0",
-    "dsh-talk-map": "github:Tasihi89/dsh-talk-map",
+    "dsh-talk-map-local": "file:plugins/dsh-talk-map-local",
     "dsh-turn-chime": "link:plugins/dsh-turn-chime"
   }
 }

@@ -1,0 +1,1299 @@
+/* All colors come from the shell's --dsw-alias-* semantic tokens (ui-theme
+ * design-platform.css), so light/dark follow the app theme automatically. */
+
+.toggleButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  cursor: pointer;
+}
+
+.toggleButton:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+.toggleButtonActive {
+  background: var(--dsw-alias-interactive-bg-active);
+  color: var(--dsw-alias-brand-primary);
+}
+
+/* Sidebar expanded: a labeled row matching the Settings trigger's footprint. */
+.toggleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.toggleRow:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+.toggleLabel {
+  white-space: nowrap;
+}
+
+.toggleIcon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--dsw-alias-bg-base);
+  color: var(--dsw-alias-label-primary);
+  /* the shell.overlay layer is click-through; entries opt back in */
+  pointer-events: auto;
+}
+
+/* Windows titlebar mode: the shell frame already reserves the top strip for
+ * the window drag region and its buttons; start the map below that strip so
+ * the map header never collides with them. */
+[data-windows-titlebar] .overlay {
+  padding-top: var(--dsh-windows-titlebar-height, 40px);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--dsw-alias-border-l1);
+  background: var(--dsw-alias-bg-layer-1);
+  flex: none;
+}
+
+.headerTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-primary);
+}
+
+.headerBadge {
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.headerSpace {
+  flex: 1;
+}
+
+.hotkeyButton {
+  flex: none;
+  padding: 3px 10px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.hotkeyButton:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+/* Same pill as the hotkey button; min-width keeps the header from jumping
+   as the label cycles 自动 / 中文 / English. */
+.langButton {
+  flex: none;
+  min-width: 58px;
+  padding: 3px 10px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.langButton:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+.zoomResetLabel {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.closeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  cursor: pointer;
+}
+
+.closeButton:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+.canvas {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+/* React Flow draws a huge translucent bounding rect over the whole selected
+ * set after a rubber-band select; spanning distant cards it covers half the
+ * board, LOOKS like select-all, and swallows every click underneath. Kill
+ * it — dragging any selected card still moves the whole selection. */
+.canvas :global(.react-flow__nodesselection),
+.canvas :global(.react-flow__nodesselection-rect) {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+.card {
+  width: 224px;
+  min-height: 104px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 10px;
+  background: var(--dsw-alias-bg-layer-1);
+  color: var(--dsw-alias-label-primary);
+  box-shadow: 0 1px 3px var(--dsw-alias-bg-mask-1);
+  font-size: 13px;
+}
+
+.cardSelected {
+  border-color: var(--dsw-alias-brand-primary);
+}
+
+.cardGhost {
+  opacity: 0.55;
+  border-style: dashed;
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.cardTitle {
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.runningDot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--dsw-alias-state-success-primary);
+  animation: talkmap-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes talkmap-pulse {
+  50% { opacity: 0.35; }
+}
+
+.cardNext {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--dsw-alias-label-secondary);
+  min-width: 0;
+}
+
+.cardNextLabel {
+  flex: none;
+  font-size: 11px;
+  color: var(--dsw-alias-brand-primary);
+  font-weight: 600;
+}
+
+.cardNextText {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cardStale {
+  flex: none;
+  color: var(--dsw-alias-state-warn-primary);
+  font-size: 12px;
+}
+
+/* pinned footer: time always bottom-left, status badge bottom-right */
+.cardDoneDot {
+  position: relative;
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+  color: var(--dsw-alias-state-success-primary, #22c55e);
+}
+
+.cardDoneDot::after {
+  content: '';
+  position: absolute;
+  inset: 20%;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.cardFooter {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.cardTime {
+  flex: none;
+}
+
+/* A card sitting inside another workspace's frame: membership never changes,
+ * so the mismatch is flagged instead of silently implied. */
+.cardForeign {
+  outline: 2px dashed #e0a33a;
+  outline-offset: 2px;
+}
+
+.cardFooterLeft {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.cardForeignTouch {
+  animation: cardForeignPulse 1.3s ease-in-out infinite;
+}
+
+@keyframes cardForeignPulse {
+  0%, 100% { box-shadow: 0 1px 3px var(--dsw-alias-bg-mask-1), 0 0 0 0 rgba(224, 163, 58, 0); }
+  50% { box-shadow: 0 1px 3px var(--dsw-alias-bg-mask-1), 0 0 0 7px rgba(224, 163, 58, 0.35); }
+}
+
+.cardArchivedChip {
+  flex: none;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  color: var(--dsw-alias-label-tertiary);
+  background: color-mix(in oklab, var(--dsw-alias-label-primary) 6%, transparent);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.cardForeignChip {
+  min-width: 0;
+  max-width: 118px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, #e0a33a 55%, transparent);
+  background: color-mix(in oklab, #e0a33a 16%, transparent);
+  color: color-mix(in oklab, #e0a33a 78%, var(--dsw-alias-label-primary));
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.wsFrameForeign {
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px dashed color-mix(in oklab, #e0a33a 55%, transparent);
+  color: color-mix(in oklab, #e0a33a 78%, var(--dsw-alias-label-primary));
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.cardBadgeRunning {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  color: var(--dsw-alias-state-success-primary);
+  background: var(--dsw-alias-state-success-tertiary);
+}
+
+.cardSummary {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--dsw-alias-label-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.cardBadgeWaiting {
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  color: var(--dsw-alias-state-warn-label);
+  background: var(--dsw-alias-state-warn-tertiary);
+}
+
+.cardBadgeDone {
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  color: var(--dsw-alias-state-success-primary);
+  background: var(--dsw-alias-state-success-tertiary);
+}
+
+.cardRemove {
+  align-self: flex-start;
+  padding: 3px 8px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.cardRemove:hover {
+  background: var(--dsw-alias-interactive-bg-hover-danger);
+  color: var(--dsw-alias-state-error-primary);
+}
+
+/* Connection points: fully invisible at rest (still hit-testable — opacity
+ * keeps pointer events), revealed on card hover or while a drag is live.
+ * Deliberately NOT transitioned: a transition rides the animation clock,
+ * which throttled/background tabs freeze — the handles would then stay
+ * stuck invisible mid-drag. Instant toggle is timing-independent. */
+.card .cardHandle {
+  width: 18px;
+  height: 18px;
+  background: transparent;
+  border: none;
+  opacity: 0.55;
+}
+
+.cardHandle::after {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  background: var(--dsw-alias-label-tertiary);
+  border: 2px solid var(--dsw-alias-bg-layer-1);
+}
+
+.card:hover .cardHandle,
+.canvasConnecting .cardHandle {
+  opacity: 1;
+}
+
+.cardHandle:hover {
+  opacity: 1;
+}
+
+.cardHandle:hover::after {
+  background: var(--dsw-alias-brand-primary);
+}
+
+.cardRefresh {
+  flex: none;
+  margin-left: auto;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.card:hover .cardRefresh {
+  opacity: 1;
+}
+
+.cardRefresh:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+.cardRefreshBusy {
+  opacity: 1;
+  animation: talkmap-spin 1s linear infinite;
+}
+
+@keyframes talkmap-spin {
+  to { transform: rotate(360deg); }
+}
+
+.spawnPanel {
+  position: absolute;
+  right: 24px;
+  top: 24px;
+  z-index: 8;
+  width: 420px;
+  max-width: calc(100% - 48px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 12px;
+  background: var(--dsw-alias-bg-layer-1);
+  box-shadow: 0 8px 30px var(--dsw-alias-bg-mask-2);
+}
+
+.spawnHeading {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-primary);
+}
+
+.spawnFrom {
+  font-size: 12px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.spawnModes {
+  display: flex;
+  gap: 6px;
+}
+
+.spawnModeBtn {
+  flex: 1;
+  padding: 5px 0;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.spawnModeBtn:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.spawnModeActive {
+  border-color: var(--dsw-alias-brand-primary);
+  color: var(--dsw-alias-brand-primary);
+  background: var(--dsw-alias-interactive-bg-active);
+}
+
+.spawnHint {
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.spawnTextarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 140px;
+  padding: 10px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 8px;
+  background: var(--dsw-alias-bg-base);
+  color: var(--dsw-alias-label-primary);
+  font-size: 13px;
+  line-height: 1.5;
+  font-family: inherit;
+}
+
+.spawnError {
+  font-size: 12px;
+  color: var(--dsw-alias-state-error-primary);
+  word-break: break-all;
+}
+
+.spawnActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.spawnBtnPrimary {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--dsw-alias-button-primary-fill);
+  color: var(--dsw-alias-label-primary-foreground);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.spawnBtnPrimary:hover {
+  background: var(--dsw-alias-button-primary-hover);
+}
+
+.spawnBtnPrimary:disabled {
+  background: var(--dsw-alias-button-primary-dimmed);
+  cursor: default;
+}
+
+.spawnBtnGhost {
+  padding: 6px 16px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.spawnBtnGhost:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.wsFrame {
+  position: relative;
+  /* A grouped region must read at a glance: 2px dashed with a solid-contrast
+   * color (mixed from the label color so it adapts to light/dark themes) and
+   * a faint plate behind the cards. */
+  border: 2px dashed color-mix(in oklab, var(--dsw-alias-label-primary) 32%, transparent);
+  border-radius: 16px;
+  background: color-mix(in oklab, var(--dsw-alias-bg-layer-1) 55%, transparent);
+}
+
+.wsFrameSelected {
+  border-style: solid;
+  border-color: var(--dsw-alias-brand-primary);
+  background: color-mix(in oklab, var(--dsw-alias-brand-primary) 8%, transparent);
+}
+
+.wsFrameLabel {
+  position: absolute;
+  top: -12px;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--dsw-alias-label-primary) 22%, transparent);
+  background: var(--dsw-alias-bg-layer-1);
+  box-shadow: 0 2px 10px color-mix(in oklab, var(--dsw-alias-bg-mask-2) 55%, transparent);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-primary);
+  white-space: nowrap;
+  /* the frame body is click-through; the chip is the physical handle */
+  pointer-events: auto;
+  cursor: grab;
+}
+
+.wsFrameLabel:active {
+  cursor: grabbing;
+}
+
+/* invisible strips along the dashed edge: click to select, drag to move */
+.wsFrameEdge {
+  position: absolute;
+  pointer-events: auto;
+  cursor: grab;
+}
+
+.wsFrameEdge:active {
+  cursor: grabbing;
+}
+
+.wsFrameResize {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 16px;
+  height: 16px;
+  pointer-events: auto;
+  cursor: nwse-resize;
+  border-right: 3px solid var(--dsw-alias-border-l3);
+  border-bottom: 3px solid var(--dsw-alias-border-l3);
+  border-bottom-right-radius: 14px;
+  opacity: 0.7;
+}
+
+.wsFrameResize:hover {
+  border-color: var(--dsw-alias-brand-primary);
+  opacity: 1;
+}
+
+.wsFrameCount {
+  font-weight: 400;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.draftCard {
+  width: 360px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border: 1.5px solid var(--dsw-alias-brand-primary);
+  border-radius: 12px;
+  background: var(--dsw-alias-bg-layer-1);
+  box-shadow: 0 8px 30px var(--dsw-alias-bg-mask-2);
+  font-size: 13px;
+}
+
+.draftHeading {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-primary);
+}
+
+.draftRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.draftLabel {
+  flex: none;
+  width: 52px;
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.draftSelect {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 5px 8px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 7px;
+  background: var(--dsw-alias-bg-base);
+  color: var(--dsw-alias-label-primary);
+  font-size: 12px;
+}
+
+.draftGrow {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.draftInput {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 5px 8px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 7px;
+  background: var(--dsw-alias-bg-base);
+  color: var(--dsw-alias-label-primary);
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.draftPathPreview {
+  font-size: 11px;
+  color: var(--dsw-alias-label-tertiary);
+  word-break: break-all;
+}
+
+.draftTextarea {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 88px;
+  padding: 9px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 8px;
+  background: var(--dsw-alias-bg-base);
+  color: var(--dsw-alias-label-primary);
+  font-size: 13px;
+  line-height: 1.5;
+  font-family: inherit;
+}
+
+.colorToolbar {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--dsw-alias-border-l1);
+  border-radius: 10px;
+  background: var(--dsw-alias-bg-layer-1);
+  box-shadow: 0 2px 10px var(--dsw-alias-bg-mask-1);
+}
+
+.colorToolbarLabel {
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary);
+  margin-right: 2px;
+}
+
+.colorSwatch {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--dsw-alias-label-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.colorSwatch:hover {
+  transform: scale(1.15);
+}
+
+.colorSwatchClear {
+  background: transparent;
+}
+
+.menu {
+  position: absolute;
+  z-index: 9;
+  min-width: 200px;
+  max-width: 280px;
+  max-height: 380px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  border: 1px solid var(--dsw-alias-border-l1);
+  border-radius: 10px;
+  background: var(--dsw-alias-bg-layer-1);
+  box-shadow: 0 8px 30px var(--dsw-alias-bg-mask-2);
+}
+
+.menuTitle {
+  flex: none;
+  padding: 4px 10px 6px;
+  font-size: 11px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.menuSearch {
+  flex: none;
+  box-sizing: border-box;
+  width: calc(100% - 8px);
+  margin: 2px 4px 6px;
+  padding: 5px 8px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 7px;
+  background: var(--dsw-alias-bg-base);
+  color: var(--dsw-alias-label-primary);
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.menuHint {
+  font-size: 11px;
+  color: var(--dsw-alias-label-dimmed);
+}
+
+.menuPreview {
+  flex: none;
+  padding: 0 10px 4px;
+  font-size: 11px;
+  color: var(--dsw-alias-label-tertiary);
+  word-break: break-all;
+}
+
+.menuError {
+  flex: none;
+  padding: 0 10px 4px;
+  font-size: 11px;
+  color: var(--dsw-alias-state-error-primary);
+  word-break: break-all;
+}
+
+.menuEmpty {
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.menuItem {
+  /* .menu is a flex column with max-height: without flex:none a long list
+   * SHRINKS every row and clips the text vertically */
+  flex: none;
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--dsw-alias-label-primary);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.menuItem:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.menuItem:disabled {
+  color: var(--dsw-alias-label-dimmed);
+  cursor: default;
+}
+
+.wsFrameHidden {
+  font-weight: 400;
+  color: var(--dsw-alias-state-warn-primary);
+}
+
+.emptyHint {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 13px;
+  color: var(--dsw-alias-label-tertiary);
+  pointer-events: none;
+  z-index: 4;
+}
+
+.toast {
+  position: absolute;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  z-index: 8;
+  max-width: 70%;
+  padding: 7px 16px;
+  border: 1px solid var(--dsw-alias-border-l1);
+  border-radius: 999px;
+  background: var(--dsw-alias-bg-layer-1);
+  box-shadow: 0 4px 16px var(--dsw-alias-bg-mask-2);
+  font-size: 12px;
+  color: var(--dsw-alias-label-primary);
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Toast that carries an inline action (「已归档 · 取消」) must take clicks,
+ * and lays its label and button out as one row. */
+.toastActionable {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding-right: 8px;
+  pointer-events: auto;
+}
+
+.toastText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toastAction {
+  flex: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: var(--dsw-alias-bg-layer-2, rgba(127, 127, 127, 0.16));
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.toastAction:hover {
+  background: var(--dsw-alias-bg-layer-3, rgba(127, 127, 127, 0.24));
+}
+
+/* ---- right-hand conversation drawer (single-click a card) ---- */
+
+.body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.chatDrawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 6;
+  width: clamp(360px, 42%, 720px);
+  display: flex;
+  flex-direction: column;
+  background: var(--dsw-alias-bg-base);
+  border-left: 1px solid var(--dsw-alias-border-l1);
+  box-shadow: -12px 0 28px -18px var(--dsw-alias-bg-mask-2);
+}
+
+.chatDrawerHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--dsw-alias-border-l1);
+  background: var(--dsw-alias-bg-layer-1);
+}
+
+.chatDrawerTitle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-primary);
+}
+
+.chatDrawerSpace {
+  flex: 1;
+}
+
+.chatDrawerClose {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  cursor: pointer;
+}
+
+.chatDrawerClose:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+.chatDrawerArchived {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid color-mix(in oklab, #e0a33a 35%, transparent);
+  background: color-mix(in oklab, #e0a33a 12%, transparent);
+  color: var(--dsw-alias-label-primary);
+  font-size: 12px;
+}
+
+.chatDrawerArchivedText {
+  flex: 1;
+  min-width: 0;
+}
+
+.chatDrawerArchivedButton {
+  flex: none;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, #e0a33a 55%, transparent);
+  background: transparent;
+  color: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.chatDrawerArchivedButton:hover {
+  background: color-mix(in oklab, #e0a33a 18%, transparent);
+}
+
+.chatDrawerBody {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Same-Session cards cannot mount a second editable Conversation root. */
+.chatDrawerNotice {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 22px 20px;
+}
+
+.chatDrawerNoticeText {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.chatDrawerNoticeButton {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  background: var(--dsw-alias-bg-layer-1);
+  color: var(--dsw-alias-label-primary);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.chatDrawerNoticeButton:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.chatPanel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- pending-interaction button + popover ---- */
+
+.cardWaitingButton {
+  padding: 1px 7px;
+  border: none;
+  border-radius: 999px;
+  font-size: 10px;
+  color: var(--dsw-alias-state-warn-label);
+  background: var(--dsw-alias-state-warn-tertiary);
+  cursor: pointer;
+}
+
+.cardWaitingButton:hover {
+  filter: brightness(1.15);
+}
+
+.interactMenu {
+  gap: 4px;
+  max-height: min(420px, 70vh);
+}
+
+.interactTitle {
+  padding: 4px 6px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-primary);
+}
+
+.interactText {
+  padding: 2px 6px 4px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--dsw-alias-label-secondary);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.interactNote {
+  padding: 0 6px 4px;
+  font-size: 11px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.interactScroll {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.interactGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.interactOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 2px 6px 4px;
+}
+
+.interactOption {
+  flex: 1 1 100%;
+  text-align: left;
+  padding: 7px 10px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dsw-alias-label-primary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.interactOption:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.interactOptionActive {
+  border-color: var(--dsw-alias-brand-primary);
+  background: var(--dsw-alias-interactive-bg-active);
+}
+
+.interactActions {
+  display: flex;
+  gap: 6px;
+  padding: 4px 6px 6px;
+}
+
+.interactAllow {
+  flex: 1;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 8px;
+  background: var(--dsw-alias-button-primary-fill);
+  color: var(--dsw-alias-label-primary-foreground);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.interactAllow:hover:not(:disabled) {
+  background: var(--dsw-alias-button-primary-hover);
+}
+
+.interactDanger {
+  flex: 1;
+  padding: 7px 10px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dsw-alias-state-error-primary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.interactDanger:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover-danger);
+}
+
+.interactSubmit,
+.interactOpen {
+  width: 100%;
+  margin-top: 4px;
+  padding: 7px 10px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dsw-alias-label-primary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.interactSubmit:hover:not(:disabled),
+.interactOpen:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.interactSubmit:disabled {
+  color: var(--dsw-alias-label-dimmed);
+  cursor: default;
+}
+
+.interactError {
+  padding: 2px 6px 4px;
+  font-size: 11px;
+  color: var(--dsw-alias-state-error-primary);
+  word-break: break-word;
+}
+
+/* ---- last-resort boundary fallback ---- */
+
+.mapFallback {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  background: var(--dsw-alias-bg-base);
+  color: var(--dsw-alias-label-primary);
+}
+
+.mapFallbackTitle {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.mapFallbackText {
+  max-width: 420px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.mapFallbackButton {
+  padding: 6px 14px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dsw-alias-label-primary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.mapFallbackButton:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+}

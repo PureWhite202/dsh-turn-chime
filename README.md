@@ -20,8 +20,6 @@
 | 目录 | 装到 | 来源 |
 | --- | --- | --- |
 | [humanizer-zh](skills/humanizer-zh/) | `~/.dsh/skills` | 第三方，LICENSE 署名「歸藏」（Humanizer-zh，MIT） |
-| [office-lite](skills/office-lite/) | `~/.agents/skills` | Pi Desktop 时期遗留，早于 DSH |
-| [video-shotcraft](skills/video-shotcraft/SOURCE.md) | `~/.dsh/skills` | 上游克隆，未改 |
 
 codex/grok/hermes/kimi-cli-calling 和 memory-consolidate 由 `dsh-memory-evolve` 启动时自动同步到 `~/.agents/skills`，不在仓库存储。
 

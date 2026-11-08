@@ -1,0 +1,37 @@
+{
+  "name": "dsh-purewhite-toolkit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "纯白莱茵自用 DSH 工具集：目前提供 screenshot 工具（整屏 / 指定窗口 / 指定区域截图，直接作为图片返回给模型）",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "cordis.patch.yml",
+    "native",
+    "build/dshtool-capture.exe",
+    "scripts",
+    "test",
+    "README.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "build": "node scripts/build-helper.mjs",
+    "test": "node scripts/build-helper.mjs && node test/smoke.mjs"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "screenshot",
+    "windows"
+  ],
+  "license": "MIT"
+}

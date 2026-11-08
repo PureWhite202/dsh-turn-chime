@@ -14,6 +14,7 @@
 | [dsh-superpowers](plugins/dsh-superpowers/SOURCE.md) | 技能与工作流 | npm 1.0.16 |
 | [dsh-memory-evolve](plugins/dsh-memory-evolve/SOURCE.md) | 记忆、待办 | github |
 | [dsh-talk-map-local](plugins/dsh-talk-map-local/) | 会话地图，本地大改版 | 基于 github:Tasihi89/dsh-talk-map |
+| [dsh-purewhite-toolkit](plugins/dsh-purewhite-toolkit/) | 自用工具集：截图（整屏/窗口/区域，直接返回图片） | 自制 |
 
 ## 技能
 

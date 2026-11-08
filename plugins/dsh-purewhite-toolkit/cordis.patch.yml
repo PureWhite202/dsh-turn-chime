@@ -1,0 +1,14 @@
+# 纯白莱茵自用工具集（dsh-purewhite-toolkit）的 bundle 层：把插件插进宿主配置树。
+# 需要改配置时直接改下面的 config（全部字段都可省略）。
+- insert:
+    - id: purewhite-toolkit
+      name: dsh-purewhite-toolkit
+      config:
+        enabled: true
+        #   toolName: screenshot      # 工具名，默认 screenshot
+        #   maxLongEdge: 1600         # 图片长边上限，0 = 不缩放
+        #   format: png               # png | jpeg
+        #   saveDir: ''               # 空 = 会话工作目录根
+        #   backend: auto             # auto | helper | powershell
+        #   cursor: false             # 是否把鼠标指针画进图里
+        #   blankUniformity: 0.995    # 判定纯色（黑屏/锁屏）的阈值

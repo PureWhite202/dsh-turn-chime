@@ -20,14 +20,18 @@
     "@deepseek-ai/dsh-experimental-forge-bundle",
     "dsh-auto-archive",
     "dsh-ops",
-    "dsh-talk-map-local"
+    "dsh-talk-map-local",
+    "dsh-purewhite-toolkit",
+    "dsh-context"
   ],
   "dependencies": {
     "@deepseek-ai/dsh-experimental-plugin-market-bundle": "0.2.2-rc.1",
     "@zfdx123/dsh-superpowers": "1.0.16",
     "dsh-auto-archive": "link:plugins/dsh-auto-archive",
+    "dsh-context": "0.83.0",
     "dsh-memory-evolve": "github:csyangwen/dsh-memory-evolve",
     "dsh-ops": "0.5.0",
+    "dsh-purewhite-toolkit": "link:plugins/dsh-purewhite-toolkit",
     "dsh-talk-map-local": "file:plugins/dsh-talk-map-local",
     "dsh-turn-chime": "link:plugins/dsh-turn-chime"
   }

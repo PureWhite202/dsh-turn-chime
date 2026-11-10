@@ -11,7 +11,7 @@
  * inside a workspace frame preselects that workspace; anywhere else the
  * selector defaults to creating a new workspace.
  */
-import { useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import type { NodeProps, Node } from '@xyflow/react'
 import type { AgentPresetEntry, ModelProviderGroup, RemoteService } from './dsh.ts'
 import type { EdgeInjection } from '../shared/model.ts'
@@ -86,7 +86,45 @@ function newWorkspaceParent(options: { path: string }[]): string {
   return cut > 0 ? sample.slice(0, cut) : sample
 }
 
-export function DraftCardNode(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
+interface DraftCatalog {
+  groups: ModelProviderGroup[]
+  presets: readonly AgentPresetEntry[]
+  defaultModel: string
+  defaultPreset: string
+}
+
+let draftCatalogPromise: Promise<DraftCatalog> | null = null
+
+/** The model catalog / agent presets / default labels are page-wide static:
+ *  load them once, lazily, and reuse them for every draft box. */
+function loadDraftCatalog(): Promise<DraftCatalog> {
+  if (draftCatalogPromise !== null) return draftCatalogPromise
+  draftCatalogPromise = (async () => {
+    const services = getServices()
+    const remote = services?.remote
+    let groups: ModelProviderGroup[] = []
+    let presets: readonly AgentPresetEntry[] = []
+    let defaultModel = ''
+    let defaultPreset = ''
+    try {
+      if (remote !== undefined) {
+        const catalog = await remote.session.modelCatalog().catch(() => undefined)
+        if (catalog !== undefined && catalog.ok) groups = catalog.value.groups ?? []
+        const list = await remote.agentPresets.list().catch(() => undefined)
+        if (list !== undefined && list.ok) presets = list.value.presets
+      }
+      const defaults = await talkMapApi.getDefaults().catch(() => undefined)
+      if (defaults !== undefined && defaults.model !== null) defaultModel = defaults.model.model
+      if (defaults !== undefined && defaults.preset !== null) defaultPreset = defaults.preset
+    } catch (error) {
+      console.warn('[dsh-talk-map] draft catalog unavailable:', error)
+    }
+    return { groups, presets, defaultModel, defaultPreset }
+  })()
+  return draftCatalogPromise
+}
+
+function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
   const { data } = props
   const [workspaceId, setWorkspaceId] = useState(
     data.defaultWorkspaceId ?? defaultWorkspaceOption(data.workspaceOptions) ?? NEW_WORKSPACE,
@@ -98,7 +136,10 @@ export function DraftCardNode(props: NodeProps<DraftCardNodeType>): React.JSX.El
   const [presetId, setPresetId] = useState('')
   const [text, setText] = useState('')
   const parent = data.parent
-  const [mode, setMode] = useState<'digest' | 'full' | 'none'>('digest')
+  const [mode, setMode] = useState<'digest' | 'full' | 'none'>('full')
+  const [generatingSummary, setGeneratingSummary] = useState(false)
+  /** The digest was generated once for this box: later clicks reuse it. */
+  const summaryRequestedRef = useRef(false)
   const [summary, setSummary] = useState(() => parent === undefined
     ? ''
     : buildInjectionText(parent.title, canvas.get().digests[parent.sessionId]))
@@ -136,35 +177,26 @@ export function DraftCardNode(props: NodeProps<DraftCardNodeType>): React.JSX.El
     setWorkspaceId(previous => (previous === NEW_WORKSPACE ? fallback : previous))
   }, [data.defaultWorkspaceId, data.workspaceOptions])
 
+  // The model/preset selectors only exist outside 完整对话 — and the catalog is
+  // page-wide static. Load it on demand (first digest/none switch or a plain
+  // new-conversation draft), never for the default fork path.
   useEffect(() => {
-    const services = getServices()
-    const remote = services?.remote
-    // The gateway can briefly lack its Remote namespaces while (re)connecting;
-    // a throw here used to crash the whole shell.overlay slot entry.
-    if (remote === undefined) return
-    try {
-      remote.session.modelCatalog().then((result) => {
-        if (result.ok) setGroups(result.value.groups ?? [])
-      }).catch(() => undefined)
-      remote.agentPresets.list().then((result) => {
-        if (result.ok) {
-          const list = result.value.presets
-          setPresets(list)
-          // Prefer the plain "standard" preset for map-born conversations —
-          // the deployment default may be a specialized mode (e.g. cordis).
-          if (list.some(preset => preset.id === 'standard')) {
-            setPresetId(previous => (previous === '' ? 'standard' : previous))
-          }
-        }
-      }).catch(() => undefined)
-    } catch (error) {
-      console.warn('[dsh-talk-map] model catalog unavailable:', error)
-    }
-    talkMapApi.getDefaults().then((defaults) => {
-      if (defaults.model !== null) setDefaultModelLabel(defaults.model.model)
-      if (defaults.preset !== null) setDefaultPresetLabel(defaults.preset)
-    }).catch(() => undefined)
-  }, [])
+    if (parent !== undefined && mode === 'full') return
+    let cancelled = false
+    void loadDraftCatalog().then((catalog) => {
+      if (cancelled) return
+      setGroups(catalog.groups)
+      setPresets(catalog.presets)
+      setDefaultModelLabel(catalog.defaultModel)
+      setDefaultPresetLabel(catalog.defaultPreset)
+      // Prefer the plain 'standard' preset for map-born conversations —
+      // the deployment default may be a specialized mode (e.g. cordis).
+      if (catalog.presets.some(preset => preset.id === 'standard')) {
+        setPresetId(previous => (previous === '' ? 'standard' : previous))
+      }
+    })
+    return () => { cancelled = true }
+  }, [parent, mode])
 
   const creatingWorkspace = workspaceId === NEW_WORKSPACE
   const wsParent = newWorkspaceParent(data.workspaceOptions)
@@ -173,7 +205,7 @@ export function DraftCardNode(props: NodeProps<DraftCardNodeType>): React.JSX.El
   const needsNewWorkspaceName = (!isFork || mode !== 'full') && creatingWorkspace && newWsName.trim() === ''
   const sendDisabled = busy
     || (isFork
-      ? (mode === 'digest' && (summary.trim() === '' || text.trim() === ''))
+      ? (mode === 'digest' && (generatingSummary || summary.trim() === '' || text.trim() === ''))
         || (mode === 'none' && text.trim() === '')
         || needsNewWorkspaceName
       : text.trim() === '' || needsNewWorkspaceName)
@@ -340,10 +372,26 @@ export function DraftCardNode(props: NodeProps<DraftCardNodeType>): React.JSX.El
   }
 
   const forkModes: { id: 'digest' | 'full' | 'none'; label: string }[] = [
-    { id: 'digest', label: t('spawn.mode.digest') },
     { id: 'full', label: t('spawn.mode.full') },
+    { id: 'digest', label: t('spawn.mode.digest') },
     { id: 'none', label: t('spawn.mode.none') },
   ]
+
+  /** Choosing 摘要注入 asks the model for a fresh digest of the source card. */
+  const generateSummary = async (): Promise<void> => {
+    if (parent === undefined || generatingSummary) return
+    setGeneratingSummary(true)
+    setError(undefined)
+    try {
+      const result = await talkMapApi.refreshDigest(parent.sessionId)
+      setSummary(buildInjectionText(parent.title, result.digest))
+      summaryRequestedRef.current = true
+    } catch (generateError) {
+      setError(String(generateError))
+    } finally {
+      setGeneratingSummary(false)
+    }
+  }
   const parentDigest = parent !== undefined ? canvas.get().digests[parent.sessionId] : undefined
   const digestEmpty = parentDigest === undefined || digestIsEmpty(parentDigest)
   const showConfig = !isFork || mode !== 'full'
@@ -376,14 +424,21 @@ export function DraftCardNode(props: NodeProps<DraftCardNodeType>): React.JSX.El
                     key={entry.id}
                     type="button"
                     className={`${styles['spawnModeBtn']}${mode === entry.id ? ` ${styles['spawnModeActive']}` : ''}`}
-                    onClick={() => { setMode(entry.id) }}
+                    onClick={() => {
+                      // Generate the digest only the first time this box switches
+                      // to 摘要注入; later clicks reuse it and never hit the model.
+                      if (entry.id === 'digest' && !summaryRequestedRef.current) void generateSummary()
+                      setMode(entry.id)
+                    }}
                   >
                     {entry.label}
                   </button>
                 ))}
               </div>
               {mode === 'digest'
-                ? (
+                ? generatingSummary
+                  ? <div className={styles['spawnHint']}>{t('spawn.generating')}</div>
+                  : (
                     <>
                       <div className={styles['spawnHint']}>{t('spawn.hint')}</div>
                       <textarea
@@ -515,3 +570,5 @@ export function DraftCardNode(props: NodeProps<DraftCardNodeType>): React.JSX.El
     </div>
   )
 }
+
+export const DraftCardNode = memo(DraftCard)

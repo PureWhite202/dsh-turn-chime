@@ -7,7 +7,7 @@
  */
 import { talkMapApi } from './api.ts'
 import { setLocalePref } from './i18n.ts'
-import type { Card, Digest, FrameGeometry, MapEdgeData, MapGlobal, Camera } from '../shared/model.ts'
+import type { Card, Digest, FrameGeometry, MapEdgeData, MapGlobal, MapImage, Camera } from '../shared/model.ts'
 import { INBOX_BOARD_ID } from '../shared/model.ts'
 
 export interface CanvasState {
@@ -16,6 +16,7 @@ export interface CanvasState {
   readonly cards: Readonly<Record<string, Card>>
   readonly edges: Readonly<Record<string, MapEdgeData>>
   readonly digests: Readonly<Record<string, Digest>>
+  readonly images: Readonly<Record<string, MapImage>>
   readonly global: MapGlobal | null
 }
 
@@ -24,7 +25,7 @@ type Listener = () => void
 const FLUSH_DELAY_MS = 800
 const CAMERA_DELAY_MS = 800
 
-let state: CanvasState = { phase: 'idle', cards: {}, edges: {}, digests: {}, global: null }
+let state: CanvasState = { phase: 'idle', cards: {}, edges: {}, digests: {}, images: {}, global: null }
 const listeners = new Set<Listener>()
 
 function setState(next: Partial<CanvasState>): void {
@@ -211,6 +212,7 @@ export const canvas = {
         cards: payload.cards,
         edges: payload.edges,
         digests: payload.digests,
+        images: payload.images ?? {},
         global: payload.global,
       })
     }).catch((error) => {
@@ -250,6 +252,20 @@ export const canvas = {
         const current = state.edges[change.key]
         if (current !== undefined && sameEdge(current, incoming)) return
         setState({ edges: { ...state.edges, [change.key]: incoming } })
+        return
+      }
+      if (change.table === 'images') {
+        if (change.operation === 'deleted') {
+          if (state.images[change.key] === undefined) return
+          const images = { ...state.images }
+          delete images[change.key]
+          setState({ images })
+          return
+        }
+        const incoming = change.value as MapImage
+        const current = state.images[change.key]
+        if (current !== undefined && current.x === incoming.x && current.y === incoming.y && current.width === incoming.width && current.height === incoming.height && current.src === incoming.src) return
+        setState({ images: { ...state.images, [change.key]: incoming } })
         return
       }
       if (change.table === 'digests') {
@@ -350,6 +366,7 @@ export const canvas = {
         cards: payload.cards,
         edges: payload.edges,
         digests: payload.digests,
+        images: payload.images ?? {},
         global: payload.global,
       })
     }).catch(() => undefined)
@@ -495,6 +512,60 @@ export const canvas = {
       if (current === null) return
       void persistGlobal(current, 'camera')
     }, CAMERA_DELAY_MS)
+  },
+
+  // ---- image nodes ------------------------------------------------------
+  addImages(entries: Record<string, MapImage>): void {
+    pushUndo()
+    setState({ images: { ...state.images, ...entries } })
+    void talkMapApi.upsertImages(entries).catch((error) => {
+      console.error('[dsh-talk-map] image upsert failed:', error)
+    })
+  },
+
+  moveImages(updates: Record<string, { x: number; y: number }>): void {
+    const moved: string[] = []
+    const images = { ...state.images }
+    for (const [id, position] of Object.entries(updates)) {
+      const image = images[id]
+      if (image === undefined) continue
+      if (image.x === position.x && image.y === position.y) continue
+      images[id] = { ...image, x: position.x, y: position.y }
+      moved.push(id)
+    }
+    if (moved.length === 0) return
+    pushUndo()
+    setState({ images })
+    const payload: Record<string, MapImage> = {}
+    for (const id of moved) {
+      const image = images[id]
+      if (image !== undefined) payload[id] = image
+    }
+    void talkMapApi.upsertImages(payload).catch((error) => {
+      console.error('[dsh-talk-map] image move save failed:', error)
+    })
+  },
+
+  resizeImage(id: string, width: number, height: number): void {
+    const image = state.images[id]
+    if (image === undefined) return
+    if (image.width === width && image.height === height) return
+    setState({ images: { ...state.images, [id]: { ...image, width, height } } })
+    void talkMapApi.upsertImages({ [id]: { ...image, width, height } }).catch((error) => {
+      console.error('[dsh-talk-map] image resize save failed:', error)
+    })
+  },
+
+  removeImages(ids: readonly string[]): void {
+    const present = ids.filter(id => state.images[id] !== undefined)
+    if (present.length === 0) return
+    pushUndo()
+    const images = { ...state.images }
+    for (const id of present) delete images[id]
+    setState({ images })
+    void talkMapApi.deleteImages(present).catch((error) => {
+      console.error('[dsh-talk-map] image delete failed:', error)
+    })
   },
 
   /** Cmd/Ctrl+Z — board operations only (conversations are not undoable). */

@@ -68,6 +68,23 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			deleteCards(ids) {
 				return postJson("/talk-map/cards/delete", { ids });
 			},
+			upsertImages(images) {
+				return postJson("/talk-map/images/upsert", { images });
+			},
+			deleteImages(ids) {
+				return postJson("/talk-map/images/delete", { ids });
+			},
+			/** Upload raw image bytes; the host stores them content-addressed. */
+			uploadImage(blob) {
+				return fetch("/talk-map/images/upload", {
+					method: "POST",
+					headers: { "content-type": blob.type || "application/octet-stream" },
+					body: blob
+				}).then(async (response) => {
+					if (!response.ok) throw new Error(`/talk-map/images/upload -> ${response.status}`);
+					return await response.json();
+				});
+			},
 			upsertEdges(edges) {
 				return postJson("/talk-map/edges/upsert", { edges });
 			},
@@ -125,12 +142,16 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			"map.title": "对话地图",
 			"map.close": "关闭地图（Esc）",
 			"map.toggle": "对话地图",
+			"image.failed": "图片添加失败：",
+			"image.added": "已添加图片",
 			"map.empty": "地图是空的 —— 右键导入工作区或对话；双击空白直接开新对话",
 			"map.sessions": "个会话",
 			"map.chat": "会话窗口",
 			"map.closeChat": "关闭会话窗口",
-			"map.sameSessionHint": "这个会话已经在主界面打开了。侧栏需要先把主界面临时切到同工作区的另一个会话，才能在这里打开它；当前没有可用的会话。关闭地图即可继续在主界面输入。",
+			"map.sameSessionHint": "这个会话已经在主界面打开了。侧栏需要先把主界面临时切到同工作区的另一个会话，才能在这里打开它；当前没有可用的会话。可以点「刷新主页重试」再试一次（会话列表可能刚加载出来），或关闭地图继续在主界面输入。",
 			"map.showMain": "关闭地图查看会话",
+			"map.retryParking": "刷新主页重试",
+			"map.retryParkingBusy": "正在重试……",
 			"map.loading": "正在加载地图……",
 			"map.loadError": "地图数据加载失败：",
 			"map.crash": "地图界面出错了",
@@ -139,17 +160,17 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			"card.running": "正在运行",
 			"card.ghostTitle": "会话已不存在",
 			"card.remove": "移除卡片",
-			"card.next": "下一步",
-			"card.stale": "摘要已过期",
+			"card.pin": "置顶会话",
+			"card.unpin": "取消置顶",
 			"time.now": "刚刚",
 			"time.m": " 分钟前",
 			"time.h": " 小时前",
 			"time.d": " 天前",
-			"card.refresh": "重新生成摘要",
 			"edge.injected": "注入",
 			"spawn.heading": "连线分叉：开一个带上下文的新对话",
 			"spawn.from": "来源",
 			"spawn.hint": "以下内容将注入新对话作为背景，可以编辑：",
+			"spawn.generating": "正在生成摘要……",
 			"spawn.noDigest": "（这段对话还没有摘要——可以先点卡片右上角的 ⟳ 生成，或直接在这里手写要带过去的背景。）",
 			"spawn.confirm": "开新对话",
 			"spawn.busy": "创建中……",
@@ -167,7 +188,6 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			"inject.header": "【上下文注入 · 来自】",
 			"inject.summary": "摘要：",
 			"inject.findings": "关键结论：",
-			"inject.next": "下一步：",
 			"frame.ungrouped": "未分组",
 			"draft.heading": "新对话",
 			"draft.workspace": "工作区",
@@ -202,8 +222,6 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			"interact.needsChatHint": "在会话窗口里回答会带上完整上下文。",
 			"card.done": "已完成",
 			"card.foreign": "外部",
-			"card.archived": "已归档",
-			"card.archivedHint": "已归档的会话不能继续对话，取消归档后才能发送消息。",
 			"card.foreignHint": "该会话属于「{name}」，只是位置落在本分组框内，不计入本组。",
 			"frame.unknown": "分组",
 			"frame.defaultWs": "默认工作区",
@@ -243,7 +261,6 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			"menu.syncGroup": "同步该工作区的新会话",
 			"menu.removeGroup": "移除分组（连同卡片）",
 			"menu.archive": "归档",
-			"menu.unarchive": "取消归档",
 			"toast.archived": "已归档",
 			"toast.unarchived": "已取消归档",
 			"toast.undo": "取消",
@@ -254,12 +271,16 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			"map.title": "Talk Map",
 			"map.close": "Close map (Esc)",
 			"map.toggle": "Talk Map",
+			"image.failed": "Failed to add image: ",
+			"image.added": "Image added",
 			"map.empty": "The map is empty — right-click to import a workspace or conversation; double-click to start a chat",
 			"map.sessions": "sessions",
 			"map.chat": "Conversation panel",
 			"map.closeChat": "Close conversation panel",
-			"map.sameSessionHint": "This conversation is already open in the main view. The panel parks the main view on another conversation in the same workspace to open it here, and none is available right now. Close the map to keep typing in the main view.",
+			"map.sameSessionHint": "This conversation is already open in the main view. The panel parks the main view on another conversation in the same workspace to open it here, and none is available right now. Try 「Refresh main view & retry」 (the session list may still be loading), or close the map to keep typing in the main view.",
 			"map.showMain": "Close map to view it",
+			"map.retryParking": "Refresh main view & retry",
+			"map.retryParkingBusy": "Retrying…",
 			"map.loading": "Loading map…",
 			"map.loadError": "Failed to load map data:",
 			"map.crash": "The map hit an error",
@@ -268,17 +289,17 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			"card.running": "running",
 			"card.ghostTitle": "Session no longer exists",
 			"card.remove": "Remove card",
-			"card.next": "Next",
-			"card.stale": "digest stale",
+			"card.pin": "Pin session",
+			"card.unpin": "Unpin session",
 			"time.now": "now",
 			"time.m": "m ago",
 			"time.h": "h ago",
 			"time.d": "d ago",
-			"card.refresh": "Regenerate digest",
 			"edge.injected": "injected",
 			"spawn.heading": "Fork with context",
 			"spawn.from": "From",
 			"spawn.hint": "This text will be injected into the new session as background — edit freely:",
+			"spawn.generating": "Generating summary…",
 			"spawn.noDigest": "(No digest yet — hit ⟳ on the card first, or write the context to carry over by hand.)",
 			"spawn.confirm": "Start session",
 			"spawn.busy": "Creating…",
@@ -296,7 +317,6 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			"inject.header": "[Context injected from] ",
 			"inject.summary": "Summary: ",
 			"inject.findings": "Key findings:",
-			"inject.next": "Next step: ",
 			"frame.ungrouped": "Ungrouped",
 			"draft.heading": "New conversation",
 			"draft.workspace": "Workspace",
@@ -331,8 +351,6 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			"interact.needsChatHint": "Answering in the conversation panel keeps the full context.",
 			"card.done": "done",
 			"card.foreign": "external",
-			"card.archived": "archived",
-			"card.archivedHint": "Archived conversations cannot receive new turns; unarchive it to send messages again.",
 			"card.foreignHint": "This Session belongs to \"{name}\". It only sits inside this frame and is not part of this group.",
 			"frame.unknown": "Group",
 			"frame.defaultWs": "Default workspace",
@@ -372,7 +390,6 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			"menu.syncGroup": "Sync new sessions of this workspace",
 			"menu.removeGroup": "Remove group (with its cards)",
 			"menu.archive": "Archive",
-			"menu.unarchive": "Unarchive",
 			"toast.archived": "Archived",
 			"toast.unarchived": "Archive undone",
 			"toast.undo": "Undo",
@@ -442,6 +459,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			cards: {},
 			edges: {},
 			digests: {},
+			images: {},
 			global: null
 		};
 		const listeners$2 = /* @__PURE__ */ new Set();
@@ -597,6 +615,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 						cards: payload.cards,
 						edges: payload.edges,
 						digests: payload.digests,
+						images: payload.images ?? {},
 						global: payload.global
 					});
 				}).catch((error) => {
@@ -640,6 +659,23 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 						if (current !== void 0 && sameEdge(current, incoming)) return;
 						setState({ edges: {
 							...state$1.edges,
+							[change.key]: incoming
+						} });
+						return;
+					}
+					if (change.table === "images") {
+						if (change.operation === "deleted") {
+							if (state$1.images[change.key] === void 0) return;
+							const images = { ...state$1.images };
+							delete images[change.key];
+							setState({ images });
+							return;
+						}
+						const incoming = change.value;
+						const current = state$1.images[change.key];
+						if (current !== void 0 && current.x === incoming.x && current.y === incoming.y && current.width === incoming.width && current.height === incoming.height && current.src === incoming.src) return;
+						setState({ images: {
+							...state$1.images,
 							[change.key]: incoming
 						} });
 						return;
@@ -748,6 +784,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 						cards: payload.cards,
 						edges: payload.edges,
 						digests: payload.digests,
+						images: payload.images ?? {},
 						global: payload.global
 					});
 				}).catch(() => void 0);
@@ -904,6 +941,73 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					if (current === null) return;
 					persistGlobal(current, "camera");
 				}, CAMERA_DELAY_MS);
+			},
+			addImages(entries) {
+				pushUndo();
+				setState({ images: {
+					...state$1.images,
+					...entries
+				} });
+				talkMapApi.upsertImages(entries).catch((error) => {
+					console.error("[dsh-talk-map] image upsert failed:", error);
+				});
+			},
+			moveImages(updates) {
+				const moved = [];
+				const images = { ...state$1.images };
+				for (const [id, position] of Object.entries(updates)) {
+					const image = images[id];
+					if (image === void 0) continue;
+					if (image.x === position.x && image.y === position.y) continue;
+					images[id] = {
+						...image,
+						x: position.x,
+						y: position.y
+					};
+					moved.push(id);
+				}
+				if (moved.length === 0) return;
+				pushUndo();
+				setState({ images });
+				const payload = {};
+				for (const id of moved) {
+					const image = images[id];
+					if (image !== void 0) payload[id] = image;
+				}
+				talkMapApi.upsertImages(payload).catch((error) => {
+					console.error("[dsh-talk-map] image move save failed:", error);
+				});
+			},
+			resizeImage(id, width, height) {
+				const image = state$1.images[id];
+				if (image === void 0) return;
+				if (image.width === width && image.height === height) return;
+				setState({ images: {
+					...state$1.images,
+					[id]: {
+						...image,
+						width,
+						height
+					}
+				} });
+				talkMapApi.upsertImages({ [id]: {
+					...image,
+					width,
+					height
+				} }).catch((error) => {
+					console.error("[dsh-talk-map] image resize save failed:", error);
+				});
+			},
+			removeImages(ids) {
+				const present = ids.filter((id) => state$1.images[id] !== void 0);
+				if (present.length === 0) return;
+				pushUndo();
+				const images = { ...state$1.images };
+				for (const id of present) delete images[id];
+				setState({ images });
+				talkMapApi.deleteImages(present).catch((error) => {
+					console.error("[dsh-talk-map] image delete failed:", error);
+				});
 			},
 			/** Cmd/Ctrl+Z — board operations only (conversations are not undoable). */
 			undo() {
@@ -1063,6 +1167,36 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			const ids = (0, react.useSyncExternalStore)(subscribe, () => getServices()?.workspaces.list?.getSnapshot().archivedSessionIds ?? EMPTY_ARCHIVED);
 			return (0, react.useMemo)(() => new Set(ids), [ids]);
 		}
+		const EMPTY_PINNED = [];
+		/**
+		* Pinned Session ids from the host's workspace model (reactive). The host's
+		* sidebar fronts pinned Sessions; a card's pin toggle writes through the same
+		* model, so both surfaces always agree.
+		*/
+		function usePinnedSessionIds() {
+			const subscribe = (0, react.useMemo)(() => (listener) => {
+				return (getServices()?.workspaces.list)?.subscribe?.(listener) ?? (() => void 0);
+			}, []);
+			const ids = (0, react.useSyncExternalStore)(subscribe, () => getServices()?.workspaces.list?.getSnapshot().pinnedSessionIds ?? EMPTY_PINNED);
+			return (0, react.useMemo)(() => new Set(ids), [ids]);
+		}
+		/**
+		* Flip one Session's pin through the host's own sidebar action. Failures are
+		* host-reported (the list model stays authoritative, so the UI already holds
+		* the truth); the error is logged rather than surfaced as plugin chrome.
+		*/
+		function toggleSessionPin(sessionId) {
+			const ui = getServices()?.uiWorkspace;
+			const call = getServices()?.workspaces.list?.getSnapshot().pinnedSessionIds?.includes(sessionId) === true ? ui?.unpinSession : ui?.pinSession;
+			if (call === void 0) return;
+			try {
+				Promise.resolve(call.call(ui, sessionId)).catch((error) => {
+					console.warn("[dsh-talk-map] pin toggle failed:", error);
+				});
+			} catch (error) {
+				console.warn("[dsh-talk-map] pin toggle failed:", error);
+			}
+		}
 		/**
 		* The Client Remote surface mixes plain values with result envelopes: the
 		* generated methods unwrap a success to its value, while some callbacks still
@@ -1205,7 +1339,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 		};
 		//#endregion
 		//#region \0dsh-css:module:src/client/talk-map.module.css.mjs
-		const css$1 = ".AxLS7q_toggleButton{width:32px;height:32px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:8px;justify-content:center;align-items:center;gap:6px;padding:0;display:flex}.AxLS7q_toggleButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_toggleButtonActive{background:var(--dsw-alias-interactive-bg-active);color:var(--dsw-alias-brand-primary)}.AxLS7q_toggleRow{width:100%;color:var(--dsw-alias-label-secondary);cursor:pointer;text-align:left;background:0 0;border:none;border-radius:8px;align-items:center;gap:8px;padding:6px 10px;font-size:13px;display:flex}.AxLS7q_toggleRow:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_toggleLabel{white-space:nowrap}.AxLS7q_toggleIcon{flex:none;width:18px;height:18px}.AxLS7q_overlay{background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);pointer-events:auto;flex-direction:column;display:flex;position:absolute;top:0;bottom:0;left:0;right:0}[data-windows-titlebar] .AxLS7q_overlay{padding-top:var(--dsh-windows-titlebar-height,40px)}.AxLS7q_header{border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);flex:none;align-items:center;gap:10px;padding:8px 14px;display:flex}.AxLS7q_headerTitle{color:var(--dsw-alias-label-primary);font-size:14px;font-weight:600}.AxLS7q_headerBadge{color:var(--dsw-alias-label-tertiary);font-size:12px}.AxLS7q_headerSpace{flex:1}.AxLS7q_hotkeyButton{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;background:0 0;border-radius:999px;flex:none;padding:3px 10px;font-size:12px}.AxLS7q_hotkeyButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_langButton{border:1px solid var(--dsw-alias-border-l2);min-width:58px;color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;background:0 0;border-radius:999px;flex:none;padding:3px 10px;font-size:12px}.AxLS7q_langButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_zoomResetLabel{letter-spacing:-.5px;font-size:9px;font-weight:700}.AxLS7q_closeButton{width:28px;height:28px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:6px;justify-content:center;align-items:center;padding:0;display:flex}.AxLS7q_closeButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_canvas{flex:1;min-height:0;position:relative}.AxLS7q_canvas .react-flow__nodesselection{pointer-events:none!important;display:none!important}.AxLS7q_canvas .react-flow__nodesselection-rect{pointer-events:none!important;display:none!important}.AxLS7q_card{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);width:224px;min-height:104px;color:var(--dsw-alias-label-primary);box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1);border-radius:10px;flex-direction:column;gap:6px;padding:10px 12px;font-size:13px;display:flex}.AxLS7q_cardSelected{border-color:var(--dsw-alias-brand-primary)}.AxLS7q_cardGhost{opacity:.55;border-style:dashed}.AxLS7q_cardTop{align-items:center;gap:6px;min-width:0;display:flex}.AxLS7q_cardTitle{-webkit-line-clamp:2;word-break:break-word;-webkit-box-orient:vertical;font-size:13px;font-weight:600;line-height:1.3;display:-webkit-box;overflow:hidden}.AxLS7q_runningDot{background:var(--dsw-alias-state-success-primary);border-radius:50%;flex:none;width:8px;height:8px;animation:1.6s ease-in-out infinite AxLS7q_talkmap-pulse}@keyframes AxLS7q_talkmap-pulse{50%{opacity:.35}}.AxLS7q_cardNext{color:var(--dsw-alias-label-secondary);align-items:baseline;gap:6px;min-width:0;font-size:12px;display:flex}.AxLS7q_cardNextLabel{color:var(--dsw-alias-brand-primary);flex:none;font-size:11px;font-weight:600}.AxLS7q_cardNextText{-webkit-line-clamp:2;-webkit-box-orient:vertical;display:-webkit-box;overflow:hidden}.AxLS7q_cardStale{color:var(--dsw-alias-state-warn-primary);flex:none;font-size:12px}.AxLS7q_cardDoneDot{width:12px;height:12px;color:var(--dsw-alias-state-success-primary,#22c55e);flex:none;display:inline-block;position:relative}.AxLS7q_cardDoneDot:after{content:\"\";background:currentColor;border-radius:50%;position:absolute;top:20%;bottom:20%;left:20%;right:20%}.AxLS7q_cardFooter{color:var(--dsw-alias-label-tertiary);justify-content:space-between;align-items:center;gap:8px;margin-top:auto;font-size:11px;display:flex}.AxLS7q_cardTime{flex:none}.AxLS7q_cardForeign{outline-offset:2px;outline:2px dashed #e0a33a}.AxLS7q_cardFooterLeft{align-items:center;gap:6px;min-width:0;display:flex}.AxLS7q_cardForeignTouch{animation:1.3s ease-in-out infinite AxLS7q_cardForeignPulse}@keyframes AxLS7q_cardForeignPulse{0%,to{box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1), 0 0 0 0 #e0a33a00}50%{box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1), 0 0 0 7px #e0a33a59}}.AxLS7q_cardArchivedChip{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-tertiary);background:color-mix(in oklab, var(--dsw-alias-label-primary) 6%, transparent);border-radius:999px;flex:none;padding:1px 7px;font-size:10px;font-weight:600}.AxLS7q_cardForeignChip{text-overflow:ellipsis;white-space:nowrap;min-width:0;max-width:118px;color:color-mix(in oklab, #e0a33a 78%, var(--dsw-alias-label-primary));background:#e0a33a29;background:color(display-p3 .842337 .649058 .309/.16);background:lab(71.621% 16.4145 60.6886/.16);border:1px solid #e0a33a8c;border:1px solid color(display-p3 .842337 .649058 .309/.55);border:1px solid lab(71.621% 16.4145 60.6886/.55);border-radius:999px;padding:1px 7px;font-size:10px;font-weight:600;overflow:hidden}.AxLS7q_wsFrameForeign{color:color-mix(in oklab, #e0a33a 78%, var(--dsw-alias-label-primary));border:1px dashed #e0a33a8c;border:1px dashed color(display-p3 .842337 .649058 .309/.55);border:1px dashed lab(71.621% 16.4145 60.6886/.55);border-radius:999px;margin-left:6px;padding:1px 7px;font-size:10px;font-weight:600}.AxLS7q_cardBadgeRunning{color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-state-success-tertiary);border-radius:999px;align-items:center;gap:5px;padding:1px 7px;font-size:10px;display:inline-flex}.AxLS7q_cardSummary{color:var(--dsw-alias-label-secondary);-webkit-line-clamp:2;word-break:break-word;-webkit-box-orient:vertical;font-size:12px;line-height:1.45;display:-webkit-box;overflow:hidden}.AxLS7q_cardBadgeWaiting{color:var(--dsw-alias-state-warn-label);background:var(--dsw-alias-state-warn-tertiary);border-radius:999px;padding:1px 7px;font-size:10px}.AxLS7q_cardBadgeDone{color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-state-success-tertiary);border-radius:999px;padding:1px 7px;font-size:10px}.AxLS7q_cardRemove{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:6px;align-self:flex-start;padding:3px 8px;font-size:12px}.AxLS7q_cardRemove:hover{background:var(--dsw-alias-interactive-bg-hover-danger);color:var(--dsw-alias-state-error-primary)}.AxLS7q_card .AxLS7q_cardHandle{opacity:.55;background:0 0;border:none;width:18px;height:18px}.AxLS7q_cardHandle:after{content:\"\";background:var(--dsw-alias-label-tertiary);border:2px solid var(--dsw-alias-bg-layer-1);border-radius:50%;position:absolute;top:5px;bottom:5px;left:5px;right:5px}.AxLS7q_card:hover .AxLS7q_cardHandle,.AxLS7q_canvasConnecting .AxLS7q_cardHandle,.AxLS7q_cardHandle:hover{opacity:1}.AxLS7q_cardHandle:hover:after{background:var(--dsw-alias-brand-primary)}.AxLS7q_cardRefresh{width:22px;height:22px;color:var(--dsw-alias-label-tertiary);cursor:pointer;opacity:0;background:0 0;border:none;border-radius:6px;flex:none;margin-left:auto;padding:0;font-size:13px;line-height:1;transition:opacity .12s}.AxLS7q_card:hover .AxLS7q_cardRefresh{opacity:1}.AxLS7q_cardRefresh:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_cardRefreshBusy{opacity:1;animation:1s linear infinite AxLS7q_talkmap-spin}@keyframes AxLS7q_talkmap-spin{to{transform:rotate(360deg)}}.AxLS7q_spawnPanel{z-index:8;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);width:420px;max-width:calc(100% - 48px);box-shadow:0 8px 30px var(--dsw-alias-bg-mask-2);border-radius:12px;flex-direction:column;gap:8px;padding:16px;display:flex;position:absolute;top:24px;right:24px}.AxLS7q_spawnHeading{color:var(--dsw-alias-label-primary);font-size:14px;font-weight:600}.AxLS7q_spawnFrom{color:var(--dsw-alias-label-secondary);font-size:12px}.AxLS7q_spawnModes{gap:6px;display:flex}.AxLS7q_spawnModeBtn{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:8px;flex:1;padding:5px 0;font-size:12px}.AxLS7q_spawnModeBtn:hover{background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_spawnModeActive{border-color:var(--dsw-alias-brand-primary);color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-interactive-bg-active)}.AxLS7q_spawnHint{color:var(--dsw-alias-label-tertiary);font-size:12px}.AxLS7q_spawnTextarea{resize:vertical;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;min-height:140px;color:var(--dsw-alias-label-primary);border-radius:8px;padding:10px;font-family:inherit;font-size:13px;line-height:1.5}.AxLS7q_spawnError{color:var(--dsw-alias-state-error-primary);word-break:break-all;font-size:12px}.AxLS7q_spawnActions{justify-content:flex-end;gap:8px;display:flex}.AxLS7q_spawnBtnPrimary{background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground);cursor:pointer;border:none;border-radius:8px;padding:6px 16px;font-size:13px}.AxLS7q_spawnBtnPrimary:hover{background:var(--dsw-alias-button-primary-hover)}.AxLS7q_spawnBtnPrimary:disabled{background:var(--dsw-alias-button-primary-dimmed);cursor:default}.AxLS7q_spawnBtnGhost{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:8px;padding:6px 16px;font-size:13px}.AxLS7q_spawnBtnGhost:hover{background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_wsFrame{border:2px dashed color-mix(in oklab, var(--dsw-alias-label-primary) 32%, transparent);background:color-mix(in oklab, var(--dsw-alias-bg-layer-1) 55%, transparent);border-radius:16px;position:relative}.AxLS7q_wsFrameSelected{border-style:solid;border-color:var(--dsw-alias-brand-primary);background:color-mix(in oklab, var(--dsw-alias-brand-primary) 8%, transparent)}.AxLS7q_wsFrameLabel{border:1px solid color-mix(in oklab, var(--dsw-alias-label-primary) 22%, transparent);background:var(--dsw-alias-bg-layer-1);box-shadow:0 2px 10px color-mix(in oklab, var(--dsw-alias-bg-mask-2) 55%, transparent);color:var(--dsw-alias-label-primary);white-space:nowrap;pointer-events:auto;cursor:grab;border-radius:999px;align-items:center;gap:6px;padding:3px 12px;font-size:12px;font-weight:600;display:flex;position:absolute;top:-12px;left:14px}.AxLS7q_wsFrameLabel:active{cursor:grabbing}.AxLS7q_wsFrameEdge{pointer-events:auto;cursor:grab;position:absolute}.AxLS7q_wsFrameEdge:active{cursor:grabbing}.AxLS7q_wsFrameResize{pointer-events:auto;cursor:nwse-resize;border-right:3px solid var(--dsw-alias-border-l3);border-bottom:3px solid var(--dsw-alias-border-l3);opacity:.7;border-bottom-right-radius:14px;width:16px;height:16px;position:absolute;bottom:-2px;right:-2px}.AxLS7q_wsFrameResize:hover{border-color:var(--dsw-alias-brand-primary);opacity:1}.AxLS7q_wsFrameCount{color:var(--dsw-alias-label-tertiary);font-weight:400}.AxLS7q_draftCard{box-sizing:border-box;border:1.5px solid var(--dsw-alias-brand-primary);background:var(--dsw-alias-bg-layer-1);width:360px;box-shadow:0 8px 30px var(--dsw-alias-bg-mask-2);border-radius:12px;flex-direction:column;gap:8px;padding:14px;font-size:13px;display:flex}.AxLS7q_draftHeading{color:var(--dsw-alias-label-primary);font-size:13px;font-weight:600}.AxLS7q_draftRow{align-items:center;gap:8px;display:flex}.AxLS7q_draftLabel{width:52px;color:var(--dsw-alias-label-tertiary);flex:none;font-size:12px}.AxLS7q_draftSelect{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);min-width:0;color:var(--dsw-alias-label-primary);border-radius:7px;flex:1;padding:5px 8px;font-size:12px}.AxLS7q_draftGrow{flex-direction:column;flex:1;gap:3px;min-width:0;display:flex}.AxLS7q_draftInput{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;color:var(--dsw-alias-label-primary);border-radius:7px;padding:5px 8px;font-family:inherit;font-size:12px}.AxLS7q_draftPathPreview{color:var(--dsw-alias-label-tertiary);word-break:break-all;font-size:11px}.AxLS7q_draftTextarea{box-sizing:border-box;resize:vertical;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;min-height:88px;color:var(--dsw-alias-label-primary);border-radius:8px;padding:9px;font-family:inherit;font-size:13px;line-height:1.5}.AxLS7q_colorToolbar{z-index:7;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);box-shadow:0 2px 10px var(--dsw-alias-bg-mask-1);border-radius:10px;align-items:center;gap:6px;padding:6px 10px;display:flex;position:absolute;top:12px;left:12px}.AxLS7q_colorToolbarLabel{color:var(--dsw-alias-label-tertiary);margin-right:2px;font-size:12px}.AxLS7q_colorSwatch{border:1px solid var(--dsw-alias-border-l2);cursor:pointer;width:18px;height:18px;color:var(--dsw-alias-label-secondary);border-radius:50%;justify-content:center;align-items:center;padding:0;font-size:11px;line-height:1;display:flex}.AxLS7q_colorSwatch:hover{transform:scale(1.15)}.AxLS7q_colorSwatchClear{background:0 0}.AxLS7q_menu{z-index:9;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);min-width:200px;max-width:280px;max-height:380px;box-shadow:0 8px 30px var(--dsw-alias-bg-mask-2);border-radius:10px;flex-direction:column;padding:6px;display:flex;position:absolute;overflow-y:auto}.AxLS7q_menuTitle{color:var(--dsw-alias-label-tertiary);flex:none;padding:4px 10px 6px;font-size:11px}.AxLS7q_menuSearch{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:calc(100% - 8px);color:var(--dsw-alias-label-primary);border-radius:7px;flex:none;margin:2px 4px 6px;padding:5px 8px;font-family:inherit;font-size:12px}.AxLS7q_menuHint{color:var(--dsw-alias-label-dimmed);font-size:11px}.AxLS7q_menuPreview{color:var(--dsw-alias-label-tertiary);word-break:break-all;flex:none;padding:0 10px 4px;font-size:11px}.AxLS7q_menuError{color:var(--dsw-alias-state-error-primary);word-break:break-all;flex:none;padding:0 10px 4px;font-size:11px}.AxLS7q_menuEmpty{color:var(--dsw-alias-label-tertiary);padding:8px 10px;font-size:12px}.AxLS7q_menuItem{text-align:left;width:100%;color:var(--dsw-alias-label-primary);cursor:pointer;white-space:nowrap;text-overflow:ellipsis;background:0 0;border:none;border-radius:7px;flex:none;padding:6px 10px;font-size:13px;display:block;overflow:hidden}.AxLS7q_menuItem:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_menuItem:disabled{color:var(--dsw-alias-label-dimmed);cursor:default}.AxLS7q_wsFrameHidden{color:var(--dsw-alias-state-warn-primary);font-weight:400}.AxLS7q_emptyHint{color:var(--dsw-alias-label-tertiary);pointer-events:none;z-index:4;font-size:13px;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}.AxLS7q_toast{z-index:8;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);max-width:70%;box-shadow:0 4px 16px var(--dsw-alias-bg-mask-2);color:var(--dsw-alias-label-primary);pointer-events:none;white-space:nowrap;text-overflow:ellipsis;border-radius:999px;padding:7px 16px;font-size:12px;position:absolute;bottom:28px;left:50%;overflow:hidden;transform:translate(-50%)}.AxLS7q_toastActionable{pointer-events:auto;align-items:center;gap:10px;padding-right:8px;display:inline-flex}.AxLS7q_toastText{text-overflow:ellipsis;min-width:0;overflow:hidden}.AxLS7q_toastAction{background:var(--dsw-alias-bg-layer-2,#7f7f7f29);color:var(--dsw-alias-label-primary);font:inherit;cursor:pointer;border:0;border-radius:999px;flex:none;padding:2px 8px;font-weight:600}.AxLS7q_toastAction:hover{background:var(--dsw-alias-bg-layer-3,#7f7f7f3d)}.AxLS7q_body{flex:1;min-height:0;display:flex;position:relative}.AxLS7q_chatDrawer{z-index:6;background:var(--dsw-alias-bg-base);border-left:1px solid var(--dsw-alias-border-l1);width:max(360px,min(42%,720px));box-shadow:-12px 0 28px -18px var(--dsw-alias-bg-mask-2);flex-direction:column;display:flex;position:absolute;top:0;bottom:0;right:0}.AxLS7q_chatDrawerHeader{border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);flex:none;align-items:center;gap:8px;padding:6px 10px;display:flex}.AxLS7q_chatDrawerTitle{text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--dsw-alias-label-primary);font-size:12px;font-weight:600;overflow:hidden}.AxLS7q_chatDrawerSpace{flex:1}.AxLS7q_chatDrawerClose{width:26px;height:26px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:6px;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.AxLS7q_chatDrawerClose:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_chatDrawerArchived{color:var(--dsw-alias-label-primary);background:#e0a33a1f;background:color(display-p3 .842337 .649058 .309/.12);background:lab(71.621% 16.4145 60.6886/.12);border-bottom:1px solid #e0a33a59;border-bottom:1px solid color(display-p3 .842337 .649058 .309/.35);border-bottom:1px solid lab(71.621% 16.4145 60.6886/.35);align-items:center;gap:10px;padding:8px 12px;font-size:12px;display:flex}.AxLS7q_chatDrawerArchivedText{flex:1;min-width:0}.AxLS7q_chatDrawerArchivedButton{color:inherit;cursor:pointer;background:0 0;border:1px solid #e0a33a8c;border:1px solid color(display-p3 .842337 .649058 .309/.55);border:1px solid lab(71.621% 16.4145 60.6886/.55);border-radius:999px;flex:none;padding:2px 10px;font-size:12px}.AxLS7q_chatDrawerArchivedButton:hover{background:#e0a33a2e;background:color(display-p3 .842337 .649058 .309/.18);background:lab(71.621% 16.4145 60.6886/.18)}.AxLS7q_chatDrawerBody{flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}.AxLS7q_chatDrawerNotice{flex-direction:column;flex:1;align-items:flex-start;gap:14px;padding:22px 20px;display:flex}.AxLS7q_chatDrawerNoticeText{color:var(--dsw-alias-label-secondary);margin:0;font-size:13px;line-height:1.7}.AxLS7q_chatDrawerNoticeButton{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);cursor:pointer;border-radius:8px;padding:6px 14px;font-size:13px}.AxLS7q_chatDrawerNoticeButton:hover{background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_chatPanel{flex-direction:column;flex:1;min-height:0;display:flex}.AxLS7q_cardWaitingButton{color:var(--dsw-alias-state-warn-label);background:var(--dsw-alias-state-warn-tertiary);cursor:pointer;border:none;border-radius:999px;padding:1px 7px;font-size:10px}.AxLS7q_cardWaitingButton:hover{filter:brightness(1.15)}.AxLS7q_interactMenu{gap:4px;max-height:min(420px,70vh)}.AxLS7q_interactTitle{color:var(--dsw-alias-label-primary);padding:4px 6px 0;font-size:12px;font-weight:600}.AxLS7q_interactText{color:var(--dsw-alias-label-secondary);white-space:pre-wrap;word-break:break-word;padding:2px 6px 4px;font-size:12px;line-height:1.45}.AxLS7q_interactNote{color:var(--dsw-alias-label-tertiary);padding:0 6px 4px;font-size:11px}.AxLS7q_interactScroll{flex-direction:column;gap:6px;max-height:260px;display:flex;overflow-y:auto}.AxLS7q_interactGroup{flex-direction:column;gap:4px;display:flex}.AxLS7q_interactOptions{flex-wrap:wrap;gap:6px;padding:2px 6px 4px;display:flex}.AxLS7q_interactOption{text-align:left;border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;flex:100%;padding:7px 10px;font-size:12px}.AxLS7q_interactOption:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_interactOptionActive{border-color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-interactive-bg-active)}.AxLS7q_interactActions{gap:6px;padding:4px 6px 6px;display:flex}.AxLS7q_interactAllow{background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground);cursor:pointer;border:none;border-radius:8px;flex:1;padding:7px 10px;font-size:12px}.AxLS7q_interactAllow:hover:not(:disabled){background:var(--dsw-alias-button-primary-hover)}.AxLS7q_interactDanger{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-state-error-primary);cursor:pointer;background:0 0;border-radius:8px;flex:1;padding:7px 10px;font-size:12px}.AxLS7q_interactDanger:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover-danger)}.AxLS7q_interactSubmit,.AxLS7q_interactOpen{border:1px solid var(--dsw-alias-border-l2);width:100%;color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;margin-top:4px;padding:7px 10px;font-size:12px}.AxLS7q_interactSubmit:hover:not(:disabled),.AxLS7q_interactOpen:hover{background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_interactSubmit:disabled{color:var(--dsw-alias-label-dimmed);cursor:default}.AxLS7q_interactError{color:var(--dsw-alias-state-error-primary);word-break:break-word;padding:2px 6px 4px;font-size:11px}.AxLS7q_mapFallback{background:var(--dsw-alias-bg-base);min-height:0;color:var(--dsw-alias-label-primary);flex-direction:column;flex:1;justify-content:center;align-items:center;gap:10px;padding:24px;display:flex}.AxLS7q_mapFallbackTitle{font-size:14px;font-weight:600}.AxLS7q_mapFallbackText{text-align:center;max-width:420px;color:var(--dsw-alias-label-secondary);font-size:12px}.AxLS7q_mapFallbackButton{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;padding:6px 14px;font-size:12px}.AxLS7q_mapFallbackButton:hover{background:var(--dsw-alias-interactive-bg-hover)}";
+		const css$1 = ".AxLS7q_toggleButton{width:32px;height:32px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:8px;justify-content:center;align-items:center;gap:6px;padding:0;display:flex}.AxLS7q_toggleButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_toggleButtonActive{background:var(--dsw-alias-interactive-bg-active);color:var(--dsw-alias-brand-primary)}.AxLS7q_toggleRow{width:100%;color:var(--dsw-alias-label-secondary);cursor:pointer;text-align:left;background:0 0;border:none;border-radius:8px;align-items:center;gap:8px;padding:6px 10px;font-size:13px;display:flex}.AxLS7q_toggleRow:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_toggleLabel{white-space:nowrap}.AxLS7q_toggleIcon{flex:none;width:18px;height:18px}.AxLS7q_overlay{background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);pointer-events:auto;flex-direction:column;display:flex;position:absolute;top:0;bottom:0;left:0;right:0}[data-windows-titlebar] .AxLS7q_overlay{padding-top:var(--dsh-windows-titlebar-height,40px)}.AxLS7q_header{border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);flex:none;align-items:center;gap:10px;padding:8px 14px;display:flex}.AxLS7q_headerTitle{color:var(--dsw-alias-label-primary);font-size:14px;font-weight:600}.AxLS7q_headerBadge{color:var(--dsw-alias-label-tertiary);font-size:12px}.AxLS7q_headerSpace{flex:1}.AxLS7q_hotkeyButton{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;background:0 0;border-radius:999px;flex:none;padding:3px 10px;font-size:12px}.AxLS7q_hotkeyButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_langButton{border:1px solid var(--dsw-alias-border-l2);min-width:58px;color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;background:0 0;border-radius:999px;flex:none;padding:3px 10px;font-size:12px}.AxLS7q_langButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_zoomResetLabel{letter-spacing:-.5px;font-size:9px;font-weight:700}.AxLS7q_closeButton{width:28px;height:28px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:6px;justify-content:center;align-items:center;padding:0;display:flex}.AxLS7q_closeButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_canvas{flex:1;min-height:0;position:relative}.AxLS7q_canvas .react-flow__nodesselection{pointer-events:none!important;display:none!important}.AxLS7q_canvas .react-flow__nodesselection-rect{pointer-events:none!important;display:none!important}.AxLS7q_card{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);width:224px;min-height:104px;color:var(--dsw-alias-label-primary);box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1);border-radius:10px;flex-direction:column;gap:6px;padding:10px 12px;font-size:13px;display:flex}.AxLS7q_cardSelected{border-color:var(--dsw-alias-brand-primary)}.AxLS7q_cardGhost{opacity:.55;border-style:dashed}.AxLS7q_cardTop{align-items:center;gap:6px;min-width:0;display:flex}.AxLS7q_cardTitle{-webkit-line-clamp:2;word-break:break-word;-webkit-box-orient:vertical;flex:auto;min-width:0;font-size:13px;font-weight:600;line-height:1.3;display:-webkit-box;overflow:hidden}.AxLS7q_cardPin{width:22px;height:22px;color:var(--dsw-alias-label-tertiary);cursor:pointer;opacity:.55;background:0 0;border:none;border-radius:6px;flex:none;justify-content:center;align-items:center;margin-left:auto;padding:0;transition:opacity .12s,background-color .12s,color .12s;display:flex;transform:translate(6px,-6px)}.AxLS7q_card:hover .AxLS7q_cardPin{opacity:1}.AxLS7q_cardPin:focus-visible{opacity:1}.AxLS7q_cardPin:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_cardPinActive{opacity:1;color:var(--dsw-alias-brand-primary)}.AxLS7q_cardPinActive:hover{color:var(--dsw-alias-brand-primary)}.AxLS7q_runningDot{background:var(--dsw-alias-state-success-primary);border-radius:50%;flex:none;width:8px;height:8px;animation:1.6s ease-in-out infinite AxLS7q_talkmap-pulse}@keyframes AxLS7q_talkmap-pulse{50%{opacity:.35}}.AxLS7q_cardDoneDot{width:12px;height:12px;color:var(--dsw-alias-state-success-primary,#22c55e);flex:none;display:inline-block;position:relative}.AxLS7q_cardDoneDot:after{content:\"\";background:currentColor;border-radius:50%;position:absolute;top:20%;bottom:20%;left:20%;right:20%}.AxLS7q_cardFooter{color:var(--dsw-alias-label-tertiary);justify-content:space-between;align-items:center;gap:8px;margin-top:auto;font-size:11px;display:flex}.AxLS7q_cardTime{flex:none}.AxLS7q_cardForeign{outline-offset:2px;outline:2px dashed #e0a33a}.AxLS7q_cardFooterLeft{align-items:center;gap:6px;min-width:0;display:flex}.AxLS7q_cardForeignTouch{animation:1.3s ease-in-out infinite AxLS7q_cardForeignPulse}@keyframes AxLS7q_cardForeignPulse{0%,to{box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1), 0 0 0 0 #e0a33a00}50%{box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1), 0 0 0 7px #e0a33a59}}.AxLS7q_cardForeignChip{text-overflow:ellipsis;white-space:nowrap;min-width:0;max-width:118px;color:color-mix(in oklab, #e0a33a 78%, var(--dsw-alias-label-primary));background:#e0a33a29;background:color(display-p3 .842337 .649058 .309/.16);background:lab(71.621% 16.4145 60.6886/.16);border:1px solid #e0a33a8c;border:1px solid color(display-p3 .842337 .649058 .309/.55);border:1px solid lab(71.621% 16.4145 60.6886/.55);border-radius:999px;padding:1px 7px;font-size:10px;font-weight:600;overflow:hidden}.AxLS7q_wsFrameForeign{color:color-mix(in oklab, #e0a33a 78%, var(--dsw-alias-label-primary));border:1px dashed #e0a33a8c;border:1px dashed color(display-p3 .842337 .649058 .309/.55);border:1px dashed lab(71.621% 16.4145 60.6886/.55);border-radius:999px;margin-left:6px;padding:1px 7px;font-size:10px;font-weight:600}.AxLS7q_cardBadgeRunning{color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-state-success-tertiary);border-radius:999px;align-items:center;gap:5px;padding:1px 7px;font-size:10px;display:inline-flex}.AxLS7q_cardBadgeWaiting{color:var(--dsw-alias-state-warn-label);background:var(--dsw-alias-state-warn-tertiary);border-radius:999px;padding:1px 7px;font-size:10px}.AxLS7q_cardBadgeDone{color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-state-success-tertiary);border-radius:999px;padding:1px 7px;font-size:10px}.AxLS7q_cardRemove{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:6px;align-self:flex-start;padding:3px 8px;font-size:12px}.AxLS7q_cardRemove:hover{background:var(--dsw-alias-interactive-bg-hover-danger);color:var(--dsw-alias-state-error-primary)}.AxLS7q_card .AxLS7q_cardHandle{opacity:.55;background:0 0;border:none;width:18px;height:18px}.AxLS7q_cardHandle:after{content:\"\";background:var(--dsw-alias-label-tertiary);border:2px solid var(--dsw-alias-bg-layer-1);border-radius:50%;position:absolute;top:5px;bottom:5px;left:5px;right:5px}.AxLS7q_card:hover .AxLS7q_cardHandle,.AxLS7q_canvasConnecting .AxLS7q_cardHandle,.AxLS7q_cardHandle:hover{opacity:1}.AxLS7q_cardHandle:hover:after{background:var(--dsw-alias-brand-primary)}.AxLS7q_spawnFrom{color:var(--dsw-alias-label-secondary);font-size:12px}.AxLS7q_spawnModes{gap:6px;display:flex}.AxLS7q_spawnModeBtn{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:8px;flex:1;padding:5px 0;font-size:12px}.AxLS7q_spawnModeBtn:hover{background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_spawnModeActive{border-color:var(--dsw-alias-brand-primary);color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-interactive-bg-active)}.AxLS7q_spawnHint{color:var(--dsw-alias-label-tertiary);font-size:12px}.AxLS7q_spawnTextarea{box-sizing:border-box;resize:vertical;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;min-height:140px;color:var(--dsw-alias-label-primary);border-radius:8px;padding:10px;font-family:inherit;font-size:13px;line-height:1.5}.AxLS7q_spawnError{color:var(--dsw-alias-state-error-primary);word-break:break-all;font-size:12px}.AxLS7q_spawnActions{justify-content:flex-end;gap:8px;display:flex}.AxLS7q_spawnBtnPrimary{background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground);cursor:pointer;border:none;border-radius:8px;padding:6px 16px;font-size:13px}.AxLS7q_spawnBtnPrimary:hover{background:var(--dsw-alias-button-primary-hover)}.AxLS7q_spawnBtnPrimary:disabled{background:var(--dsw-alias-button-primary-dimmed);cursor:default}.AxLS7q_spawnBtnGhost{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:8px;padding:6px 16px;font-size:13px}.AxLS7q_spawnBtnGhost:hover{background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_wsFrame{border:2px dashed color-mix(in oklab, var(--dsw-alias-label-primary) 32%, transparent);background:color-mix(in oklab, var(--dsw-alias-bg-layer-1) 55%, transparent);border-radius:16px;position:relative}.AxLS7q_wsFrameSelected{border-style:solid;border-color:var(--dsw-alias-brand-primary);background:color-mix(in oklab, var(--dsw-alias-brand-primary) 8%, transparent)}.AxLS7q_wsFrameLabel{border:1px solid color-mix(in oklab, var(--dsw-alias-label-primary) 22%, transparent);background:var(--dsw-alias-bg-layer-1);box-shadow:0 2px 10px color-mix(in oklab, var(--dsw-alias-bg-mask-2) 55%, transparent);color:var(--dsw-alias-label-primary);white-space:nowrap;pointer-events:auto;cursor:grab;border-radius:999px;align-items:center;gap:6px;padding:3px 12px;font-size:12px;font-weight:600;display:flex;position:absolute;top:-12px;left:14px}.AxLS7q_wsFrameLabel:active{cursor:grabbing}.AxLS7q_wsFrameEdge{pointer-events:auto;cursor:grab;position:absolute}.AxLS7q_wsFrameEdge:active{cursor:grabbing}.AxLS7q_wsFrameResize{pointer-events:auto;cursor:nwse-resize;border-right:3px solid var(--dsw-alias-border-l3);border-bottom:3px solid var(--dsw-alias-border-l3);opacity:.7;border-bottom-right-radius:14px;width:16px;height:16px;position:absolute;bottom:-2px;right:-2px}.AxLS7q_wsFrameResize:hover{border-color:var(--dsw-alias-brand-primary);opacity:1}.AxLS7q_wsFrameCount{color:var(--dsw-alias-label-tertiary);font-weight:400}.AxLS7q_draftCard{box-sizing:border-box;border:1.5px solid var(--dsw-alias-brand-primary);background:var(--dsw-alias-bg-layer-1);width:360px;box-shadow:0 8px 30px var(--dsw-alias-bg-mask-2);border-radius:12px;flex-direction:column;gap:8px;padding:14px;font-size:13px;display:flex}.AxLS7q_draftHeading{color:var(--dsw-alias-label-primary);font-size:13px;font-weight:600}.AxLS7q_draftRow{align-items:center;gap:8px;display:flex}.AxLS7q_draftLabel{width:52px;color:var(--dsw-alias-label-tertiary);flex:none;font-size:12px}.AxLS7q_draftSelect{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);min-width:0;color:var(--dsw-alias-label-primary);border-radius:7px;flex:1;padding:5px 8px;font-size:12px}.AxLS7q_draftGrow{flex-direction:column;flex:1;gap:3px;min-width:0;display:flex}.AxLS7q_draftInput{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;color:var(--dsw-alias-label-primary);border-radius:7px;padding:5px 8px;font-family:inherit;font-size:12px}.AxLS7q_draftPathPreview{color:var(--dsw-alias-label-tertiary);word-break:break-all;font-size:11px}.AxLS7q_draftTextarea{box-sizing:border-box;resize:vertical;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;min-height:88px;color:var(--dsw-alias-label-primary);border-radius:8px;padding:9px;font-family:inherit;font-size:13px;line-height:1.5}.AxLS7q_colorToolbar{z-index:7;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);box-shadow:0 2px 10px var(--dsw-alias-bg-mask-1);border-radius:10px;align-items:center;gap:6px;padding:6px 10px;display:flex;position:absolute;top:12px;left:12px}.AxLS7q_colorToolbarLabel{color:var(--dsw-alias-label-tertiary);margin-right:2px;font-size:12px}.AxLS7q_colorSwatch{border:1px solid var(--dsw-alias-border-l2);cursor:pointer;width:18px;height:18px;color:var(--dsw-alias-label-secondary);border-radius:50%;justify-content:center;align-items:center;padding:0;font-size:11px;line-height:1;display:flex}.AxLS7q_colorSwatch:hover{transform:scale(1.15)}.AxLS7q_colorSwatchClear{background:0 0}.AxLS7q_menu{z-index:9;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);min-width:200px;max-width:280px;max-height:380px;box-shadow:0 8px 30px var(--dsw-alias-bg-mask-2);border-radius:10px;flex-direction:column;padding:6px;display:flex;position:absolute;overflow-y:auto}.AxLS7q_menuTitle{color:var(--dsw-alias-label-tertiary);flex:none;padding:4px 10px 6px;font-size:11px}.AxLS7q_menuSearch{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:calc(100% - 8px);color:var(--dsw-alias-label-primary);border-radius:7px;flex:none;margin:2px 4px 6px;padding:5px 8px;font-family:inherit;font-size:12px}.AxLS7q_menuHint{color:var(--dsw-alias-label-dimmed);font-size:11px}.AxLS7q_menuPreview{color:var(--dsw-alias-label-tertiary);word-break:break-all;flex:none;padding:0 10px 4px;font-size:11px}.AxLS7q_menuError{color:var(--dsw-alias-state-error-primary);word-break:break-all;flex:none;padding:0 10px 4px;font-size:11px}.AxLS7q_menuEmpty{color:var(--dsw-alias-label-tertiary);padding:8px 10px;font-size:12px}.AxLS7q_menuItem{text-align:left;width:100%;color:var(--dsw-alias-label-primary);cursor:pointer;white-space:nowrap;text-overflow:ellipsis;background:0 0;border:none;border-radius:7px;flex:none;padding:6px 10px;font-size:13px;display:block;overflow:hidden}.AxLS7q_menuItem:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_menuItem:disabled{color:var(--dsw-alias-label-dimmed);cursor:default}.AxLS7q_wsFrameHidden{color:var(--dsw-alias-state-warn-primary);font-weight:400}.AxLS7q_emptyHint{color:var(--dsw-alias-label-tertiary);pointer-events:none;z-index:4;font-size:13px;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}.AxLS7q_toast{z-index:8;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);max-width:70%;box-shadow:0 4px 16px var(--dsw-alias-bg-mask-2);color:var(--dsw-alias-label-primary);pointer-events:none;white-space:nowrap;text-overflow:ellipsis;border-radius:999px;padding:7px 16px;font-size:12px;position:absolute;bottom:28px;left:50%;overflow:hidden;transform:translate(-50%)}.AxLS7q_toastActionable{pointer-events:auto;align-items:center;gap:10px;padding-right:8px;display:inline-flex}.AxLS7q_toastText{text-overflow:ellipsis;min-width:0;overflow:hidden}.AxLS7q_toastAction{background:var(--dsw-alias-bg-layer-2,#7f7f7f29);color:var(--dsw-alias-label-primary);font:inherit;cursor:pointer;border:0;border-radius:999px;flex:none;padding:2px 8px;font-weight:600}.AxLS7q_toastAction:hover{background:var(--dsw-alias-bg-layer-3,#7f7f7f3d)}.AxLS7q_body{flex:1;min-height:0;display:flex;position:relative}.AxLS7q_chatDrawer{z-index:6;background:var(--dsw-alias-bg-base);border-left:1px solid var(--dsw-alias-border-l1);width:max(360px,min(42%,720px));box-shadow:-12px 0 28px -18px var(--dsw-alias-bg-mask-2);flex-direction:column;display:flex;position:absolute;top:0;bottom:0;right:0;container:AxLS7q_talk-map-drawer/inline-size}.AxLS7q_chatDrawerHeader{border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);flex:none;align-items:center;gap:8px;padding:6px 10px;display:flex}.AxLS7q_chatDrawerTitle{text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--dsw-alias-label-primary);font-size:12px;font-weight:600;overflow:hidden}.AxLS7q_chatDrawerSpace{flex:1}.AxLS7q_chatDrawerClose{width:26px;height:26px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:6px;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.AxLS7q_chatDrawerClose:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_chatDrawerArchived{color:var(--dsw-alias-label-primary);background:#e0a33a1f;background:color(display-p3 .842337 .649058 .309/.12);background:lab(71.621% 16.4145 60.6886/.12);border-bottom:1px solid #e0a33a59;border-bottom:1px solid color(display-p3 .842337 .649058 .309/.35);border-bottom:1px solid lab(71.621% 16.4145 60.6886/.35);align-items:center;gap:10px;padding:8px 12px;font-size:12px;display:flex}.AxLS7q_chatDrawerArchivedText{flex:1;min-width:0}.AxLS7q_chatDrawerArchivedButton{color:inherit;cursor:pointer;background:0 0;border:1px solid #e0a33a8c;border:1px solid color(display-p3 .842337 .649058 .309/.55);border:1px solid lab(71.621% 16.4145 60.6886/.55);border-radius:999px;flex:none;padding:2px 10px;font-size:12px}.AxLS7q_chatDrawerArchivedButton:hover{background:#e0a33a2e;background:color(display-p3 .842337 .649058 .309/.18);background:lab(71.621% 16.4145 60.6886/.18)}.AxLS7q_chatDrawerBody{flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}@container AxLS7q_talk-map-drawer (width>=560px){.AxLS7q_chatDrawer nav[aria-label]{display:block}}.AxLS7q_chatDrawerNotice{flex-direction:column;flex:1;align-items:flex-start;gap:14px;padding:22px 20px;display:flex}.AxLS7q_chatDrawerNoticeText{color:var(--dsw-alias-label-secondary);margin:0;font-size:13px;line-height:1.7}.AxLS7q_chatDrawerNoticeActions{flex-wrap:wrap;gap:8px;display:flex}.AxLS7q_chatDrawerNoticeButton{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);cursor:pointer;border-radius:8px;padding:6px 14px;font-size:13px}.AxLS7q_chatDrawerNoticeButton:hover{background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_chatDrawerNoticeButton:disabled{opacity:.55;cursor:default}.AxLS7q_chatPanel{flex-direction:column;flex:1;min-height:0;display:flex}.AxLS7q_cardWaitingButton{color:var(--dsw-alias-state-warn-label);background:var(--dsw-alias-state-warn-tertiary);cursor:pointer;border:none;border-radius:999px;padding:1px 7px;font-size:10px}.AxLS7q_cardWaitingButton:hover{filter:brightness(1.15)}.AxLS7q_interactMenu{gap:4px;max-height:min(420px,70vh)}.AxLS7q_interactTitle{color:var(--dsw-alias-label-primary);padding:4px 6px 0;font-size:12px;font-weight:600}.AxLS7q_interactText{color:var(--dsw-alias-label-secondary);white-space:pre-wrap;word-break:break-word;padding:2px 6px 4px;font-size:12px;line-height:1.45}.AxLS7q_interactNote{color:var(--dsw-alias-label-tertiary);padding:0 6px 4px;font-size:11px}.AxLS7q_interactScroll{flex-direction:column;gap:6px;max-height:260px;display:flex;overflow-y:auto}.AxLS7q_interactGroup{flex-direction:column;gap:4px;display:flex}.AxLS7q_interactOptions{flex-wrap:wrap;gap:6px;padding:2px 6px 4px;display:flex}.AxLS7q_interactOption{text-align:left;border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;flex:100%;padding:7px 10px;font-size:12px}.AxLS7q_interactOption:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_interactOptionActive{border-color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-interactive-bg-active)}.AxLS7q_interactActions{gap:6px;padding:4px 6px 6px;display:flex}.AxLS7q_interactAllow{background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground);cursor:pointer;border:none;border-radius:8px;flex:1;padding:7px 10px;font-size:12px}.AxLS7q_interactAllow:hover:not(:disabled){background:var(--dsw-alias-button-primary-hover)}.AxLS7q_interactDanger{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-state-error-primary);cursor:pointer;background:0 0;border-radius:8px;flex:1;padding:7px 10px;font-size:12px}.AxLS7q_interactDanger:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover-danger)}.AxLS7q_interactSubmit,.AxLS7q_interactOpen{border:1px solid var(--dsw-alias-border-l2);width:100%;color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;margin-top:4px;padding:7px 10px;font-size:12px}.AxLS7q_interactSubmit:hover:not(:disabled),.AxLS7q_interactOpen:hover{background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_interactSubmit:disabled{color:var(--dsw-alias-label-dimmed);cursor:default}.AxLS7q_interactError{color:var(--dsw-alias-state-error-primary);word-break:break-word;padding:2px 6px 4px;font-size:11px}.AxLS7q_mapFallback{background:var(--dsw-alias-bg-base);min-height:0;color:var(--dsw-alias-label-primary);flex-direction:column;flex:1;justify-content:center;align-items:center;gap:10px;padding:24px;display:flex}.AxLS7q_mapFallbackTitle{font-size:14px;font-weight:600}.AxLS7q_mapFallbackText{text-align:center;max-width:420px;color:var(--dsw-alias-label-secondary);font-size:12px}.AxLS7q_mapFallbackButton{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;padding:6px 14px;font-size:12px}.AxLS7q_mapFallbackButton:hover{background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_imageCard{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);width:100%;height:100%;box-shadow:0 10px 26px -18px var(--dsw-alias-bg-mask-2);border-radius:10px;overflow:hidden}.AxLS7q_imageCardSelected{border-color:var(--dsw-alias-brand-primary);box-shadow:0 0 0 2px var(--dsw-alias-brand-primary)}.AxLS7q_imageCardImg{object-fit:contain;background:var(--dsw-alias-bg-base);width:100%;height:100%;display:block}";
 		const tagId$1 = "dsh-talk-map-local/talk-map.module.css";
 		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$1) + "]") === null) {
 			const tag = document.createElement("style");
@@ -1215,131 +1349,127 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			document.head.appendChild(tag);
 		}
 		var talk_map_module_css_default = {
-			"closeButton": "AxLS7q_closeButton",
-			"toastAction": "AxLS7q_toastAction",
-			"chatDrawerHeader": "AxLS7q_chatDrawerHeader",
-			"interactActions": "AxLS7q_interactActions",
-			"wsFrameLabel": "AxLS7q_wsFrameLabel",
-			"mapFallbackButton": "AxLS7q_mapFallbackButton",
-			"emptyHint": "AxLS7q_emptyHint",
-			"cardStale": "AxLS7q_cardStale",
+			"interactTitle": "AxLS7q_interactTitle",
+			"wsFrameSelected": "AxLS7q_wsFrameSelected",
+			"chatDrawerSpace": "AxLS7q_chatDrawerSpace",
+			"menuHint": "AxLS7q_menuHint",
 			"interactMenu": "AxLS7q_interactMenu",
-			"menuError": "AxLS7q_menuError",
-			"zoomResetLabel": "AxLS7q_zoomResetLabel",
-			"mapFallbackTitle": "AxLS7q_mapFallbackTitle",
-			"draftRow": "AxLS7q_draftRow",
-			"toast": "AxLS7q_toast",
-			"cardRemove": "AxLS7q_cardRemove",
-			"draftLabel": "AxLS7q_draftLabel",
-			"chatDrawerArchivedButton": "AxLS7q_chatDrawerArchivedButton",
-			"cardForeignTouch": "AxLS7q_cardForeignTouch",
-			"wsFrameForeign": "AxLS7q_wsFrameForeign",
-			"spawnModeActive": "AxLS7q_spawnModeActive",
-			"spawnBtnPrimary": "AxLS7q_spawnBtnPrimary",
-			"spawnError": "AxLS7q_spawnError",
-			"menuSearch": "AxLS7q_menuSearch",
-			"toggleRow": "AxLS7q_toggleRow",
-			"cardTop": "AxLS7q_cardTop",
-			"cardBadgeWaiting": "AxLS7q_cardBadgeWaiting",
-			"menuEmpty": "AxLS7q_menuEmpty",
-			"cardForeignChip": "AxLS7q_cardForeignChip",
-			"toggleLabel": "AxLS7q_toggleLabel",
-			"cardBadgeDone": "AxLS7q_cardBadgeDone",
-			"chatPanel": "AxLS7q_chatPanel",
-			"interactText": "AxLS7q_interactText",
-			"cardArchivedChip": "AxLS7q_cardArchivedChip",
-			"interactOption": "AxLS7q_interactOption",
 			"interactDanger": "AxLS7q_interactDanger",
-			"wsFrameCount": "AxLS7q_wsFrameCount",
-			"draftSelect": "AxLS7q_draftSelect",
-			"talkmap-spin": "AxLS7q_talkmap-spin",
-			"chatDrawer": "AxLS7q_chatDrawer",
-			"cardDoneDot": "AxLS7q_cardDoneDot",
-			"cardGhost": "AxLS7q_cardGhost",
-			"cardNextText": "AxLS7q_cardNextText",
-			"cardRefresh": "AxLS7q_cardRefresh",
-			"colorToolbarLabel": "AxLS7q_colorToolbarLabel",
-			"runningDot": "AxLS7q_runningDot",
-			"cardSummary": "AxLS7q_cardSummary",
-			"interactSubmit": "AxLS7q_interactSubmit",
+			"cardBadgeWaiting": "AxLS7q_cardBadgeWaiting",
+			"chatDrawerNoticeActions": "AxLS7q_chatDrawerNoticeActions",
 			"menuTitle": "AxLS7q_menuTitle",
-			"card": "AxLS7q_card",
-			"chatDrawerNotice": "AxLS7q_chatDrawerNotice",
-			"interactOptionActive": "AxLS7q_interactOptionActive",
-			"spawnModes": "AxLS7q_spawnModes",
-			"body": "AxLS7q_body",
-			"chatDrawerArchivedText": "AxLS7q_chatDrawerArchivedText",
-			"talkmap-pulse": "AxLS7q_talkmap-pulse",
-			"chatDrawerNoticeButton": "AxLS7q_chatDrawerNoticeButton",
-			"interactError": "AxLS7q_interactError",
-			"wsFrameResize": "AxLS7q_wsFrameResize",
-			"mapFallback": "AxLS7q_mapFallback",
-			"chatDrawerNoticeText": "AxLS7q_chatDrawerNoticeText",
-			"spawnPanel": "AxLS7q_spawnPanel",
+			"wsFrame": "AxLS7q_wsFrame",
+			"interactActions": "AxLS7q_interactActions",
+			"toggleIcon": "AxLS7q_toggleIcon",
 			"toastText": "AxLS7q_toastText",
 			"interactOptions": "AxLS7q_interactOptions",
-			"toggleButtonActive": "AxLS7q_toggleButtonActive",
-			"spawnHeading": "AxLS7q_spawnHeading",
-			"wsFrameSelected": "AxLS7q_wsFrameSelected",
-			"headerSpace": "AxLS7q_headerSpace",
-			"toggleIcon": "AxLS7q_toggleIcon",
-			"chatDrawerClose": "AxLS7q_chatDrawerClose",
+			"spawnActions": "AxLS7q_spawnActions",
+			"cardBadgeDone": "AxLS7q_cardBadgeDone",
+			"talk-map-drawer": "AxLS7q_talk-map-drawer",
+			"toggleLabel": "AxLS7q_toggleLabel",
+			"cardTop": "AxLS7q_cardTop",
+			"header": "AxLS7q_header",
 			"canvas": "AxLS7q_canvas",
-			"interactNote": "AxLS7q_interactNote",
-			"langButton": "AxLS7q_langButton",
-			"menuItem": "AxLS7q_menuItem",
-			"mapFallbackText": "AxLS7q_mapFallbackText",
-			"menu": "AxLS7q_menu",
-			"canvasConnecting": "AxLS7q_canvasConnecting",
-			"wsFrameEdge": "AxLS7q_wsFrameEdge",
+			"talkmap-pulse": "AxLS7q_talkmap-pulse",
+			"spawnModes": "AxLS7q_spawnModes",
+			"draftCard": "AxLS7q_draftCard",
+			"draftGrow": "AxLS7q_draftGrow",
+			"colorToolbarLabel": "AxLS7q_colorToolbarLabel",
+			"toastAction": "AxLS7q_toastAction",
+			"wsFrameLabel": "AxLS7q_wsFrameLabel",
+			"chatDrawerNoticeButton": "AxLS7q_chatDrawerNoticeButton",
+			"draftLabel": "AxLS7q_draftLabel",
+			"chatDrawerNoticeText": "AxLS7q_chatDrawerNoticeText",
+			"colorSwatchClear": "AxLS7q_colorSwatchClear",
+			"interactError": "AxLS7q_interactError",
+			"headerBadge": "AxLS7q_headerBadge",
+			"card": "AxLS7q_card",
 			"draftInput": "AxLS7q_draftInput",
+			"chatPanel": "AxLS7q_chatPanel",
+			"mapFallback": "AxLS7q_mapFallback",
+			"toast": "AxLS7q_toast",
+			"toggleRow": "AxLS7q_toggleRow",
+			"imageCardImg": "AxLS7q_imageCardImg",
+			"canvasConnecting": "AxLS7q_canvasConnecting",
+			"chatDrawerNotice": "AxLS7q_chatDrawerNotice",
+			"toggleButtonActive": "AxLS7q_toggleButtonActive",
+			"closeButton": "AxLS7q_closeButton",
+			"menuError": "AxLS7q_menuError",
+			"wsFrameForeign": "AxLS7q_wsFrameForeign",
+			"cardDoneDot": "AxLS7q_cardDoneDot",
+			"cardFooterLeft": "AxLS7q_cardFooterLeft",
+			"interactGroup": "AxLS7q_interactGroup",
+			"cardForeignPulse": "AxLS7q_cardForeignPulse",
 			"cardSelected": "AxLS7q_cardSelected",
 			"cardHandle": "AxLS7q_cardHandle",
-			"draftCard": "AxLS7q_draftCard",
-			"colorSwatchClear": "AxLS7q_colorSwatchClear",
-			"cardTime": "AxLS7q_cardTime",
-			"spawnHint": "AxLS7q_spawnHint",
-			"draftTextarea": "AxLS7q_draftTextarea",
-			"header": "AxLS7q_header",
-			"chatDrawerTitle": "AxLS7q_chatDrawerTitle",
-			"interactGroup": "AxLS7q_interactGroup",
-			"spawnFrom": "AxLS7q_spawnFrom",
-			"colorSwatch": "AxLS7q_colorSwatch",
-			"chatDrawerArchived": "AxLS7q_chatDrawerArchived",
-			"toggleButton": "AxLS7q_toggleButton",
-			"spawnTextarea": "AxLS7q_spawnTextarea",
-			"hotkeyButton": "AxLS7q_hotkeyButton",
-			"draftPathPreview": "AxLS7q_draftPathPreview",
-			"chatDrawerSpace": "AxLS7q_chatDrawerSpace",
-			"cardTitle": "AxLS7q_cardTitle",
-			"interactTitle": "AxLS7q_interactTitle",
-			"interactScroll": "AxLS7q_interactScroll",
-			"menuHint": "AxLS7q_menuHint",
-			"cardNextLabel": "AxLS7q_cardNextLabel",
-			"wsFrame": "AxLS7q_wsFrame",
-			"spawnBtnGhost": "AxLS7q_spawnBtnGhost",
+			"wsFrameEdge": "AxLS7q_wsFrameEdge",
 			"interactAllow": "AxLS7q_interactAllow",
-			"cardFooter": "AxLS7q_cardFooter",
-			"headerBadge": "AxLS7q_headerBadge",
-			"toastActionable": "AxLS7q_toastActionable",
-			"cardFooterLeft": "AxLS7q_cardFooterLeft",
-			"spawnActions": "AxLS7q_spawnActions",
-			"overlay": "AxLS7q_overlay",
-			"cardForeignPulse": "AxLS7q_cardForeignPulse",
-			"draftGrow": "AxLS7q_draftGrow",
-			"wsFrameHidden": "AxLS7q_wsFrameHidden",
-			"spawnModeBtn": "AxLS7q_spawnModeBtn",
-			"cardWaitingButton": "AxLS7q_cardWaitingButton",
-			"menuPreview": "AxLS7q_menuPreview",
-			"draftHeading": "AxLS7q_draftHeading",
-			"cardRefreshBusy": "AxLS7q_cardRefreshBusy",
-			"interactOpen": "AxLS7q_interactOpen",
+			"toggleButton": "AxLS7q_toggleButton",
+			"runningDot": "AxLS7q_runningDot",
+			"cardForeignChip": "AxLS7q_cardForeignChip",
+			"mapFallbackText": "AxLS7q_mapFallbackText",
+			"mapFallbackButton": "AxLS7q_mapFallbackButton",
+			"cardGhost": "AxLS7q_cardGhost",
+			"headerSpace": "AxLS7q_headerSpace",
+			"spawnBtnGhost": "AxLS7q_spawnBtnGhost",
 			"colorToolbar": "AxLS7q_colorToolbar",
-			"cardBadgeRunning": "AxLS7q_cardBadgeRunning",
+			"spawnBtnPrimary": "AxLS7q_spawnBtnPrimary",
+			"chatDrawerHeader": "AxLS7q_chatDrawerHeader",
+			"chatDrawerClose": "AxLS7q_chatDrawerClose",
+			"draftPathPreview": "AxLS7q_draftPathPreview",
+			"menuItem": "AxLS7q_menuItem",
+			"spawnError": "AxLS7q_spawnError",
+			"menuEmpty": "AxLS7q_menuEmpty",
+			"interactOptionActive": "AxLS7q_interactOptionActive",
+			"draftTextarea": "AxLS7q_draftTextarea",
+			"cardRemove": "AxLS7q_cardRemove",
+			"cardWaitingButton": "AxLS7q_cardWaitingButton",
+			"cardPin": "AxLS7q_cardPin",
 			"headerTitle": "AxLS7q_headerTitle",
+			"spawnFrom": "AxLS7q_spawnFrom",
+			"chatDrawer": "AxLS7q_chatDrawer",
+			"toastActionable": "AxLS7q_toastActionable",
+			"chatDrawerBody": "AxLS7q_chatDrawerBody",
+			"menu": "AxLS7q_menu",
+			"hotkeyButton": "AxLS7q_hotkeyButton",
+			"interactText": "AxLS7q_interactText",
+			"chatDrawerArchived": "AxLS7q_chatDrawerArchived",
+			"interactNote": "AxLS7q_interactNote",
+			"cardForeignTouch": "AxLS7q_cardForeignTouch",
+			"interactScroll": "AxLS7q_interactScroll",
+			"chatDrawerTitle": "AxLS7q_chatDrawerTitle",
+			"wsFrameCount": "AxLS7q_wsFrameCount",
+			"chatDrawerArchivedText": "AxLS7q_chatDrawerArchivedText",
+			"interactSubmit": "AxLS7q_interactSubmit",
+			"cardTitle": "AxLS7q_cardTitle",
+			"mapFallbackTitle": "AxLS7q_mapFallbackTitle",
+			"wsFrameResize": "AxLS7q_wsFrameResize",
+			"draftSelect": "AxLS7q_draftSelect",
+			"interactOption": "AxLS7q_interactOption",
+			"body": "AxLS7q_body",
+			"zoomResetLabel": "AxLS7q_zoomResetLabel",
+			"menuSearch": "AxLS7q_menuSearch",
+			"overlay": "AxLS7q_overlay",
+			"cardBadgeRunning": "AxLS7q_cardBadgeRunning",
+			"chatDrawerArchivedButton": "AxLS7q_chatDrawerArchivedButton",
+			"langButton": "AxLS7q_langButton",
+			"interactOpen": "AxLS7q_interactOpen",
+			"imageCardSelected": "AxLS7q_imageCardSelected",
+			"draftHeading": "AxLS7q_draftHeading",
+			"cardTime": "AxLS7q_cardTime",
+			"menuPreview": "AxLS7q_menuPreview",
+			"cardFooter": "AxLS7q_cardFooter",
+			"spawnTextarea": "AxLS7q_spawnTextarea",
+			"cardPinActive": "AxLS7q_cardPinActive",
+			"spawnHint": "AxLS7q_spawnHint",
+			"spawnModeBtn": "AxLS7q_spawnModeBtn",
+			"colorSwatch": "AxLS7q_colorSwatch",
 			"cardForeign": "AxLS7q_cardForeign",
-			"cardNext": "AxLS7q_cardNext",
-			"chatDrawerBody": "AxLS7q_chatDrawerBody"
+			"spawnModeActive": "AxLS7q_spawnModeActive",
+			"draftRow": "AxLS7q_draftRow",
+			"emptyHint": "AxLS7q_emptyHint",
+			"wsFrameHidden": "AxLS7q_wsFrameHidden",
+			"imageCard": "AxLS7q_imageCard"
 		};
 		//#endregion
 		//#region src/client/ChatPanel.tsx
@@ -6667,6 +6797,18 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			ResizeControlVariant["Line"] = "line";
 			ResizeControlVariant["Handle"] = "handle";
 		})(ResizeControlVariant || (ResizeControlVariant = {}));
+		const XY_RESIZER_HANDLE_POSITIONS = [
+			"top-left",
+			"top-right",
+			"bottom-left",
+			"bottom-right"
+		];
+		const XY_RESIZER_LINE_POSITIONS = [
+			"top",
+			"right",
+			"bottom",
+			"left"
+		];
 		/**
 		* Get all connecting edges for a given set of nodes
 		* @param width - new width of the node
@@ -11982,7 +12124,73 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				children
 			});
 		}
-		(0, react.memo)(ResizeControl);
+		/**
+		* To create your own resizing UI, you can use the `NodeResizeControl` component where you can pass children (such as icons).
+		* @public
+		*
+		*/
+		const NodeResizeControl = (0, react.memo)(ResizeControl);
+		/**
+		* The `<NodeResizer />` component can be used to add a resize functionality to your
+		* nodes. It renders draggable controls around the node to resize in all directions.
+		* @public
+		*
+		* @example
+		*```jsx
+		*import { memo } from 'react';
+		*import { Handle, Position, NodeResizer } from '@xyflow/react';
+		*
+		*function ResizableNode({ data }) {
+		*  return (
+		*    <>
+		*      <NodeResizer minWidth={100} minHeight={30} />
+		*      <Handle type="target" position={Position.Left} />
+		*      <div style={{ padding: 10 }}>{data.label}</div>
+		*      <Handle type="source" position={Position.Right} />
+		*    </>
+		*  );
+		*};
+		*
+		*export default memo(ResizableNode);
+		*```
+		*/
+		function NodeResizer({ nodeId, isVisible = true, handleClassName, handleStyle, lineClassName, lineStyle, color, minWidth = 10, minHeight = 10, maxWidth = Number.MAX_VALUE, maxHeight = Number.MAX_VALUE, keepAspectRatio = false, autoScale = true, shouldResize, onResizeStart, onResize, onResizeEnd }) {
+			if (!isVisible) return null;
+			return (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [XY_RESIZER_LINE_POSITIONS.map((position) => (0, react_jsx_runtime.jsx)(NodeResizeControl, {
+				className: lineClassName,
+				style: lineStyle,
+				nodeId,
+				position,
+				variant: ResizeControlVariant.Line,
+				color,
+				minWidth,
+				minHeight,
+				maxWidth,
+				maxHeight,
+				onResizeStart,
+				keepAspectRatio,
+				autoScale,
+				shouldResize,
+				onResize,
+				onResizeEnd
+			}, position)), XY_RESIZER_HANDLE_POSITIONS.map((position) => (0, react_jsx_runtime.jsx)(NodeResizeControl, {
+				className: handleClassName,
+				style: handleStyle,
+				nodeId,
+				position,
+				color,
+				minWidth,
+				minHeight,
+				maxWidth,
+				maxHeight,
+				onResizeStart,
+				keepAspectRatio,
+				autoScale,
+				shouldResize,
+				onResize,
+				onResizeEnd
+			}, position))] });
+		}
 		//#endregion
 		//#region \0dsh-css:plain:@xyflow/react/dist/style.css.mjs
 		const css = ".react-flow{--xy-edge-stroke-default:#b1b1b7;--xy-edge-stroke-width-default:1;--xy-edge-stroke-selected-default:#555;--xy-connectionline-stroke-default:#b1b1b7;--xy-connectionline-stroke-width-default:1;--xy-attribution-background-color-default:#ffffff80;--xy-minimap-background-color-default:#fff;--xy-minimap-mask-background-color-default:#f0f0f099;--xy-minimap-mask-stroke-color-default:transparent;--xy-minimap-mask-stroke-width-default:1;--xy-minimap-node-background-color-default:#e2e2e2;--xy-minimap-node-stroke-color-default:transparent;--xy-minimap-node-stroke-width-default:2;--xy-background-color-default:transparent;--xy-background-pattern-dots-color-default:#91919a;--xy-background-pattern-lines-color-default:#eee;--xy-background-pattern-cross-color-default:#e2e2e2;background-color:var(--xy-background-color,var(--xy-background-color-default));--xy-node-color-default:inherit;--xy-node-border-default:1px solid #1a192b;--xy-node-background-color-default:#fff;--xy-node-group-background-color-default:#f0f0f040;--xy-node-boxshadow-hover-default:0 1px 4px 1px #00000014;--xy-node-boxshadow-selected-default:0 0 0 .5px #1a192b;--xy-node-border-radius-default:3px;--xy-handle-background-color-default:#1a192b;--xy-handle-border-color-default:#fff;--xy-selection-background-color-default:#0059dc14;--xy-selection-border-default:1px dotted #0059dccc;--xy-controls-button-background-color-default:#fefefe;--xy-controls-button-background-color-hover-default:#f4f4f4;--xy-controls-button-color-default:inherit;--xy-controls-button-color-hover-default:inherit;--xy-controls-button-border-color-default:#eee;--xy-controls-box-shadow-default:0 0 2px 1px #00000014;--xy-edge-label-background-color-default:#fff;--xy-edge-label-color-default:inherit;--xy-resize-background-color-default:#3367d9;direction:ltr}.react-flow.dark{--xy-edge-stroke-default:#3e3e3e;--xy-edge-stroke-width-default:1;--xy-edge-stroke-selected-default:#727272;--xy-connectionline-stroke-default:#b1b1b7;--xy-connectionline-stroke-width-default:1;--xy-attribution-background-color-default:#96969640;--xy-minimap-background-color-default:#141414;--xy-minimap-mask-background-color-default:#3c3c3c99;--xy-minimap-mask-stroke-color-default:transparent;--xy-minimap-mask-stroke-width-default:1;--xy-minimap-node-background-color-default:#2b2b2b;--xy-minimap-node-stroke-color-default:transparent;--xy-minimap-node-stroke-width-default:2;--xy-background-color-default:#141414;--xy-background-pattern-dots-color-default:#555;--xy-background-pattern-lines-color-default:#333;--xy-background-pattern-cross-color-default:#333;--xy-node-color-default:#f8f8f8;--xy-node-border-default:1px solid #3c3c3c;--xy-node-background-color-default:#1e1e1e;--xy-node-group-background-color-default:#f0f0f040;--xy-node-boxshadow-hover-default:0 1px 4px 1px #ffffff14;--xy-node-boxshadow-selected-default:0 0 0 .5px #999;--xy-handle-background-color-default:#bebebe;--xy-handle-border-color-default:#1e1e1e;--xy-selection-background-color-default:#c8c8dc14;--xy-selection-border-default:1px dotted #c8c8dccc;--xy-controls-button-background-color-default:#2b2b2b;--xy-controls-button-background-color-hover-default:#3e3e3e;--xy-controls-button-color-default:#f8f8f8;--xy-controls-button-color-hover-default:#fff;--xy-controls-button-border-color-default:#5b5b5b;--xy-controls-box-shadow-default:0 0 2px 1px #00000014;--xy-edge-label-background-color-default:#141414;--xy-edge-label-color-default:#f8f8f8}.react-flow__background{background-color:var(--xy-background-color-props,var(--xy-background-color,var(--xy-background-color-default)));pointer-events:none;z-index:-1}.react-flow__container{width:100%;height:100%;position:absolute;top:0;left:0}.react-flow__pane{z-index:1;touch-action:none}.react-flow__pane.draggable{cursor:grab}.react-flow__pane.dragging{cursor:grabbing}.react-flow__pane.selection{cursor:pointer}.react-flow__viewport{transform-origin:0 0;z-index:2;pointer-events:none}.react-flow__renderer{z-index:4}.react-flow__selection{z-index:6}.react-flow__nodesselection-rect:focus{outline:none}.react-flow__nodesselection-rect:focus-visible{outline:none}.react-flow__edge-path{stroke:var(--xy-edge-stroke,var(--xy-edge-stroke-default));stroke-width:var(--xy-edge-stroke-width,var(--xy-edge-stroke-width-default));fill:none}.react-flow__connection-path{stroke:var(--xy-connectionline-stroke,var(--xy-connectionline-stroke-default));stroke-width:var(--xy-connectionline-stroke-width,var(--xy-connectionline-stroke-width-default));fill:none}.react-flow .react-flow__edges{position:absolute}.react-flow .react-flow__edges svg{pointer-events:none;position:absolute;overflow:visible}.react-flow__edge{pointer-events:visibleStroke}.react-flow__edge.selectable{cursor:pointer}.react-flow__edge.animated path{stroke-dasharray:5;animation:.5s linear infinite dashdraw}.react-flow__edge.animated path.react-flow__edge-interaction{stroke-dasharray:none;animation:none}.react-flow__edge.inactive{pointer-events:none}.react-flow__edge.selected,.react-flow__edge:focus{outline:none}.react-flow__edge:focus-visible{outline:none}.react-flow__edge.selected .react-flow__edge-path,.react-flow__edge.selectable:focus .react-flow__edge-path{stroke:var(--xy-edge-stroke-selected,var(--xy-edge-stroke-selected-default))}.react-flow__edge.selectable:focus-visible .react-flow__edge-path{stroke:var(--xy-edge-stroke-selected,var(--xy-edge-stroke-selected-default))}.react-flow__edge-textwrapper{pointer-events:all}.react-flow__edge .react-flow__edge-text{pointer-events:none;-webkit-user-select:none;user-select:none}.react-flow__arrowhead polyline{stroke:var(--xy-edge-stroke,var(--xy-edge-stroke-default))}.react-flow__arrowhead polyline.arrowclosed{fill:var(--xy-edge-stroke,var(--xy-edge-stroke-default))}.react-flow__connection{pointer-events:none}.react-flow__connection .animated{stroke-dasharray:5;animation:.5s linear infinite dashdraw}svg.react-flow__connectionline{z-index:1001;position:absolute;overflow:visible}.react-flow__nodes{pointer-events:none;transform-origin:0 0}.react-flow__node{-webkit-user-select:none;user-select:none;pointer-events:all;transform-origin:0 0;box-sizing:border-box;cursor:default;position:absolute}.react-flow__node.selectable{cursor:pointer}.react-flow__node.draggable{cursor:grab;pointer-events:all}.react-flow__node.draggable.dragging{cursor:grabbing}.react-flow__nodesselection{z-index:3;transform-origin:0 0;pointer-events:none}.react-flow__nodesselection-rect{pointer-events:all;cursor:grab;position:absolute}.react-flow__handle{pointer-events:none;background-color:var(--xy-handle-background-color,var(--xy-handle-background-color-default));border:1px solid var(--xy-handle-border-color,var(--xy-handle-border-color-default));border-radius:100%;width:6px;min-width:5px;height:6px;min-height:5px;position:absolute}.react-flow__handle.connectingfrom{pointer-events:all}.react-flow__handle.connectionindicator{pointer-events:all;cursor:crosshair}.react-flow__handle-bottom{top:auto;bottom:0;left:50%;transform:translate(-50%,50%)}.react-flow__handle-top{top:0;left:50%;transform:translate(-50%,-50%)}.react-flow__handle-left{top:50%;left:0;transform:translate(-50%,-50%)}.react-flow__handle-right{top:50%;right:0;transform:translate(50%,-50%)}.react-flow__edgeupdater{cursor:move;pointer-events:all}.react-flow__pane.selection .react-flow__panel{pointer-events:none}.react-flow__panel{z-index:5;margin:15px;position:absolute}.react-flow__panel.top{top:0}.react-flow__panel.bottom{bottom:0}.react-flow__panel.top.center,.react-flow__panel.bottom.center{left:50%;transform:translate(-15px)translate(-50%)}.react-flow__panel.left{left:0}.react-flow__panel.right{right:0}.react-flow__panel.left.center,.react-flow__panel.right.center{top:50%;transform:translateY(-15px)translateY(-50%)}.react-flow__attribution{background:var(--xy-attribution-background-color,var(--xy-attribution-background-color-default));margin:0;padding:2px 3px;font-size:10px}.react-flow__attribution a{color:#999;text-decoration:none}@keyframes dashdraw{0%{stroke-dashoffset:10px}}.react-flow__edgelabel-renderer{pointer-events:none;-webkit-user-select:none;user-select:none;width:100%;height:100%;position:absolute;top:0;left:0}.react-flow__viewport-portal{-webkit-user-select:none;user-select:none;width:100%;height:100%;position:absolute;top:0;left:0}.react-flow__minimap{background:var(--xy-minimap-background-color-props,var(--xy-minimap-background-color,var(--xy-minimap-background-color-default)))}.react-flow__minimap-svg{display:block}.react-flow__minimap-mask{fill:var(--xy-minimap-mask-background-color-props,var(--xy-minimap-mask-background-color,var(--xy-minimap-mask-background-color-default)));stroke:var(--xy-minimap-mask-stroke-color-props,var(--xy-minimap-mask-stroke-color,var(--xy-minimap-mask-stroke-color-default)));stroke-width:var(--xy-minimap-mask-stroke-width-props,var(--xy-minimap-mask-stroke-width,var(--xy-minimap-mask-stroke-width-default)))}.react-flow__minimap-node{fill:var(--xy-minimap-node-background-color-props,var(--xy-minimap-node-background-color,var(--xy-minimap-node-background-color-default)));stroke:var(--xy-minimap-node-stroke-color-props,var(--xy-minimap-node-stroke-color,var(--xy-minimap-node-stroke-color-default)));stroke-width:var(--xy-minimap-node-stroke-width-props,var(--xy-minimap-node-stroke-width,var(--xy-minimap-node-stroke-width-default)))}.react-flow__background-pattern.dots{fill:var(--xy-background-pattern-color-props,var(--xy-background-pattern-color,var(--xy-background-pattern-dots-color-default)))}.react-flow__background-pattern.lines{stroke:var(--xy-background-pattern-color-props,var(--xy-background-pattern-color,var(--xy-background-pattern-lines-color-default)))}.react-flow__background-pattern.cross{stroke:var(--xy-background-pattern-color-props,var(--xy-background-pattern-color,var(--xy-background-pattern-cross-color-default)))}.react-flow__controls{box-shadow:var(--xy-controls-box-shadow,var(--xy-controls-box-shadow-default));flex-direction:column;display:flex}.react-flow__controls.horizontal{flex-direction:row}.react-flow__controls-button{background:var(--xy-controls-button-background-color,var(--xy-controls-button-background-color-default));border:none;border-bottom:1px solid var(--xy-controls-button-border-color-props,var(--xy-controls-button-border-color,var(--xy-controls-button-border-color-default)));width:26px;height:26px;color:var(--xy-controls-button-color-props,var(--xy-controls-button-color,var(--xy-controls-button-color-default)));cursor:pointer;-webkit-user-select:none;user-select:none;justify-content:center;align-items:center;padding:4px;display:flex}.react-flow__controls-button svg{fill:currentColor;width:100%;max-width:12px;max-height:12px}.react-flow__edge.updating .react-flow__edge-path{stroke:#777}.react-flow__edge-text{font-size:10px}.react-flow__node.selectable:focus{outline:none}.react-flow__node.selectable:focus-visible{outline:none}.react-flow__node-input,.react-flow__node-default,.react-flow__node-output,.react-flow__node-group{border-radius:var(--xy-node-border-radius,var(--xy-node-border-radius-default));width:150px;color:var(--xy-node-color,var(--xy-node-color-default));text-align:center;border:var(--xy-node-border,var(--xy-node-border-default));background-color:var(--xy-node-background-color,var(--xy-node-background-color-default));padding:10px;font-size:12px}.react-flow__node-input.selectable:hover,.react-flow__node-default.selectable:hover,.react-flow__node-output.selectable:hover,.react-flow__node-group.selectable:hover{box-shadow:var(--xy-node-boxshadow-hover,var(--xy-node-boxshadow-hover-default))}.react-flow__node-input.selectable.selected,.react-flow__node-input.selectable:focus,.react-flow__node-default.selectable.selected,.react-flow__node-default.selectable:focus,.react-flow__node-output.selectable.selected,.react-flow__node-output.selectable:focus,.react-flow__node-group.selectable.selected,.react-flow__node-group.selectable:focus{box-shadow:var(--xy-node-boxshadow-selected,var(--xy-node-boxshadow-selected-default))}.react-flow__node-input.selectable:focus-visible{box-shadow:var(--xy-node-boxshadow-selected,var(--xy-node-boxshadow-selected-default))}.react-flow__node-default.selectable:focus-visible{box-shadow:var(--xy-node-boxshadow-selected,var(--xy-node-boxshadow-selected-default))}.react-flow__node-output.selectable:focus-visible{box-shadow:var(--xy-node-boxshadow-selected,var(--xy-node-boxshadow-selected-default))}.react-flow__node-group.selectable:focus-visible{box-shadow:var(--xy-node-boxshadow-selected,var(--xy-node-boxshadow-selected-default))}.react-flow__node-group{background-color:var(--xy-node-group-background-color,var(--xy-node-group-background-color-default))}.react-flow__nodesselection-rect,.react-flow__selection{background:var(--xy-selection-background-color,var(--xy-selection-background-color-default));border:var(--xy-selection-border,var(--xy-selection-border-default))}.react-flow__nodesselection-rect:focus,.react-flow__selection:focus{outline:none}.react-flow__nodesselection-rect:focus-visible{outline:none}.react-flow__selection:focus-visible{outline:none}.react-flow__controls-button:hover{background:var(--xy-controls-button-background-color-hover-props,var(--xy-controls-button-background-color-hover,var(--xy-controls-button-background-color-hover-default)));color:var(--xy-controls-button-color-hover-props,var(--xy-controls-button-color-hover,var(--xy-controls-button-color-hover-default)))}.react-flow__controls-button:disabled{pointer-events:none}.react-flow__controls-button:disabled svg{fill-opacity:.4}.react-flow__controls-button:last-child{border-bottom:none}.react-flow__controls.horizontal .react-flow__controls-button{border-bottom:none;border-right:1px solid var(--xy-controls-button-border-color-props,var(--xy-controls-button-border-color,var(--xy-controls-button-border-color-default)))}.react-flow__controls.horizontal .react-flow__controls-button:last-child{border-right:none}.react-flow__resize-control{position:absolute}.react-flow__resize-control.left,.react-flow__resize-control.right{cursor:ew-resize}.react-flow__resize-control.top,.react-flow__resize-control.bottom{cursor:ns-resize}.react-flow__resize-control.top.left,.react-flow__resize-control.bottom.right{cursor:nwse-resize}.react-flow__resize-control.bottom.left,.react-flow__resize-control.top.right{cursor:nesw-resize}.react-flow__resize-control.handle{background-color:var(--xy-resize-background-color,var(--xy-resize-background-color-default));border:1px solid #fff;border-radius:1px;width:5px;height:5px;translate:-50% -50%}.react-flow__resize-control.handle.left{top:50%;left:0}.react-flow__resize-control.handle.right{top:50%;left:100%}.react-flow__resize-control.handle.top{top:0;left:50%}.react-flow__resize-control.handle.bottom{top:100%;left:50%}.react-flow__resize-control.handle.top.left,.react-flow__resize-control.handle.bottom.left{left:0}.react-flow__resize-control.handle.top.right,.react-flow__resize-control.handle.bottom.right{left:100%}.react-flow__resize-control.line{border-color:var(--xy-resize-background-color,var(--xy-resize-background-color-default));border-style:solid;border-width:0}.react-flow__resize-control.line.left,.react-flow__resize-control.line.right{width:1px;height:100%;top:0;transform:translate(-50%)}.react-flow__resize-control.line.left{border-left-width:1px;left:0}.react-flow__resize-control.line.right{border-right-width:1px;left:100%}.react-flow__resize-control.line.top,.react-flow__resize-control.line.bottom{width:100%;height:1px;left:0;transform:translateY(-50%)}.react-flow__resize-control.line.top{border-top-width:1px;top:0}.react-flow__resize-control.line.bottom{border-bottom-width:1px;top:100%}.react-flow__edge-textbg{fill:var(--xy-edge-label-background-color,var(--xy-edge-label-background-color-default))}.react-flow__edge-text{fill:var(--xy-edge-label-color,var(--xy-edge-label-color-default))}";
@@ -12026,8 +12234,6 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				parts.push(t("inject.findings"));
 				for (const finding of digest.keyFindings) parts.push(`- ${finding}`);
 			}
-			const next = digest.nextStep !== "" ? digest.nextStep : digest.todoNext ?? "";
-			if (next !== "") parts.push(`${t("inject.next")}${next}`);
 			return parts;
 		}
 		function digestIsEmpty(digest) {
@@ -12444,7 +12650,40 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			const cut = sample.lastIndexOf("/");
 			return cut > 0 ? sample.slice(0, cut) : sample;
 		}
-		function DraftCardNode(props) {
+		let draftCatalogPromise = null;
+		/** The model catalog / agent presets / default labels are page-wide static:
+		*  load them once, lazily, and reuse them for every draft box. */
+		function loadDraftCatalog() {
+			if (draftCatalogPromise !== null) return draftCatalogPromise;
+			draftCatalogPromise = (async () => {
+				const remote = getServices()?.remote;
+				let groups = [];
+				let presets = [];
+				let defaultModel = "";
+				let defaultPreset = "";
+				try {
+					if (remote !== void 0) {
+						const catalog = await remote.session.modelCatalog().catch(() => void 0);
+						if (catalog !== void 0 && catalog.ok) groups = catalog.value.groups ?? [];
+						const list = await remote.agentPresets.list().catch(() => void 0);
+						if (list !== void 0 && list.ok) presets = list.value.presets;
+					}
+					const defaults = await talkMapApi.getDefaults().catch(() => void 0);
+					if (defaults !== void 0 && defaults.model !== null) defaultModel = defaults.model.model;
+					if (defaults !== void 0 && defaults.preset !== null) defaultPreset = defaults.preset;
+				} catch (error) {
+					console.warn("[dsh-talk-map] draft catalog unavailable:", error);
+				}
+				return {
+					groups,
+					presets,
+					defaultModel,
+					defaultPreset
+				};
+			})();
+			return draftCatalogPromise;
+		}
+		function DraftCard(props) {
 			const { data } = props;
 			const [workspaceId, setWorkspaceId] = (0, react.useState)(data.defaultWorkspaceId ?? defaultWorkspaceOption(data.workspaceOptions) ?? NEW_WORKSPACE);
 			/** Whether the user picked a workspace themselves (then never override it). */
@@ -12454,7 +12693,10 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			const [presetId, setPresetId] = (0, react.useState)("");
 			const [text, setText] = (0, react.useState)("");
 			const parent = data.parent;
-			const [mode, setMode] = (0, react.useState)("digest");
+			const [mode, setMode] = (0, react.useState)("full");
+			const [generatingSummary, setGeneratingSummary] = (0, react.useState)(false);
+			/** The digest was generated once for this box: later clicks reuse it. */
+			const summaryRequestedRef = (0, react.useRef)(false);
 			const [summary, setSummary] = (0, react.useState)(() => parent === void 0 ? "" : buildInjectionText(parent.title, canvas.get().digests[parent.sessionId]));
 			const [groups, setGroups] = (0, react.useState)([]);
 			const [presets, setPresets] = (0, react.useState)([]);
@@ -12485,32 +12727,25 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				setWorkspaceId((previous) => previous === NEW_WORKSPACE ? fallback : previous);
 			}, [data.defaultWorkspaceId, data.workspaceOptions]);
 			(0, react.useEffect)(() => {
-				const remote = getServices()?.remote;
-				if (remote === void 0) return;
-				try {
-					remote.session.modelCatalog().then((result) => {
-						if (result.ok) setGroups(result.value.groups ?? []);
-					}).catch(() => void 0);
-					remote.agentPresets.list().then((result) => {
-						if (result.ok) {
-							const list = result.value.presets;
-							setPresets(list);
-							if (list.some((preset) => preset.id === "standard")) setPresetId((previous) => previous === "" ? "standard" : previous);
-						}
-					}).catch(() => void 0);
-				} catch (error) {
-					console.warn("[dsh-talk-map] model catalog unavailable:", error);
-				}
-				talkMapApi.getDefaults().then((defaults) => {
-					if (defaults.model !== null) setDefaultModelLabel(defaults.model.model);
-					if (defaults.preset !== null) setDefaultPresetLabel(defaults.preset);
-				}).catch(() => void 0);
-			}, []);
+				if (parent !== void 0 && mode === "full") return;
+				let cancelled = false;
+				loadDraftCatalog().then((catalog) => {
+					if (cancelled) return;
+					setGroups(catalog.groups);
+					setPresets(catalog.presets);
+					setDefaultModelLabel(catalog.defaultModel);
+					setDefaultPresetLabel(catalog.defaultPreset);
+					if (catalog.presets.some((preset) => preset.id === "standard")) setPresetId((previous) => previous === "" ? "standard" : previous);
+				});
+				return () => {
+					cancelled = true;
+				};
+			}, [parent, mode]);
 			const creatingWorkspace = workspaceId === NEW_WORKSPACE;
 			const newWsPath = `${newWorkspaceParent(data.workspaceOptions)}/${newWsName.trim()}`;
 			const isFork = parent !== void 0;
 			const needsNewWorkspaceName = (!isFork || mode !== "full") && creatingWorkspace && newWsName.trim() === "";
-			const sendDisabled = busy || (isFork ? mode === "digest" && (summary.trim() === "" || text.trim() === "") || mode === "none" && text.trim() === "" || needsNewWorkspaceName : text.trim() === "" || needsNewWorkspaceName);
+			const sendDisabled = busy || (isFork ? mode === "digest" && (generatingSummary || summary.trim() === "" || text.trim() === "") || mode === "none" && text.trim() === "" || needsNewWorkspaceName : text.trim() === "" || needsNewWorkspaceName);
 			/** Resolve the destination workspace, creating the folder/workspace on demand. */
 			const resolveTargetWorkspace = async (remote) => {
 				if (workspaceId !== NEW_WORKSPACE) return workspaceId;
@@ -12650,18 +12885,33 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			};
 			const forkModes = [
 				{
-					id: "digest",
-					label: t("spawn.mode.digest")
-				},
-				{
 					id: "full",
 					label: t("spawn.mode.full")
+				},
+				{
+					id: "digest",
+					label: t("spawn.mode.digest")
 				},
 				{
 					id: "none",
 					label: t("spawn.mode.none")
 				}
 			];
+			/** Choosing 摘要注入 asks the model for a fresh digest of the source card. */
+			const generateSummary = async () => {
+				if (parent === void 0 || generatingSummary) return;
+				setGeneratingSummary(true);
+				setError(void 0);
+				try {
+					const result = await talkMapApi.refreshDigest(parent.sessionId);
+					setSummary(buildInjectionText(parent.title, result.digest));
+					summaryRequestedRef.current = true;
+				} catch (generateError) {
+					setError(String(generateError));
+				} finally {
+					setGeneratingSummary(false);
+				}
+			};
 			const parentDigest = parent !== void 0 ? canvas.get().digests[parent.sessionId] : void 0;
 			const digestEmpty = parentDigest === void 0 || digestIsEmpty(parentDigest);
 			const showConfig = !isFork || mode !== "full";
@@ -12696,12 +12946,16 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 								type: "button",
 								className: `${talk_map_module_css_default["spawnModeBtn"]}${mode === entry.id ? ` ${talk_map_module_css_default["spawnModeActive"]}` : ""}`,
 								onClick: () => {
+									if (entry.id === "digest" && !summaryRequestedRef.current) generateSummary();
 									setMode(entry.id);
 								},
 								children: entry.label
 							}, entry.id))
 						}),
-						mode === "digest" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [
+						mode === "digest" ? generatingSummary ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+							className: talk_map_module_css_default["spawnHint"],
+							children: t("spawn.generating")
+						}) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [
 							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 								className: talk_map_module_css_default["spawnHint"],
 								children: t("spawn.hint")
@@ -12858,6 +13112,40 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				]
 			});
 		}
+		const DraftCardNode = (0, react.memo)(DraftCard);
+		//#endregion
+		//#region src/client/ImageNode.tsx
+		/**
+		* Image node: a picture dragged out of the drawer conversation onto the board.
+		* The bytes live in the host store (content-addressed, served under
+		* /talk-map/images/); this node only renders the image and carries its board
+		* geometry. Resizing is proportional (keepAspectRatio) and persisted as the
+		* node's width/height.
+		*/
+		function ImageNode(props) {
+			const { id, data, selected } = props;
+			const { image } = data;
+			const classes = [talk_map_module_css_default["imageCard"] ?? ""];
+			if (selected === true) classes.push(talk_map_module_css_default["imageCardSelected"] ?? "");
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+				className: classes.join(" "),
+				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(NodeResizer, {
+					isVisible: selected === true,
+					keepAspectRatio: true,
+					minWidth: 120,
+					minHeight: 80,
+					onResize: (_event, params) => {
+						data.onResize(id, params.width, params.height);
+					}
+				}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("img", {
+					className: talk_map_module_css_default["imageCardImg"],
+					src: image.src,
+					alt: image.title ?? "",
+					draggable: false
+				})]
+			});
+		}
+		const ImageNodeView = (0, react.memo)(ImageNode);
 		//#endregion
 		//#region src/client/SessionCard.tsx
 		/**
@@ -12876,25 +13164,30 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			if (hours < 24) return `${hours}${t("time.h")}`;
 			return `${Math.round(hours / 24)}${t("time.d")}`;
 		}
+		/** Pushpin glyph shared by the card's pin toggle (filled while pinned). */
+		function PinIcon(props) {
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("svg", {
+				width: "14",
+				height: "14",
+				viewBox: "0 0 24 24",
+				fill: props.filled ? "currentColor" : "none",
+				stroke: "currentColor",
+				strokeWidth: props.filled ? 0 : 1.8,
+				strokeLinecap: "round",
+				strokeLinejoin: "round",
+				"aria-hidden": "true",
+				children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M16 9V4h1a1 1 0 0 0 0-2H7a1 1 0 0 0 0 2h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z" })
+			});
+		}
 		function SessionCard(props) {
 			const { data, selected } = props;
-			const [refreshing, setRefreshing] = (0, react.useState)(false);
+			const pinned = usePinnedSessionIds().has(data.sessionId);
+			const archived = useArchivedSessionIds().has(data.sessionId);
 			const classNames = [talk_map_module_css_default["card"]];
 			if (data.ghost) classNames.push(talk_map_module_css_default["cardGhost"]);
 			if (selected === true) classNames.push(talk_map_module_css_default["cardSelected"]);
 			if (data.foreignLabel !== void 0) classNames.push(talk_map_module_css_default["cardForeign"]);
 			if (data.foreignTouch === true) classNames.push(talk_map_module_css_default["cardForeignTouch"]);
-			const refreshDigest = async () => {
-				if (refreshing) return;
-				setRefreshing(true);
-				try {
-					await talkMapApi.refreshDigest(data.sessionId);
-				} catch (error) {
-					console.error("[dsh-talk-map] digest refresh failed:", error);
-				} finally {
-					setRefreshing(false);
-				}
-			};
 			const color = colorOf(data.colorTag);
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 				className: classNames.filter(Boolean).join(" "),
@@ -12927,17 +13220,21 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 								className: talk_map_module_css_default["cardTitle"],
 								children: data.ghost ? t("card.ghostTitle") : data.title
 							}),
-							data.ghost ? null : /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+							data.ghost !== true && !archived ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 								type: "button",
-								className: `${talk_map_module_css_default["cardRefresh"]} nodrag${refreshing ? ` ${talk_map_module_css_default["cardRefreshBusy"]}` : ""}`,
-								title: t("card.refresh"),
-								"aria-label": t("card.refresh"),
+								className: pinned ? `nodrag ${talk_map_module_css_default["cardPin"] ?? ""} ${talk_map_module_css_default["cardPinActive"] ?? ""}` : `nodrag ${talk_map_module_css_default["cardPin"] ?? ""}`,
+								title: pinned ? t("card.unpin") : t("card.pin"),
+								"aria-label": pinned ? t("card.unpin") : t("card.pin"),
+								"aria-pressed": pinned,
 								onClick: (event) => {
 									event.stopPropagation();
-									refreshDigest();
+									toggleSessionPin(data.sessionId);
 								},
-								children: "⟳"
-							})
+								onPointerDown: (event) => {
+									event.stopPropagation();
+								},
+								children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PinIcon, { filled: pinned })
+							}) : null
 						]
 					}),
 					data.ghost ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
@@ -12947,51 +13244,23 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 							canvas.removeCard(data.cardId);
 						},
 						children: t("card.remove")
-					}) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [data.summary !== void 0 && data.summary !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-						className: talk_map_module_css_default["cardSummary"],
-						children: data.summary
-					}) : null, data.nextStep !== void 0 && data.nextStep !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: talk_map_module_css_default["cardNext"],
-						children: [
-							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-								className: talk_map_module_css_default["cardNextLabel"],
-								children: t("card.next")
-							}),
-							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-								className: talk_map_module_css_default["cardNextText"],
-								children: data.nextStep
-							}),
-							data.stale === true ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-								className: talk_map_module_css_default["cardStale"],
-								title: t("card.stale"),
-								children: "⟳"
-							}) : null
-						]
-					}) : null] }),
+					}) : null,
 					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 						className: talk_map_module_css_default["cardFooter"],
 						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 							className: talk_map_module_css_default["cardFooterLeft"],
-							children: [
-								data.archived === true ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-									className: talk_map_module_css_default["cardArchivedChip"],
-									title: t("card.archivedHint"),
-									children: t("card.archived")
-								}) : null,
-								data.foreignLabel !== void 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
-									className: talk_map_module_css_default["cardForeignChip"],
-									title: t("card.foreignHint", { name: data.foreignLabel }),
-									children: [
-										t("card.foreign"),
-										" · ",
-										data.foreignLabel
-									]
-								}) : null,
-								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-									className: talk_map_module_css_default["cardTime"],
-									children: relativeTime(data.updatedAt)
-								})
-							]
+							children: [data.foreignLabel !== void 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+								className: talk_map_module_css_default["cardForeignChip"],
+								title: t("card.foreignHint", { name: data.foreignLabel }),
+								children: [
+									t("card.foreign"),
+									" · ",
+									data.foreignLabel
+								]
+							}) : null, /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+								className: talk_map_module_css_default["cardTime"],
+								children: data.timeLabel ?? ""
+							})]
 						}), data.waiting === true ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 							type: "button",
 							className: `nodrag ${talk_map_module_css_default["cardWaitingButton"] ?? ""}`,
@@ -13168,7 +13437,8 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 		const nodeTypes = {
 			sessionCard: SessionCardNode,
 			wsFrame: WsFrameNode,
-			draftCard: DraftCardNode
+			draftCard: DraftCardNode,
+			imageNode: ImageNodeView
 		};
 		const GRID = 16;
 		const CARD_W = 250;
@@ -13182,7 +13452,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 		/** Shallow compare of the fields a SessionCard renders — the node cache reuses
 		*  the previous node object (and thus skips the card's render) while equal. */
 		function sameSessionCardData(left, right) {
-			return left.cardId === right.cardId && left.sessionId === right.sessionId && left.title === right.title && left.running === right.running && left.ghost === right.ghost && left.updatedAt === right.updatedAt && left.nextStep === right.nextStep && left.summary === right.summary && left.stale === right.stale && left.colorTag === right.colorTag && left.waiting === right.waiting && left.done === right.done && left.foreignLabel === right.foreignLabel && left.foreignTouch === right.foreignTouch && left.archived === right.archived && left.nowMinute === right.nowMinute;
+			return left.cardId === right.cardId && left.sessionId === right.sessionId && left.title === right.title && left.running === right.running && left.ghost === right.ghost && left.updatedAt === right.updatedAt && left.colorTag === right.colorTag && left.timeLabel === right.timeLabel && left.waiting === right.waiting && left.done === right.done && left.foreignLabel === right.foreignLabel && left.foreignTouch === right.foreignTouch;
 		}
 		/** Same idea for frames: geometry/counts/colors are the whole render input. */
 		function sameWsFrameData(left, right) {
@@ -13338,6 +13608,30 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				};
 			}, []);
 			const locale = (0, react.useSyncExternalStore)(subscribeLocale, activeLocale, activeLocale);
+			const draftWorkspaceOptions = (0, react.useMemo)(() => workspaces.items.map((item) => ({
+				id: item.workspaceId,
+				title: item.title,
+				path: item.path
+			})), [workspaces.items]);
+			const closeDraft = (0, react.useCallback)(() => {
+				setDraft(null);
+			}, []);
+			const draftNodeData = (0, react.useMemo)(() => {
+				if (draft === null) return null;
+				return {
+					workspaceOptions: draftWorkspaceOptions,
+					...draft.workspaceId !== void 0 ? { defaultWorkspaceId: draft.workspaceId } : {},
+					...draft.groupId !== void 0 ? { groupId: draft.groupId } : {},
+					...draft.parent !== void 0 ? { parent: draft.parent } : {},
+					onClose: closeDraft,
+					...props.onOpenChat !== void 0 ? { onOpenChat: props.onOpenChat } : {}
+				};
+			}, [
+				draft,
+				draftWorkspaceOptions,
+				closeDraft,
+				props.onOpenChat
+			]);
 			const sessionWs = (0, react.useMemo)(() => sessionWorkspaceIndex(workspaces), [workspaces]);
 			const wsTitles = (0, react.useMemo)(() => new Map(workspaces.items.map((item) => [item.workspaceId, item.title])), [workspaces]);
 			const wsDisplayNames = (0, react.useMemo)(() => {
@@ -13396,11 +13690,57 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				const out = {};
 				for (const [cardId, card] of Object.entries(canvasState.cards)) {
 					if (blankSessions.has(card.sessionId)) continue;
+					if (archivedIds.has(card.sessionId)) continue;
 					out[cardId] = card;
 				}
 				return out;
-			}, [canvasState.cards, blankSessions]);
+			}, [
+				canvasState.cards,
+				blankSessions,
+				archivedIds
+			]);
 			const cardIdsKey = (0, react.useMemo)(() => Object.keys(visibleCards).sort().join("|"), [visibleCards]);
+			(0, react.useEffect)(() => {
+				if (canvasState.global === null) return;
+				let nextPlacements = canvasState.global.archivedCards ?? {};
+				const toRemove = [];
+				const toRestore = [];
+				let moved = false;
+				for (const [cardId, card] of Object.entries(canvasState.cards)) {
+					if (!archivedIds.has(card.sessionId)) continue;
+					const edges = Object.fromEntries(Object.entries(canvasState.edges).filter(([, edge]) => edge.fromCardId === cardId || edge.toCardId === cardId));
+					nextPlacements = {
+						...nextPlacements,
+						[card.sessionId]: {
+							cardId,
+							card,
+							edges
+						}
+					};
+					toRemove.push(cardId);
+					moved = true;
+				}
+				for (const [sessionId, placement] of Object.entries(nextPlacements)) {
+					if (archivedIds.has(sessionId)) continue;
+					const remaining = { ...nextPlacements };
+					delete remaining[sessionId];
+					nextPlacements = remaining;
+					toRestore.push(placement);
+					moved = true;
+				}
+				if (!moved) return;
+				canvas.patchGlobalNow({ archivedCards: nextPlacements });
+				for (const cardId of toRemove) canvas.removeCard(cardId);
+				for (const placement of toRestore) {
+					canvas.addCards({ [placement.cardId]: placement.card });
+					if (Object.keys(placement.edges).length > 0) canvas.addEdges(placement.edges);
+				}
+			}, [
+				archivedIds,
+				canvasState.cards,
+				canvasState.edges,
+				canvasState.global
+			]);
 			const membersByGroup = (0, react.useMemo)(() => {
 				const index = /* @__PURE__ */ new Map();
 				for (const [cardId, card] of Object.entries(visibleCards)) {
@@ -13536,12 +13876,15 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				const next = /* @__PURE__ */ new Set();
 				for (const id of selectedIds) if (id.startsWith("frame-")) {
 					if (wsFrames[id.slice(6)] !== void 0) next.add(id);
+				} else if (id.startsWith("image-")) {
+					if (canvasState.images[id.slice(6)] !== void 0) next.add(id);
 				} else if (visibleCards[id] !== void 0) next.add(id);
 				return next;
 			}, [
 				selectedIds,
 				visibleCards,
-				wsFrames
+				wsFrames,
+				canvasState.images
 			]);
 			const liveSelectedEdgeIds = (0, react.useMemo)(() => {
 				const next = /* @__PURE__ */ new Set();
@@ -13566,6 +13909,17 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 						const target = event.target;
 						if (target !== null && target.closest("input, textarea, [contenteditable=\"true\"]") !== null) return;
 						const frameIds = [...liveSelectedIdsRef.current].filter((id) => id.startsWith("frame-"));
+						const imageIds = [...liveSelectedIdsRef.current].filter((id) => id.startsWith("image-")).map((id) => id.slice(6));
+						if (imageIds.length > 0) {
+							event.preventDefault();
+							event.stopPropagation();
+							canvas.removeImages(imageIds);
+							setSelectedIds((previous) => {
+								const next = new Set(previous);
+								for (const id of previous) if (id.startsWith("image-")) next.delete(id);
+								return next;
+							});
+						}
 						if (frameIds.length === 0) return;
 						for (const frameId of frameIds) removeGroupRef.current(frameId.slice(6));
 						setSelectedIds((previous) => {
@@ -13581,6 +13935,9 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					release();
 				};
 			}, [hasSelection]);
+			const handleImageResize = (0, react.useCallback)((id, width, height) => {
+				canvas.resizeImage(id, width, height);
+			}, []);
 			const liveNodes = (0, react.useMemo)(() => {
 				if (isSelecting && frozenRef.current !== null) return frozenRef.current.nodes;
 				const previousNodes = nodeCacheRef.current;
@@ -13623,7 +13980,6 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				});
 				const cardNodes = Object.entries(visibleCards).filter(([, card]) => card.boardId === INBOX_BOARD_ID).map(([cardId, card]) => {
 					const summary = sessions.byId[card.sessionId];
-					const digest = canvasState.digests[card.sessionId];
 					const selected = liveSelectedIds.has(cardId);
 					const data = {
 						cardId,
@@ -13632,15 +13988,12 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 						running: summary?.running ?? false,
 						ghost: summary === void 0,
 						updatedAt: summary?.updatedAt,
-						nextStep: digest?.nextStep ?? digest?.todoNext,
-						summary: digest?.summary,
 						waiting: pendingInteractions.has(card.sessionId) || summary?.pendingInteraction !== void 0,
 						done: completedIds.has(card.sessionId) || summary?.completed === true,
-						...archivedIds.has(card.sessionId) ? { archived: true } : {},
 						...card.colorTag !== void 0 ? { colorTag: card.colorTag } : {},
 						...foreign.labels.has(cardId) ? { foreignLabel: foreign.labels.get(cardId) } : {},
 						...foreign.touching.has(cardId) ? { foreignTouch: true } : {},
-						nowMinute
+						timeLabel: relativeTime(summary?.updatedAt)
 					};
 					const cached = previousNodes.get(cardId);
 					if (cached !== void 0 && cached.type === "sessionCard" && cached.position.x === card.x && cached.position.y === card.y && cached.selected === selected && sameSessionCardData(cached.data, data)) {
@@ -13660,7 +14013,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					nextCache.set(cardId, node);
 					return node;
 				});
-				const draftNodes = draft === null ? [] : [{
+				const draftNodes = draft === null || draftNodeData === null ? [] : [{
 					id: "draft",
 					type: "draftCard",
 					position: {
@@ -13669,24 +14022,26 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					},
 					selectable: false,
 					zIndex: 10,
-					data: {
-						workspaceOptions: workspaces.items.map((item) => ({
-							id: item.workspaceId,
-							title: item.title,
-							path: item.path
-						})),
-						...draft.workspaceId !== void 0 ? { defaultWorkspaceId: draft.workspaceId } : {},
-						...draft.groupId !== void 0 ? { groupId: draft.groupId } : {},
-						...draft.parent !== void 0 ? { parent: draft.parent } : {},
-						onClose: () => {
-							setDraft(null);
-						},
-						...props.onOpenChat !== void 0 ? { onOpenChat: props.onOpenChat } : {}
-					}
+					data: draftNodeData
 				}];
+				const imageNodes = Object.entries(canvasState.images).map(([imageId, image]) => ({
+					id: `image-${imageId}`,
+					type: "imageNode",
+					position: {
+						x: image.x,
+						y: image.y
+					},
+					width: image.width,
+					height: image.height,
+					data: {
+						image,
+						onResize: handleImageResize
+					}
+				}));
 				nodeCacheRef.current = nextCache;
 				return [
 					...frameNodes,
+					...imageNodes,
 					...cardNodes,
 					...draftNodes
 				];
@@ -13696,10 +14051,10 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				wsTitles,
 				visibleCards,
 				wsColors,
-				canvasState.digests,
 				sessions,
 				liveSelectedIds,
 				draft,
+				draftNodeData,
 				workspaces.items,
 				locale,
 				pendingInteractions,
@@ -13708,7 +14063,9 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				archivedIds,
 				nowMinute,
 				isSelecting,
-				props.onOpenChat
+				props.onOpenChat,
+				canvasState.images,
+				handleImageResize
 			]);
 			const sessionIdToCardId = (0, react.useMemo)(() => {
 				const index = /* @__PURE__ */ new Map();
@@ -13797,8 +14154,10 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				setIsSelecting(false);
 			};
 			const onNodesChange = (changes) => {
-				const removedCardIds = changes.filter((change) => change.type === "remove").map((change) => change.id).filter((id) => !id.startsWith("frame-") && id !== "draft");
+				const removedCardIds = changes.filter((change) => change.type === "remove").map((change) => change.id).filter((id) => !id.startsWith("frame-") && id !== "draft" && !id.startsWith("image-"));
 				const positionUpdates = {};
+				const imagePositionUpdates = {};
+				const removedImageIds = changes.filter((change) => change.type === "remove").map((change) => change.id).filter((id) => id.startsWith("image-")).map((id) => id.slice(6));
 				for (const change of changes) if (change.type === "position" && change.position !== void 0) {
 					if (change.id === "draft") setDraft((previous) => previous === null ? previous : {
 						...previous,
@@ -13830,7 +14189,11 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 							width: rect.width,
 							height: rect.height
 						});
-					} else positionUpdates[change.id] = {
+					} else if (change.id.startsWith("image-")) imagePositionUpdates[change.id.slice(6)] = {
+						x: change.position.x,
+						y: change.position.y
+					};
+					else positionUpdates[change.id] = {
 						x: change.position.x,
 						y: change.position.y
 					};
@@ -13850,6 +14213,8 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					});
 				}
 				if (Object.keys(positionUpdates).length > 0) canvas.moveCards(positionUpdates);
+				if (Object.keys(imagePositionUpdates).length > 0) canvas.moveImages(imagePositionUpdates);
+				if (removedImageIds.length > 0) canvas.removeImages(removedImageIds);
 				if (removedCardIds.length > 0) {
 					const touched = /* @__PURE__ */ new Set();
 					for (const cardId of removedCardIds) {
@@ -14015,7 +14380,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					sessionId: card.sessionId,
 					title: summary.displayTitle,
 					...parentWorkspaceId !== void 0 ? { workspaceId: parentWorkspaceId } : {}
-				});
+				}, true);
 			};
 			const openSession = (sessionId) => {
 				if (getServices() === void 0) return;
@@ -14029,8 +14394,8 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			const groupAtPoint = (x, y) => {
 				for (const [groupId, rect] of Object.entries(wsFrames)) if (x >= rect.x && x <= rect.x + rect.width && y >= rect.y && y <= rect.y + rect.height) return groupId;
 			};
-			const openDraftAt = (flowX, flowY, parent) => {
-				const x = snap(flowX - CARD_W / 2);
+			const openDraftAt = (flowX, flowY, parent, alignLeft = false) => {
+				const x = alignLeft ? flowX : snap(flowX - CARD_W / 2);
 				const y = snap(flowY - 40);
 				const groupId = groupAtPoint(flowX, flowY);
 				const isWorkspace = groupId !== void 0 && wsTitles.has(groupId);
@@ -14149,9 +14514,6 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				const card = canvasState.cards[cardId];
 				if (card === void 0) return;
 				const sessionId = card.sessionId;
-				const cardSnapshot = { ...card };
-				const edgeSnapshot = {};
-				for (const [edgeId, edge] of Object.entries(canvasState.edges)) if (edge.fromCardId === cardId || edge.toCardId === cardId) edgeSnapshot[edgeId] = edge;
 				(async () => {
 					try {
 						await talkMapApi.archiveSession(sessionId);
@@ -14160,31 +14522,16 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 						return;
 					}
 					if (!mountedRef.current) return;
-					canvas.removeCard(cardId);
 					showActionToast(t("toast.archived"), t("toast.undo"), () => {
 						(async () => {
 							try {
 								await talkMapApi.unarchiveSession(sessionId);
-								canvas.addCards({ [cardId]: cardSnapshot });
-								if (Object.keys(edgeSnapshot).length > 0) canvas.addEdges(edgeSnapshot);
 								if (mountedRef.current) showToast(t("toast.unarchived"));
 							} catch (error) {
 								if (mountedRef.current) showToast(`${t("toast.unarchiveFailed")}${errorText(error)}`);
 							}
 						})();
 					});
-				})();
-			};
-			/** The card is still on the board but its Session was archived elsewhere
-			*  (sidebar): the menu offers the inverse action. */
-			const unarchiveCard = (sessionId) => {
-				(async () => {
-					try {
-						await talkMapApi.unarchiveSession(sessionId);
-						if (mountedRef.current) showToast(t("toast.unarchived"));
-					} catch (error) {
-						if (mountedRef.current) showToast(`${t("toast.unarchiveFailed")}${errorText(error)}`);
-					}
 				})();
 			};
 			const openMenu = (event, kind, targetId, edgeEnds) => {
@@ -14349,32 +14696,14 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 							}
 						});
 					}
-					items.push({
-						key: "digest",
-						label: t("card.refresh"),
+					if (card !== void 0) items.push({
+						key: "archive",
+						label: t("menu.archive"),
 						onPick: () => {
 							close();
-							if (card !== void 0) talkMapApi.refreshDigest(card.sessionId).catch(() => void 0);
+							archiveCard(cardId);
 						}
 					});
-					if (card !== void 0) {
-						if (new Set(getServices()?.workspaces.list?.getSnapshot().archivedSessionIds ?? []).has(card.sessionId)) items.push({
-							key: "unarchive",
-							label: t("menu.unarchive"),
-							onPick: () => {
-								close();
-								unarchiveCard(card.sessionId);
-							}
-						});
-						else items.push({
-							key: "archive",
-							label: t("menu.archive"),
-							onPick: () => {
-								close();
-								archiveCard(cardId);
-							}
-						});
-					}
 					items.push({
 						key: "remove",
 						label: t("menu.removeCard"),
@@ -14456,6 +14785,64 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			]);
 			const savedCamera = canvas.savedCamera(INBOX_BOARD_ID);
 			const hasContent = Object.keys(visibleCards).length > 0 || Object.keys(wsFrames).length > 0;
+			const imageNaturalSize = (src) => new Promise((resolve) => {
+				const image = new Image();
+				image.onload = () => resolve({
+					width: image.naturalWidth || 480,
+					height: image.naturalHeight || 360
+				});
+				image.onerror = () => resolve({
+					width: 480,
+					height: 360
+				});
+				image.src = src;
+			});
+			const addImageFromDrop = async (payload, clientX, clientY) => {
+				const position = screenToFlowPosition({
+					x: clientX,
+					y: clientY
+				});
+				try {
+					const response = await fetch(payload.src);
+					if (!response.ok) throw new Error(`fetch ${response.status}`);
+					const blob = await response.blob();
+					if (!blob.type.startsWith("image/")) throw new Error(blob.type === "" ? "not an image" : blob.type);
+					const uploaded = await talkMapApi.uploadImage(blob);
+					const size = await imageNaturalSize(uploaded.src);
+					const width = Math.round(Math.min(size.width, 480) || 480);
+					const height = Math.round(size.height * width / (size.width || width));
+					canvas.addImages({ [`image-${crypto.randomUUID()}`]: {
+						boardId: canvasState.global?.activeBoard ?? "inbox",
+						src: uploaded.src,
+						...payload.title !== void 0 && payload.title.trim() !== "" ? { title: payload.title.trim() } : {},
+						x: Math.round(position.x - width / 2),
+						y: Math.round(position.y - 24),
+						width,
+						height,
+						createdAt: Date.now()
+					} });
+				} catch (error) {
+					showToast(`${t("image.failed")}${errorText(error)}`);
+				}
+			};
+			const onImageDrop = (event) => {
+				const raw = event.dataTransfer.getData("application/x-talk-map-image");
+				if (raw === "") return;
+				event.preventDefault();
+				try {
+					const payload = JSON.parse(raw);
+					if (typeof payload.src !== "string" || payload.src === "") return;
+					addImageFromDrop({
+						src: payload.src,
+						...typeof payload.title === "string" ? { title: payload.title } : {}
+					}, event.clientX, event.clientY);
+				} catch {}
+			};
+			const onImageDragOver = (event) => {
+				if (!event.dataTransfer.types.includes("application/x-talk-map-image")) return;
+				event.preventDefault();
+				event.dataTransfer.dropEffect = "copy";
+			};
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 				ref: wrapperRef,
 				className: `${talk_map_module_css_default["canvas"]}${connecting ? ` ${talk_map_module_css_default["canvasConnecting"]}` : ""}`,
@@ -14479,6 +14866,8 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					});
 					openDraftAt(position.x, position.y);
 				},
+				onDragOver: onImageDragOver,
+				onDrop: onImageDrop,
 				onPointerDown: trackRightDown,
 				onPointerMove: trackRightMove,
 				onContextMenu: handleContextMenu,
@@ -14820,7 +15209,10 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			const sessionCount = props.useSessions((state) => state.ids.length);
 			const [chat, setChat] = (0, react.useState)(null);
 			const [notice, setNotice] = (0, react.useState)(null);
+			/** The notice's 「refresh main view」 retry is in flight. */
+			const [retrying, setRetrying] = (0, react.useState)(false);
 			const chatRef = (0, react.useRef)(null);
+			const drawerBodyRef = (0, react.useRef)(null);
 			/** Session an open request is currently waiting for (newly created ones). */
 			const chatWantedRef = (0, react.useRef)(void 0);
 			/**
@@ -14832,6 +15224,18 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			const swapRef = (0, react.useRef)(null);
 			const swapPendingRef = (0, react.useRef)(void 0);
 			const mountedRef = (0, react.useRef)(true);
+			/**
+			* While the map is open the main column is kept empty: the host owns one
+			* editable composer root per Session, and the drawer must be the only place
+			* a Conversation renders. `clearMain` is the host's own "close the visible
+			* Session" path; `clearedSessionRef` remembers what to put back on close.
+			*/
+			const mainClearedRef = (0, react.useRef)(false);
+			const clearedSessionRef = (0, react.useRef)(void 0);
+			/** True during the plugin's own short visit of a Session in the main column
+			*  (the host clears an unread dot only for the Session the main column
+			*  shows); the background re-clear must not fight that visit. */
+			const visitingRef = (0, react.useRef)(false);
 			const archivedIds = useArchivedSessionIds();
 			/**
 			* References retained for the drawer, kept until the overlay unmounts.
@@ -14840,11 +15244,44 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			* moves the visible occurrence; the handles die with the map.
 			*/
 			const retainedRef = (0, react.useRef)(/* @__PURE__ */ new Map());
+			/**
+			* Close the Session the main column shows (host-internal `clearMain`, the
+			* same call the host makes when the visible Session is archived). Returns
+			* false when the host has no such method, so callers can keep the legacy
+			* parking path.
+			*/
+			const clearMainNow = (0, react.useCallback)(() => {
+				const ui = getServices()?.uiWorkspace;
+				if (ui?.clearMain === void 0) return false;
+				try {
+					ui.clearMain();
+					mainClearedRef.current = true;
+					return true;
+				} catch (error) {
+					console.warn("[dsh-talk-map] clearing the main column failed:", error);
+					return false;
+				}
+			}, []);
 			(0, react.useEffect)(() => {
 				mountedRef.current = true;
+				const before = mainSessionId();
+				if (before !== void 0 && clearMainNow()) clearedSessionRef.current = before;
 				return () => {
 					mountedRef.current = false;
 				};
+			}, []);
+			(0, react.useEffect)(() => {
+				if ((getServices()?.uiWorkspace)?.clearMain === void 0) return;
+				const list = getServices()?.sessions.list;
+				if (list === void 0) return;
+				const check = () => {
+					if (!mountedRef.current || visitingRef.current) return;
+					const current = mainSessionId();
+					if (current === void 0) return;
+					if (clearedSessionRef.current === void 0) clearedSessionRef.current = current;
+					clearMainNow();
+				};
+				return list.subscribe(check);
 			}, []);
 			/**
 			* The Session on the main column: the retention feed is authoritative
@@ -14924,6 +15361,39 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					} catch {}
 				}, 0);
 			};
+			(0, react.useEffect)(() => {
+				const body = drawerBodyRef.current;
+				if (body === null) return;
+				const onDragStart = (event) => {
+					const target = event.target;
+					if (!(target instanceof Element)) return;
+					const image = target.closest("img");
+					if (image !== null) {
+						const src = image.getAttribute("src");
+						if (src === null || src === "") return;
+						event.dataTransfer?.setData("application/x-talk-map-image", JSON.stringify({
+							src,
+							title: image.getAttribute("alt") ?? ""
+						}));
+						event.dataTransfer?.setData("text/uri-list", src);
+						return;
+					}
+					const link = target.closest("a[href]");
+					if (link === null) return;
+					const href = link.getAttribute("href") ?? "";
+					const name = (link.textContent ?? "").trim();
+					if (!/\.(png|jpe?g|webp|gif|svg)(\?|$)/i.test(href) && !/\.(png|jpe?g|webp|gif|svg)$/i.test(name)) return;
+					event.dataTransfer?.setData("application/x-talk-map-image", JSON.stringify({
+						src: href,
+						title: name
+					}));
+					event.dataTransfer?.setData("text/uri-list", href);
+				};
+				body.addEventListener("dragstart", onDragStart, true);
+				return () => {
+					body.removeEventListener("dragstart", onDragStart, true);
+				};
+			}, [chat?.sessionId]);
 			const closeChatNow = () => {
 				chatRef.current = null;
 				chatWantedRef.current = void 0;
@@ -14998,6 +15468,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			const handleFullOpen = (0, react.useCallback)((sessionId) => {
 				swapPendingRef.current = void 0;
 				swapRef.current = null;
+				clearedSessionRef.current = void 0;
 				closeChatNow();
 				persistDrawer(void 0);
 				setNotice(null);
@@ -15006,6 +15477,38 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					openSessionInMain(sessionId);
 				}, 0);
 			}, []);
+			/**
+			* Park the main column on a candidate Session, then show `sessionId` in the
+			* drawer. Shared by the automatic open path and the notice's manual retry.
+			*/
+			const parkAndShow = (0, react.useCallback)(async (sessionId, candidates) => {
+				closeChatNow();
+				setNotice(null);
+				swapPendingRef.current = sessionId;
+				for (const parking of candidates) {
+					if (!mountedRef.current) return;
+					swapRef.current = {
+						original: sessionId,
+						parking
+					};
+					openSessionInMain(parking);
+					if (await waitForMain(parking, 1500)) {
+						swapPendingRef.current = void 0;
+						if (!mountedRef.current) return;
+						retainAndShow(sessionId);
+						return;
+					}
+				}
+				console.warn("[dsh-talk-map] parking the main column failed", {
+					sessionId,
+					candidates
+				});
+				swapPendingRef.current = void 0;
+				swapRef.current = null;
+				if (!mountedRef.current) return;
+				openSessionInMain(sessionId);
+				setNotice({ sessionId });
+			}, [retainAndShow]);
 			/**
 			* A card's drawer. The host owns ONE editable composer root per Session
 			* (ui-conversation: "does not support simultaneous editable roots for one
@@ -15022,6 +15525,11 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					return;
 				}
 				if (swapPendingRef.current !== void 0) return;
+				if (mainClearedRef.current) {
+					setNotice(null);
+					retainAndShow(sessionId);
+					return;
+				}
 				if (chatRef.current?.sessionId === sessionId) return;
 				const swap = swapRef.current;
 				if (swap !== null && sessionId === swap.parking) {
@@ -15041,35 +15549,23 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					setNotice({ sessionId });
 					return;
 				}
-				closeChatNow();
-				setNotice(null);
-				swapPendingRef.current = sessionId;
-				(async () => {
-					for (const parking of candidates) {
-						if (!mountedRef.current) return;
-						swapRef.current = {
-							original: sessionId,
-							parking
-						};
-						openSessionInMain(parking);
-						if (await waitForMain(parking, 1500)) {
-							swapPendingRef.current = void 0;
-							if (!mountedRef.current) return;
-							retainAndShow(sessionId);
-							return;
-						}
-					}
-					console.warn("[dsh-talk-map] parking the main column failed", {
-						sessionId,
-						candidates
-					});
-					swapPendingRef.current = void 0;
-					swapRef.current = null;
-					if (!mountedRef.current) return;
-					openSessionInMain(sessionId);
-					setNotice({ sessionId });
-				})();
-			}, [retainAndShow]);
+				parkAndShow(sessionId, candidates);
+			}, [parkAndShow, retainAndShow]);
+			/**
+			* The notice's manual escape hatch: the parking may have lost a race with
+			* the Session list loading (the "偶现" notice). Re-read the current list and
+			* retry the same switch; if nothing usable appeared we keep the honest
+			* notice instead of inventing a Session.
+			*/
+			const retryParking = (0, react.useCallback)((sessionId) => {
+				if (retrying || swapPendingRef.current !== void 0) return;
+				const candidates = findParkingSessions(sessionId);
+				if (candidates.length === 0) return;
+				setRetrying(true);
+				parkAndShow(sessionId, candidates).finally(() => {
+					if (mountedRef.current) setRetrying(false);
+				});
+			}, [parkAndShow, retrying]);
 			/**
 			* Click-open parity with the sidebar: opening a finished-but-unread Session
 			* clears its green dot. The host clears the unread flag only for the Session
@@ -15078,9 +15574,26 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			* editable occurrences must never overlap).
 			*/
 			const markReadThenOpen = (0, react.useCallback)((sessionId) => {
-				const unread = completions.getSnapshot().has(sessionId);
+				if (!completions.getSnapshot().has(sessionId)) {
+					openChat(sessionId);
+					return;
+				}
+				if (mainClearedRef.current) {
+					visitingRef.current = true;
+					openSessionInMain(sessionId);
+					(async () => {
+						const visited = await waitForMain(sessionId, 1500);
+						const started = Date.now();
+						while (mountedRef.current && Date.now() - started < 1500 && completions.getSnapshot().has(sessionId)) await new Promise((resolve) => window.setTimeout(resolve, 50));
+						visitingRef.current = false;
+						if (!mountedRef.current) return;
+						if (visited) clearMainNow();
+						openChat(sessionId);
+					})();
+					return;
+				}
 				const original = mainSessionId();
-				if (!unread || original === void 0 || original === sessionId) {
+				if (original === void 0 || original === sessionId) {
 					openChat(sessionId);
 					return;
 				}
@@ -15097,7 +15610,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					if (!mountedRef.current) return;
 					openChat(sessionId);
 				})();
-			}, [openChat]);
+			}, [openChat, clearMainNow]);
 			/** Archived Sessions reject turns host-side: offer the one-click restore. */
 			const unarchiveDrawerSession = (0, react.useCallback)(() => {
 				const services = getServices();
@@ -15138,6 +15651,10 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 							return;
 						}
 						persistDrawer(void 0);
+						return;
+					}
+					if (mainClearedRef.current) {
+						openChat(target);
 						return;
 					}
 					const main = mainConversationSessionId();
@@ -15182,15 +15699,27 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				};
 			}, [notice]);
 			(0, react.useEffect)(() => () => {
+				const drawerSession = chatRef.current?.sessionId;
 				chatRef.current = null;
 				chatWantedRef.current = void 0;
 				releaseRetained();
 				const swap = swapRef.current;
 				swapRef.current = null;
 				swapPendingRef.current = void 0;
-				if (swap !== null) window.setTimeout(() => {
+				if (drawerSession !== void 0) window.setTimeout(() => {
+					openSessionInMain(drawerSession);
+				}, 0);
+				else if (swap !== null) window.setTimeout(() => {
 					openSessionInMain(swap.original);
 				}, 0);
+				else if (clearedSessionRef.current !== void 0) {
+					const restore = clearedSessionRef.current;
+					window.setTimeout(() => {
+						openSessionInMain(restore);
+					}, 0);
+				}
+				clearedSessionRef.current = void 0;
+				mainClearedRef.current = false;
 			}, []);
 			const drawerSessionId = chat?.sessionId ?? notice?.sessionId;
 			const chatTitle = props.useSessions((state) => drawerSessionId === void 0 ? void 0 : state.byId[drawerSessionId]?.displayTitle) ?? "";
@@ -15222,14 +15751,25 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 						className: talk_map_module_css_default["chatDrawerNoticeText"],
 						children: t("map.sameSessionHint")
-					}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
-						type: "button",
-						className: talk_map_module_css_default["chatDrawerNoticeButton"],
-						onClick: () => {
-							setNotice(null);
-							mapUi.setOpen(false);
-						},
-						children: t("map.showMain")
+					}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+						className: talk_map_module_css_default["chatDrawerNoticeActions"],
+						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+							type: "button",
+							className: talk_map_module_css_default["chatDrawerNoticeButton"],
+							onClick: () => {
+								setNotice(null);
+								mapUi.setOpen(false);
+							},
+							children: t("map.showMain")
+						}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+							type: "button",
+							className: talk_map_module_css_default["chatDrawerNoticeButton"],
+							onClick: () => {
+								retryParking(notice.sessionId);
+							},
+							disabled: retrying,
+							children: retrying ? t("map.retryParkingBusy") : t("map.retryParking")
+						})]
 					})]
 				})]
 			}) : chat !== null && props.SessionProvider !== void 0 && props.renderSlot !== void 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("aside", {
@@ -15269,6 +15809,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					}) : null,
 					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 						className: talk_map_module_css_default["chatDrawerBody"],
+						ref: drawerBodyRef,
 						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(props.SessionProvider, {
 							session: chat.reference,
 							children: props.renderSlot("talk-map.chat", { sessionId: chat.sessionId })

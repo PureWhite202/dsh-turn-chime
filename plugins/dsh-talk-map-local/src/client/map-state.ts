@@ -141,6 +141,47 @@ export function useArchivedSessionIds(): ReadonlySet<string> {
   return useMemo(() => new Set(ids), [ids])
 }
 
+const EMPTY_PINNED: readonly string[] = []
+
+/**
+ * Pinned Session ids from the host's workspace model (reactive). The host's
+ * sidebar fronts pinned Sessions; a card's pin toggle writes through the same
+ * model, so both surfaces always agree.
+ */
+export function usePinnedSessionIds(): ReadonlySet<string> {
+  const subscribe = useMemo(
+    () => (listener: () => void): (() => void) => {
+      const list = getServices()?.workspaces.list
+      return list?.subscribe?.(listener) ?? (() => undefined)
+    },
+    [],
+  )
+  const ids = useSyncExternalStore(
+    subscribe,
+    () => getServices()?.workspaces.list?.getSnapshot().pinnedSessionIds ?? EMPTY_PINNED,
+  )
+  return useMemo(() => new Set(ids), [ids])
+}
+
+/**
+ * Flip one Session's pin through the host's own sidebar action. Failures are
+ * host-reported (the list model stays authoritative, so the UI already holds
+ * the truth); the error is logged rather than surfaced as plugin chrome.
+ */
+export function toggleSessionPin(sessionId: string): void {
+  const ui = getServices()?.uiWorkspace
+  const pinned = getServices()?.workspaces.list?.getSnapshot().pinnedSessionIds?.includes(sessionId) === true
+  const call = pinned ? ui?.unpinSession : ui?.pinSession
+  if (call === undefined) return
+  try {
+    Promise.resolve(call.call(ui, sessionId)).catch((error: unknown) => {
+      console.warn('[dsh-talk-map] pin toggle failed:', error)
+    })
+  } catch (error) {
+    console.warn('[dsh-talk-map] pin toggle failed:', error)
+  }
+}
+
 /**
  * The Client Remote surface mixes plain values with result envelopes: the
  * generated methods unwrap a success to its value, while some callbacks still

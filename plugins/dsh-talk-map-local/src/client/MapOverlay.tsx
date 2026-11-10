@@ -131,7 +131,10 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
   const sessionCount = props.useSessions(state => state.ids.length)
   const [chat, setChat] = useState<ChatTarget | null>(null)
   const [notice, setNotice] = useState<ChatNotice | null>(null)
+  /** The notice's 「refresh main view」 retry is in flight. */
+  const [retrying, setRetrying] = useState(false)
   const chatRef = useRef<ChatTarget | null>(null)
+  const drawerBodyRef = useRef<HTMLDivElement | null>(null)
   /** Session an open request is currently waiting for (newly created ones). */
   const chatWantedRef = useRef<string | undefined>(undefined)
   /**
@@ -143,6 +146,18 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
   const swapRef = useRef<{ original: string; parking: string } | null>(null)
   const swapPendingRef = useRef<string | undefined>(undefined)
   const mountedRef = useRef(true)
+  /**
+   * While the map is open the main column is kept empty: the host owns one
+   * editable composer root per Session, and the drawer must be the only place
+   * a Conversation renders. `clearMain` is the host's own "close the visible
+   * Session" path; `clearedSessionRef` remembers what to put back on close.
+   */
+  const mainClearedRef = useRef(false)
+  const clearedSessionRef = useRef<string | undefined>(undefined)
+  /** True during the plugin's own short visit of a Session in the main column
+   *  (the host clears an unread dot only for the Session the main column
+   *  shows); the background re-clear must not fight that visit. */
+  const visitingRef = useRef(false)
   const archivedIds = useArchivedSessionIds()
   /**
    * References retained for the drawer, kept until the overlay unmounts.
@@ -152,9 +167,54 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
    */
   const retainedRef = useRef(new Map<string, SessionReference>())
 
+  /**
+   * Close the Session the main column shows (host-internal `clearMain`, the
+   * same call the host makes when the visible Session is archived). Returns
+   * false when the host has no such method, so callers can keep the legacy
+   * parking path.
+   */
+  const clearMainNow = useCallback((): boolean => {
+    const ui = getServices()?.uiWorkspace
+    if (ui?.clearMain === undefined) return false
+    try {
+      ui.clearMain()
+      mainClearedRef.current = true
+      return true
+    } catch (error) {
+      console.warn('[dsh-talk-map] clearing the main column failed:', error)
+      return false
+    }
+  }, [])
+
   useEffect(() => {
     mountedRef.current = true
+    // The map owns the conversation surface while it is open: close whatever
+    // the main column was showing, so a card's drawer never competes with a
+    // second editable occurrence of the same Session.
+    const before = mainSessionId()
+    if (before !== undefined && clearMainNow()) clearedSessionRef.current = before
     return () => { mountedRef.current = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // The app restores its own main column after the overlay mounts (a reload
+  // with the map already open), and can also open a Session on its own. While
+  // the map is up the main column stays empty: re-clear whatever appears,
+  // except during the plugin's own short unread-clearing visit.
+  useEffect(() => {
+    const ui = getServices()?.uiWorkspace
+    if (ui?.clearMain === undefined) return
+    const list = getServices()?.sessions.list
+    if (list === undefined) return
+    const check = (): void => {
+      if (!mountedRef.current || visitingRef.current) return
+      const current = mainSessionId()
+      if (current === undefined) return
+      if (clearedSessionRef.current === undefined) clearedSessionRef.current = current
+      clearMainNow()
+    }
+    return list.subscribe(check)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   /**
@@ -248,6 +308,35 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
     }, 0)
   }
 
+  // Drag images out of the drawer onto the board: the inline <img> and the
+  // file attachment rows carry their URL through the dataTransfer; the map's
+  // drop handler uploads the bytes and creates an image node.
+  useEffect(() => {
+    const body = drawerBodyRef.current
+    if (body === null) return
+    const onDragStart = (event: DragEvent): void => {
+      const target = event.target
+      if (!(target instanceof Element)) return
+      const image = target.closest('img')
+      if (image !== null) {
+        const src = image.getAttribute('src')
+        if (src === null || src === '') return
+        event.dataTransfer?.setData('application/x-talk-map-image', JSON.stringify({ src, title: image.getAttribute('alt') ?? '' }))
+        event.dataTransfer?.setData('text/uri-list', src)
+        return
+      }
+      const link = target.closest('a[href]')
+      if (link === null) return
+      const href = link.getAttribute('href') ?? ''
+      const name = (link.textContent ?? '').trim()
+      if (!/\.(png|jpe?g|webp|gif|svg)(\?|$)/i.test(href) && !/\.(png|jpe?g|webp|gif|svg)$/i.test(name)) return
+      event.dataTransfer?.setData('application/x-talk-map-image', JSON.stringify({ src: href, title: name }))
+      event.dataTransfer?.setData('text/uri-list', href)
+    }
+    body.addEventListener('dragstart', onDragStart, true)
+    return () => { body.removeEventListener('dragstart', onDragStart, true) }
+  }, [chat?.sessionId])
+
   const closeChatNow = (): void => {
     chatRef.current = null
     chatWantedRef.current = undefined
@@ -321,10 +410,11 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
   }, [])
 
   const handleFullOpen = useCallback((sessionId: string): void => {
-    // A full open wins over any parked Session: never restore it afterwards,
-    // or the double-clicked target would be replaced by the parked one.
+    // A full open wins over any parked or pre-map Session: never restore it
+    // afterwards, or the double-clicked target would be replaced.
     swapPendingRef.current = undefined
     swapRef.current = null
+    clearedSessionRef.current = undefined
     closeChatNow()
     persistDrawer(undefined)
     setNotice(null)
@@ -333,6 +423,36 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
     // Session, otherwise the two occurrences collide again.
     window.setTimeout(() => { openSessionInMain(sessionId) }, 0)
   }, [])
+
+  /**
+   * Park the main column on a candidate Session, then show `sessionId` in the
+   * drawer. Shared by the automatic open path and the notice's manual retry.
+   */
+  const parkAndShow = useCallback(async (sessionId: string, candidates: string[]): Promise<void> => {
+    closeChatNow()
+    setNotice(null)
+    swapPendingRef.current = sessionId
+    for (const parking of candidates) {
+      if (!mountedRef.current) return
+      swapRef.current = { original: sessionId, parking }
+      openSessionInMain(parking)
+      const parked = await waitForMain(parking, 1500)
+      if (parked) {
+        swapPendingRef.current = undefined
+        if (!mountedRef.current) return
+        retainAndShow(sessionId)
+        return
+      }
+    }
+    // Every candidate refused/slowed the main-column switch: restore the
+    // original Session and show the honest explanation.
+    console.warn('[dsh-talk-map] parking the main column failed', { sessionId, candidates })
+    swapPendingRef.current = undefined
+    swapRef.current = null
+    if (!mountedRef.current) return
+    openSessionInMain(sessionId)
+    setNotice({ sessionId })
+  }, [retainAndShow])
 
   /**
    * A card's drawer. The host owns ONE editable composer root per Session
@@ -351,6 +471,13 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
       return
     }
     if (swapPendingRef.current !== undefined) return
+    if (mainClearedRef.current) {
+      // No main-column occurrence exists while the map is up: the drawer is
+      // always safe to render the card's Conversation.
+      setNotice(null)
+      retainAndShow(sessionId)
+      return
+    }
     if (chatRef.current?.sessionId === sessionId) return
     const swap = swapRef.current
     if (swap !== null && sessionId === swap.parking) {
@@ -371,32 +498,24 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
       setNotice({ sessionId })
       return
     }
-    closeChatNow()
-    setNotice(null)
-    swapPendingRef.current = sessionId
-    void (async () => {
-      for (const parking of candidates) {
-        if (!mountedRef.current) return
-        swapRef.current = { original: sessionId, parking }
-        openSessionInMain(parking)
-        const parked = await waitForMain(parking, 1500)
-        if (parked) {
-          swapPendingRef.current = undefined
-          if (!mountedRef.current) return
-          retainAndShow(sessionId)
-          return
-        }
-      }
-      // Every candidate refused/slowed the main-column switch: restore the
-      // original Session and show the honest explanation.
-      console.warn('[dsh-talk-map] parking the main column failed', { sessionId, candidates })
-      swapPendingRef.current = undefined
-      swapRef.current = null
-      if (!mountedRef.current) return
-      openSessionInMain(sessionId)
-      setNotice({ sessionId })
-    })()
-  }, [retainAndShow])
+    void parkAndShow(sessionId, candidates)
+  }, [parkAndShow, retainAndShow])
+
+  /**
+   * The notice's manual escape hatch: the parking may have lost a race with
+   * the Session list loading (the "偶现" notice). Re-read the current list and
+   * retry the same switch; if nothing usable appeared we keep the honest
+   * notice instead of inventing a Session.
+   */
+  const retryParking = useCallback((sessionId: string): void => {
+    if (retrying || swapPendingRef.current !== undefined) return
+    const candidates = findParkingSessions(sessionId)
+    if (candidates.length === 0) return
+    setRetrying(true)
+    void parkAndShow(sessionId, candidates).finally(() => {
+      if (mountedRef.current) setRetrying(false)
+    })
+  }, [parkAndShow, retrying])
 
   /**
    * Click-open parity with the sidebar: opening a finished-but-unread Session
@@ -407,8 +526,31 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
    */
   const markReadThenOpen = useCallback((sessionId: string): void => {
     const unread = completions.getSnapshot().has(sessionId)
+    if (!unread) {
+      openChat(sessionId)
+      return
+    }
+    if (mainClearedRef.current) {
+      // The map keeps the main column empty: visit the Session just long
+      // enough for the host to clear its unread dot, then give the column back
+      // to the map before the drawer mounts the same Conversation.
+      visitingRef.current = true
+      openSessionInMain(sessionId)
+      void (async () => {
+        const visited = await waitForMain(sessionId, 1500)
+        const started = Date.now()
+        while (mountedRef.current && Date.now() - started < 1500 && completions.getSnapshot().has(sessionId)) {
+          await new Promise((resolve) => window.setTimeout(resolve, 50))
+        }
+        visitingRef.current = false
+        if (!mountedRef.current) return
+        if (visited) clearMainNow()
+        openChat(sessionId)
+      })()
+      return
+    }
     const original = mainSessionId()
-    if (!unread || original === undefined || original === sessionId) {
+    if (original === undefined || original === sessionId) {
       openChat(sessionId)
       return
     }
@@ -427,7 +569,7 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
       if (!mountedRef.current) return
       openChat(sessionId)
     })()
-  }, [openChat])
+  }, [openChat, clearMainNow])
 
   /** Archived Sessions reject turns host-side: offer the one-click restore. */
   const unarchiveDrawerSession = useCallback((): void => {
@@ -466,6 +608,11 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
       if (services.sessions.list.getSnapshot().byId[target] === undefined) {
         if (Date.now() - started < 2500) { window.setTimeout(attempt, 200); return }
         persistDrawer(undefined)
+        return
+      }
+      // With the main column cleared there is nothing to wait for.
+      if (mainClearedRef.current) {
+        openChat(target)
         return
       }
       // Let the app restore its own main column first: whether the drawer may
@@ -516,15 +663,26 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
   // drop the retained Session with it so its history stream does not leak, and
   // put a parked main Session back once the drawer's editor has unmounted.
   useEffect(() => () => {
+    const drawerSession = chatRef.current?.sessionId
     chatRef.current = null
     chatWantedRef.current = undefined
     releaseRetained()
     const swap = swapRef.current
     swapRef.current = null
     swapPendingRef.current = undefined
-    if (swap !== null) {
+    // Closing the map lands on whatever the drawer was showing; with no
+    // drawer Session the pre-map Session is restored (the swap below, or the
+    // main column the map cleared when it opened).
+    if (drawerSession !== undefined) {
+      window.setTimeout(() => { openSessionInMain(drawerSession) }, 0)
+    } else if (swap !== null) {
       window.setTimeout(() => { openSessionInMain(swap.original) }, 0)
+    } else if (clearedSessionRef.current !== undefined) {
+      const restore = clearedSessionRef.current
+      window.setTimeout(() => { openSessionInMain(restore) }, 0)
     }
+    clearedSessionRef.current = undefined
+    mainClearedRef.current = false
   }, [])
 
   const drawerSessionId = chat?.sessionId ?? notice?.sessionId
@@ -550,13 +708,23 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
           </div>
           <div className={styles['chatDrawerNotice']}>
             <p className={styles['chatDrawerNoticeText']}>{t('map.sameSessionHint')}</p>
-            <button
-              type="button"
-              className={styles['chatDrawerNoticeButton']}
-              onClick={() => { setNotice(null); mapUi.setOpen(false) }}
-            >
-              {t('map.showMain')}
-            </button>
+            <div className={styles['chatDrawerNoticeActions']}>
+              <button
+                type="button"
+                className={styles['chatDrawerNoticeButton']}
+                onClick={() => { setNotice(null); mapUi.setOpen(false) }}
+              >
+                {t('map.showMain')}
+              </button>
+              <button
+                type="button"
+                className={styles['chatDrawerNoticeButton']}
+                onClick={() => { retryParking(notice.sessionId) }}
+                disabled={retrying}
+              >
+                {retrying ? t('map.retryParkingBusy') : t('map.retryParking')}
+              </button>
+            </div>
           </div>
         </aside>
       )
@@ -590,7 +758,7 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
                 </div>
               )
             : null}
-          <div className={styles['chatDrawerBody']}>
+          <div className={styles['chatDrawerBody']} ref={drawerBodyRef}>
             <props.SessionProvider session={chat.reference}>
               {props.renderSlot('talk-map.chat', { sessionId: chat.sessionId })}
             </props.SessionProvider>

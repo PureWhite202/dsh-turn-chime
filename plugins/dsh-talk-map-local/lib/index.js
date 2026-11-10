@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
-import { mkdir } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
-import { resolve, sep } from "node:path";
+import { join, resolve, sep } from "node:path";
 import { z } from "zod";
 //#region src/host/digest/extract.ts
 const MAX_CHARS = 24e3;
@@ -45,23 +45,20 @@ function extractFromSurface(events, capturedThroughSeq) {
 //#endregion
 //#region src/host/digest/prompt.ts
 /**
-* Digest prompt: three fields, strict JSON, the conversation's own language.
-* Structure follows compaction-basic's summarizer style (structured, bounded)
-* but collapsed to what a card front and an injection preview actually need.
+* Digest prompt: two fields (summary + key findings), strict JSON, the
+* conversation's own language. The old "nextStep" field was removed — the
+* card no longer shows a next step and the model is asked for the summary
+* only (and the findings that belong to it).
 */
 const DIGEST_SYSTEM_PROMPT = [
 	"You are a conversation digester for a visual conversation map.",
 	"Read the conversation transcript and output STRICT JSON, nothing else:",
-	"{\"summary\": string, \"keyFindings\": string[], \"nextStep\": string}",
+	"{\"summary\": string, \"keyFindings\": string[]}",
 	"",
 	"Rules:",
 	"- Use the language the conversation itself is in (Chinese conversation → Chinese output).",
 	"- summary: what this conversation is about and where it stands, ≤120 characters.",
 	"- keyFindings: at most 5 short bullet strings — decisions made, facts established, artifacts produced.",
-	"- nextStep: ONE imperative sentence naming the next concrete action to take, ≤40 characters.",
-	"  The reader has ADHD and returns after days away — nextStep must be directly actionable,",
-	"  never vague (\"continue working\" is forbidden; \"run the M2 browser test\" is right).",
-	"- If the conversation is finished with nothing left to do, nextStep is an empty string.",
 	"- Output raw JSON only: no markdown fences, no commentary."
 ].join("\n");
 function digestUserPrompt(transcript) {
@@ -75,109 +72,35 @@ function parseDigestOutput(raw) {
 	const end = text.lastIndexOf("}");
 	if (start === -1 || end <= start) throw new Error("digest output contains no JSON object");
 	const parsed = JSON.parse(text.slice(start, end + 1));
-	if (typeof parsed.summary !== "string" || typeof parsed.nextStep !== "string" || !Array.isArray(parsed.keyFindings)) throw new Error("digest output missing required fields");
+	if (typeof parsed.summary !== "string" || !Array.isArray(parsed.keyFindings)) throw new Error("digest output missing required fields");
 	return {
 		summary: parsed.summary.slice(0, 300),
-		keyFindings: parsed.keyFindings.filter((finding) => typeof finding === "string").slice(0, 5).map((finding) => finding.slice(0, 200)),
-		nextStep: parsed.nextStep.slice(0, 120)
+		keyFindings: parsed.keyFindings.filter((finding) => typeof finding === "string").slice(0, 5).map((finding) => finding.slice(0, 200))
 	};
 }
 //#endregion
 //#region src/host/digest/pipeline.ts
 /**
-* Digest pipeline: turn/end → per-session debounce → single-flight queue →
-* readSurface → extract → hash-skip → one LLM call → digests table.
+* Digest pipeline: readSurface → extract → hash-skip → one LLM call →
+* digests table.
 *
-* Deliberately NOT ctx.compaction (destructive, needs a live agent, holds a
-* log lock). Failure degrades gracefully: the todo/write "next step" and any
-* previous digest fields survive, with `error` set for the card badge.
+* The model is called ONLY from the card's manual ⟳ refresh. The automatic
+* turn/end listener, the import backfill and the refresh-on-upsert trigger
+* were removed: the map must never spend model tokens on its own.
 */
-const DIGEST_DEFAULTS = {
-	enabled: true,
-	idleMs: 3e4
-};
 const MIN_MESSAGES = 2;
 var DigestPipeline = class {
 	services;
 	storeReady;
-	config;
 	onFresh;
-	timers = /* @__PURE__ */ new Map();
-	queue = [];
-	queued = /* @__PURE__ */ new Set();
-	draining = false;
-	disposed = false;
-	constructor(services, storeReady, config = DIGEST_DEFAULTS, onFresh) {
+	constructor(services, storeReady, onFresh) {
 		this.services = services;
 		this.storeReady = storeReady;
-		this.config = config;
 		this.onFresh = onFresh;
-	}
-	/** Wire the turn/end trigger; returns the disposer. */
-	start() {
-		const off = this.services.on("session/event", (...args) => {
-			if (!this.config.enabled) return;
-			const session = args[0];
-			if (args[1]?.type !== "turn/end" || typeof session?.id !== "string") return;
-			const sessionId = session.id;
-			this.storeReady.then((store) => {
-				if (this.disposed) return;
-				for (const [, card] of store.cards.entries()) if (card.sessionId === sessionId) {
-					this.schedule(sessionId);
-					return;
-				}
-			}).catch(() => void 0);
-		});
-		return () => {
-			this.disposed = true;
-			off();
-			for (const timer of this.timers.values()) clearTimeout(timer);
-			this.timers.clear();
-		};
-	}
-	/** Debounced trigger: a busy session settles idleMs before digesting. */
-	schedule(sessionId) {
-		if (this.disposed) return;
-		const existing = this.timers.get(sessionId);
-		if (existing !== void 0) clearTimeout(existing);
-		const timer = setTimeout(() => {
-			this.timers.delete(sessionId);
-			this.enqueue(sessionId);
-		}, this.config.idleMs);
-		timer.unref?.();
-		this.timers.set(sessionId, timer);
 	}
 	/** Manual refresh: skips the debounce, forces regeneration (ignores hash). */
 	async refresh(sessionId) {
 		return await this.run(sessionId, { force: true });
-	}
-	/** Queue sessions that have no digest yet (imported/backlog cards). */
-	backfill(sessionIds) {
-		for (const sessionId of sessionIds) this.enqueue(sessionId);
-	}
-	enqueue(sessionId) {
-		if (this.queued.has(sessionId)) return;
-		this.queued.add(sessionId);
-		this.queue.push(sessionId);
-		this.drain();
-	}
-	async drain() {
-		if (this.draining) return;
-		this.draining = true;
-		try {
-			while (this.queue.length > 0 && !this.disposed) {
-				const sessionId = this.queue.shift();
-				if (sessionId === void 0) break;
-				this.queued.delete(sessionId);
-				try {
-					await this.run(sessionId, { force: false });
-				} catch (error) {
-					this.services.logger?.warn(`[dsh-talk-map] digest for ${sessionId} failed: ${String(error)}`);
-				}
-			}
-		} finally {
-			this.draining = false;
-		}
 	}
 	async run(sessionId, options) {
 		const store = await this.storeReady;
@@ -189,8 +112,7 @@ var DigestPipeline = class {
 				atSeq: extracted.lastSeq,
 				summary: previous?.summary ?? "",
 				keyFindings: previous?.keyFindings ?? [],
-				nextStep: previous?.nextStep ?? "",
-				...extracted.todoNext !== void 0 ? { todoNext: extracted.todoNext } : {},
+				nextStep: "",
 				generatedAt: Date.now()
 			};
 			await store.digests.put(sessionId, digest);
@@ -205,8 +127,7 @@ var DigestPipeline = class {
 				atSeq: extracted.lastSeq,
 				summary: parsed.summary,
 				keyFindings: parsed.keyFindings,
-				nextStep: parsed.nextStep,
-				...extracted.todoNext !== void 0 ? { todoNext: extracted.todoNext } : {},
+				nextStep: "",
 				generatedAt: Date.now(),
 				model: `${route.provider}/${route.model}`,
 				inputHash
@@ -223,8 +144,7 @@ var DigestPipeline = class {
 				atSeq: extracted.lastSeq,
 				summary: previous?.summary ?? "",
 				keyFindings: previous?.keyFindings ?? [],
-				nextStep: previous?.nextStep ?? "",
-				...extracted.todoNext !== void 0 ? { todoNext: extracted.todoNext } : {},
+				nextStep: "",
 				generatedAt: Date.now(),
 				error: String(error).slice(0, 500)
 			};
@@ -240,10 +160,7 @@ var DigestPipeline = class {
 				type: "text",
 				text: digestUserPrompt(transcript)
 			}],
-			source: {
-				kind: "plugin",
-				plugin: "dsh-talk-map"
-			}
+			source: { kind: "plugin:dsh-talk-map" }
 		};
 		let text = "";
 		let failure;
@@ -469,6 +386,17 @@ const cameraSchema = z.object({
 	y: z.number(),
 	zoom: z.number()
 });
+const imageSchema = z.object({
+	boardId: z.string(),
+	/** Plugin-served image URL (/talk-map/images/<sha>). */
+	src: z.string(),
+	title: z.string().optional(),
+	x: z.number(),
+	y: z.number(),
+	width: z.number(),
+	height: z.number(),
+	createdAt: z.number()
+});
 const globalSchema = z.object({
 	version: z.number(),
 	activeBoard: z.string(),
@@ -497,6 +425,13 @@ const globalSchema = z.object({
 		x: z.number(),
 		y: z.number(),
 		colorTag: z.string().optional()
+	})).optional(),
+	/** Archived conversations keep their board placement here, so unarchiving
+	*  brings the card (and its edges) back exactly where it was. */
+	archivedCards: z.record(z.string(), z.object({
+		cardId: z.string(),
+		card: cardSchema,
+		edges: z.record(z.string(), edgeSchema)
 	})).optional()
 });
 const TALK_MAP_SPEC = {
@@ -514,7 +449,8 @@ const TALK_MAP_SPEC = {
 		boards: { valueSchema: boardSchema },
 		cards: { valueSchema: cardSchema },
 		edges: { valueSchema: edgeSchema },
-		digests: { valueSchema: digestSchema }
+		digests: { valueSchema: digestSchema },
+		images: { valueSchema: imageSchema }
 	}
 };
 async function openTalkMapStore(storageDomain) {
@@ -525,6 +461,7 @@ async function openTalkMapStore(storageDomain) {
 		cards: domain.table("cards"),
 		edges: domain.table("edges"),
 		digests: domain.table("digests"),
+		images: domain.table("images"),
 		global: () => domain.global.get(),
 		setGlobal: (value) => domain.global.set(value)
 	};
@@ -539,6 +476,38 @@ async function openTalkMapStore(storageDomain) {
 //#endregion
 //#region src/host/routes.ts
 const MAX_BODY_BYTES = 1048576;
+const MAX_IMAGE_BYTES = 26214400;
+/** Raster images the map can display (SVG included for screenshots/icons). */
+const IMAGE_MIME_EXT = {
+	"image/png": "png",
+	"image/jpeg": "jpg",
+	"image/webp": "webp",
+	"image/gif": "gif",
+	"image/svg+xml": "svg"
+};
+const IMAGE_EXT_MIME = {
+	png: "image/png",
+	jpg: "image/jpeg",
+	webp: "image/webp",
+	gif: "image/gif",
+	svg: "image/svg+xml"
+};
+/** Content-addressed image files live beside the map store. */
+function imagesDir() {
+	const home = process.env.DSH_HOME ?? join(homedir(), ".dsh");
+	return join(home, "storages", "talk-map-images");
+}
+async function readRawBody(request, limit) {
+	const chunks = [];
+	let size = 0;
+	for await (const chunk of request) {
+		const buffer = chunk;
+		size += buffer.length;
+		if (size > limit) throw new Error("body too large");
+		chunks.push(buffer);
+	}
+	return Buffer.concat(chunks);
+}
 function sendJson(response, status, body) {
 	const payload = JSON.stringify(body);
 	response.writeHead(status, {
@@ -601,6 +570,8 @@ const injectBody = z.object({
 	})).min(1)
 });
 const ensureDirBody = z.object({ path: z.string().min(1) });
+const upsertImagesBody = z.object({ images: z.record(z.string(), imageSchema) });
+const deleteImagesBody = z.object({ ids: z.array(z.string()) });
 /**
 * Register the /talk-map/ routes.
 * @param services - host services (webServer + event bus).
@@ -633,6 +604,7 @@ function mountTalkMapRoutes(services, storeReady, runtime) {
 						cards: tableToRecord(store.cards),
 						edges: tableToRecord(store.edges),
 						digests: tableToRecord(store.digests),
+						images: tableToRecord(store.images),
 						global: store.global()
 					});
 					return;
@@ -672,11 +644,7 @@ function mountTalkMapRoutes(services, storeReady, runtime) {
 				if (route === "POST /talk-map/cards/upsert") {
 					const store = await storeReady;
 					const body = upsertCardsBody.parse(await readJsonBody(request));
-					for (const [id, card] of Object.entries(body.cards)) {
-						await store.cards.put(id, card);
-						const digest = store.digests.get(card.sessionId);
-						if (digest === void 0 || digest.summary === "") runtime.digest?.schedule(card.sessionId);
-					}
+					for (const [id, card] of Object.entries(body.cards)) await store.cards.put(id, card);
 					sendJson(response, 200, {
 						ok: true,
 						count: Object.keys(body.cards).length
@@ -703,6 +671,75 @@ function mountTalkMapRoutes(services, storeReady, runtime) {
 						ok: true,
 						removed
 					});
+					return;
+				}
+				if (route === "POST /talk-map/images/upsert") {
+					const store = await storeReady;
+					const body = upsertImagesBody.parse(await readJsonBody(request));
+					for (const [id, image] of Object.entries(body.images)) await store.images.put(id, image);
+					sendJson(response, 200, {
+						ok: true,
+						count: Object.keys(body.images).length
+					});
+					return;
+				}
+				if (route === "POST /talk-map/images/delete") {
+					const store = await storeReady;
+					const body = deleteImagesBody.parse(await readJsonBody(request));
+					let removed = 0;
+					for (const id of body.ids) if (await store.images.delete(id)) removed += 1;
+					sendJson(response, 200, {
+						ok: true,
+						removed
+					});
+					return;
+				}
+				if (route === "POST /talk-map/images/upload") {
+					const mime = String(request.headers["content-type"] ?? "").split(";")[0]?.trim() ?? "";
+					const ext = IMAGE_MIME_EXT[mime];
+					if (ext === void 0) {
+						sendJson(response, 415, { error: "unsupported image type" });
+						return;
+					}
+					let bytes;
+					try {
+						bytes = await readRawBody(request, MAX_IMAGE_BYTES);
+					} catch {
+						sendJson(response, 413, { error: "image too large" });
+						return;
+					}
+					if (bytes.length === 0) {
+						sendJson(response, 400, { error: "empty image" });
+						return;
+					}
+					const sha = createHash("sha256").update(bytes).digest("hex");
+					const dir = imagesDir();
+					await mkdir(dir, { recursive: true });
+					const file = join(dir, `${sha}.${ext}`);
+					try {
+						await readFile(file);
+					} catch {
+						await writeFile(file, bytes);
+					}
+					sendJson(response, 200, {
+						src: `/talk-map/images/${sha}.${ext}`,
+						size: bytes.length
+					});
+					return;
+				}
+				const imageMatch = url.pathname.match(/^\/talk-map\/images\/([a-f0-9]{64})\.(png|jpg|gif|webp|svg)$/);
+				if (request.method === "GET" && imageMatch !== null) {
+					try {
+						const bytes = await readFile(join(imagesDir(), `${imageMatch[1]}.${imageMatch[2]}`));
+						response.writeHead(200, {
+							"content-type": IMAGE_EXT_MIME[imageMatch[2] ?? ""] ?? "application/octet-stream",
+							"cache-control": "public, max-age=31536000, immutable",
+							"content-length": bytes.length
+						});
+						response.end(bytes);
+					} catch {
+						sendJson(response, 404, { error: "image not found" });
+					}
 					return;
 				}
 				if (route === "POST /talk-map/edges/delete") {
@@ -869,18 +906,8 @@ function apply(ctx) {
 		const services = injected;
 		services.effect(() => {
 			const pipeline = new DigestPipeline(services, storeReady);
-			const stop = pipeline.start();
 			runtime.digest = pipeline;
-			storeReady.then((store) => {
-				if (runtime.digest !== pipeline) return;
-				const missing = [...new Set([...store.cards.entries()].map(([, card]) => card.sessionId))].filter((sessionId) => {
-					const digest = store.digests.get(sessionId);
-					return digest === void 0 || digest.summary === "";
-				});
-				pipeline.backfill(missing);
-			}).catch(() => void 0);
 			return () => {
-				stop();
 				if (runtime.digest === pipeline) delete runtime.digest;
 			};
 		}, "dsh-talk-map: digest pipeline");

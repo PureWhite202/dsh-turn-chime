@@ -1,10 +1,10 @@
 /**
- * Digest pipeline: turn/end → per-session debounce → single-flight queue →
- * readSurface → extract → hash-skip → one LLM call → digests table.
+ * Digest pipeline: readSurface → extract → hash-skip → one LLM call →
+ * digests table.
  *
- * Deliberately NOT ctx.compaction (destructive, needs a live agent, holds a
- * log lock). Failure degrades gracefully: the todo/write "next step" and any
- * previous digest fields survive, with `error` set for the card badge.
+ * The model is called ONLY from the card's manual ⟳ refresh. The automatic
+ * turn/end listener, the import backfill and the refresh-on-upsert trigger
+ * were removed: the map must never spend model tokens on its own.
  */
 import { createHash } from 'node:crypto'
 import type { DigestHostServices } from '../dsh-host.ts'
@@ -12,109 +12,21 @@ import type { Digest, TalkMapStore } from '../store.ts'
 import { extractFromSurface } from './extract.ts'
 import { DIGEST_SYSTEM_PROMPT, digestUserPrompt, parseDigestOutput } from './prompt.ts'
 
-export interface DigestConfig {
-  enabled: boolean
-  idleMs: number
-}
-
-export const DIGEST_DEFAULTS: DigestConfig = { enabled: true, idleMs: 30_000 }
-
 const MIN_MESSAGES = 2
 
 export class DigestPipeline {
-  private readonly timers = new Map<string, ReturnType<typeof setTimeout>>()
-  private readonly queue: string[] = []
-  private readonly queued = new Set<string>()
-  private draining = false
-  private disposed = false
-
   constructor(
     private readonly services: DigestHostServices,
     private readonly storeReady: Promise<TalkMapStore>,
-    private readonly config: DigestConfig = DIGEST_DEFAULTS,
     /** Fired when a digest was regenerated from CHANGED input (new
-     * inputHash) — the auto-sync fan-out hangs off this. Never fired for
+     * inputHash) — a sync fan-out can hang off this. Never fired for
      * hash-identical refreshes, so sync edges cannot flood their targets. */
     private readonly onFresh?: (sessionId: string, digest: Digest) => void,
   ) {}
 
-  /** Wire the turn/end trigger; returns the disposer. */
-  start(): () => void {
-    const off = this.services.on('session/event', (...args: unknown[]) => {
-      if (!this.config.enabled) return
-      const session = args[0] as { id?: string }
-      const event = args[1] as { type?: string }
-      if (event?.type !== 'turn/end' || typeof session?.id !== 'string') return
-      const sessionId = session.id
-      // Only sessions with a card on the board need a digest: every other
-      // session's turns would otherwise call the LLM (and write the digest
-      // table + SSE) for a conversation the map never shows. A newly imported
-      // card is scheduled by the cards/upsert route instead.
-      void this.storeReady.then((store) => {
-        if (this.disposed) return
-        for (const [, card] of store.cards.entries()) {
-          if (card.sessionId === sessionId) {
-            this.schedule(sessionId)
-            return
-          }
-        }
-      }).catch(() => undefined)
-    })
-    return () => {
-      this.disposed = true
-      off()
-      for (const timer of this.timers.values()) clearTimeout(timer)
-      this.timers.clear()
-    }
-  }
-
-  /** Debounced trigger: a busy session settles idleMs before digesting. */
-  schedule(sessionId: string): void {
-    if (this.disposed) return
-    const existing = this.timers.get(sessionId)
-    if (existing !== undefined) clearTimeout(existing)
-    const timer = setTimeout(() => {
-      this.timers.delete(sessionId)
-      this.enqueue(sessionId)
-    }, this.config.idleMs)
-    timer.unref?.()
-    this.timers.set(sessionId, timer)
-  }
-
   /** Manual refresh: skips the debounce, forces regeneration (ignores hash). */
   async refresh(sessionId: string): Promise<Digest> {
     return await this.run(sessionId, { force: true })
-  }
-
-  /** Queue sessions that have no digest yet (imported/backlog cards). */
-  backfill(sessionIds: readonly string[]): void {
-    for (const sessionId of sessionIds) this.enqueue(sessionId)
-  }
-
-  private enqueue(sessionId: string): void {
-    if (this.queued.has(sessionId)) return
-    this.queued.add(sessionId)
-    this.queue.push(sessionId)
-    void this.drain()
-  }
-
-  private async drain(): Promise<void> {
-    if (this.draining) return
-    this.draining = true
-    try {
-      while (this.queue.length > 0 && !this.disposed) {
-        const sessionId = this.queue.shift()
-        if (sessionId === undefined) break
-        this.queued.delete(sessionId)
-        try {
-          await this.run(sessionId, { force: false })
-        } catch (error) {
-          this.services.logger?.warn(`[dsh-talk-map] digest for ${sessionId} failed: ${String(error)}`)
-        }
-      }
-    } finally {
-      this.draining = false
-    }
   }
 
   private async run(sessionId: string, options: { force: boolean }): Promise<Digest> {
@@ -124,13 +36,12 @@ export class DigestPipeline {
     const previous = store.digests.get(sessionId)
 
     if (extracted.transcript === '' || extracted.messageCount < MIN_MESSAGES) {
-      // Too little to summarize — still surface the todo fallback.
+      // Too little to summarize — keep the previous text, no next-step.
       const digest: Digest = {
         atSeq: extracted.lastSeq,
         summary: previous?.summary ?? '',
         keyFindings: previous?.keyFindings ?? [],
-        nextStep: previous?.nextStep ?? '',
-        ...(extracted.todoNext !== undefined ? { todoNext: extracted.todoNext } : {}),
+        nextStep: '',
         generatedAt: Date.now(),
       }
       await store.digests.put(sessionId, digest)
@@ -150,8 +61,7 @@ export class DigestPipeline {
         atSeq: extracted.lastSeq,
         summary: parsed.summary,
         keyFindings: parsed.keyFindings,
-        nextStep: parsed.nextStep,
-        ...(extracted.todoNext !== undefined ? { todoNext: extracted.todoNext } : {}),
+        nextStep: '',
         generatedAt: Date.now(),
         model: `${route.provider}/${route.model}`,
         inputHash,
@@ -172,8 +82,7 @@ export class DigestPipeline {
         atSeq: extracted.lastSeq,
         summary: previous?.summary ?? '',
         keyFindings: previous?.keyFindings ?? [],
-        nextStep: previous?.nextStep ?? '',
-        ...(extracted.todoNext !== undefined ? { todoNext: extracted.todoNext } : {}),
+        nextStep: '',
         generatedAt: Date.now(),
         error: String(error).slice(0, 500),
       }
@@ -191,7 +100,7 @@ export class DigestPipeline {
       id: crypto.randomUUID(),
       role: 'user' as const,
       content: [{ type: 'text' as const, text: digestUserPrompt(transcript) }],
-      source: { kind: 'plugin' as const, plugin: 'dsh-talk-map' },
+      source: { kind: 'plugin:dsh-talk-map' as const },
     }
     let text = ''
     let failure: string | undefined

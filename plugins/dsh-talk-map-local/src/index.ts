@@ -65,24 +65,13 @@ export function apply(ctx: OuterContext): void {
   ctx.inject(['sessions', 'sessionQuery', 'llm', 'agentDefaultModel'], (injected: unknown) => {
     const services = injected as DigestHostServices
     services.effect(() => {
-      // Auto-sync is shelved: the pipeline's onFresh hook and
-      // host/auto-sync.ts stay unwired until the feature is wanted.
+      // The digest is generated ONLY from the card's manual ⟳ refresh. The
+      // turn/end listener, import backfill and refresh-on-upsert triggers are
+      // deliberately gone: the map must never spend model tokens on its own.
+      // The pipeline's onFresh hook stays unwired until a sync fan-out is wanted.
       const pipeline = new DigestPipeline(services, storeReady)
-      const stop = pipeline.start()
       runtime.digest = pipeline
-      // Backfill: cards already on the board whose session has no digest yet
-      // (historic conversations never hit the turn/end trigger).
-      void storeReady.then((store) => {
-        if (runtime.digest !== pipeline) return
-        const missing = [...new Set([...store.cards.entries()].map(([, card]) => card.sessionId))]
-          .filter((sessionId) => {
-            const digest = store.digests.get(sessionId)
-            return digest === undefined || digest.summary === ''
-          })
-        pipeline.backfill(missing)
-      }).catch(() => undefined)
       return () => {
-        stop()
         if (runtime.digest === pipeline) delete runtime.digest
       }
     }, 'dsh-talk-map: digest pipeline')

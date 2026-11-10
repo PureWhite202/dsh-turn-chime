@@ -211,6 +211,8 @@ export interface WorkspacesService {
   list?: {
     getSnapshot(): {
       readonly archivedSessionIds?: readonly string[]
+      /** Sessions the user pinned; they front their workspace list. */
+      readonly pinnedSessionIds?: readonly string[]
     }
     subscribe?(listener: () => void): () => void
   }
@@ -225,6 +227,15 @@ export interface WorkspacesService {
  */
 export interface UiWorkspaceService {
   openSession(sessionId: string): void
+  /** Toggle the host's own sidebar pin (置顶会话); rejects on failure.
+   *  Absent on hosts whose sidebar has no pin action. */
+  pinSession?(sessionId: string): Promise<unknown>
+  unpinSession?(sessionId: string): Promise<unknown>
+  /** Close the Session the main column is showing (host-internal: the host
+   *  itself calls it when archiving the visible Session). Resolves the map's
+   *  "two editable occurrences of one Session" conflict by leaving the main
+   *  column empty while the map owns the conversation surface. */
+  clearMain?(): void
 }
 
 /** RPC envelopes (packages/host/apiproxy/src/api/rpc.ts): the fetch client

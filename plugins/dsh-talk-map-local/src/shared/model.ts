@@ -63,6 +63,12 @@ export interface Camera {
   zoom: number
 }
 
+export interface ArchivedCardPlacement {
+  cardId: string
+  card: Card
+  edges: Record<string, MapEdgeData>
+}
+
 export interface MapGlobal {
   version: number
   activeBoard: string
@@ -79,6 +85,9 @@ export interface MapGlobal {
   locale?: LocalePref
   /** Last known placement per session — re-imports restore the arrangement. */
   layoutMemory?: Record<string, LayoutMemoryEntry>
+  /** Archived conversations keep their board placement (and edges) here: the
+   *  card is removed from the board while archived and restored on unarchive. */
+  archivedCards?: Record<string, ArchivedCardPlacement>
 }
 
 /** Language the map's own copy renders in; 'auto' defers to dsh. */
@@ -97,11 +106,24 @@ export interface FrameGeometry {
   height: number
 }
 
+export interface MapImage {
+  boardId: string
+  /** Stable plugin-served URL (/talk-map/images/<sha>). */
+  src: string
+  title?: string
+  x: number
+  y: number
+  width: number
+  height: number
+  createdAt: number
+}
+
 export interface MapStatePayload {
   boards: Record<string, Board>
   cards: Record<string, Card>
   edges: Record<string, MapEdgeData>
   digests: Record<string, Digest>
+  images: Record<string, MapImage>
   global: MapGlobal
 }
 

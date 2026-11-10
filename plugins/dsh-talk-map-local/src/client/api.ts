@@ -2,7 +2,7 @@
  * Thin fetch/EventSource layer over the host half's /talk-map/* routes.
  * Same-origin by construction (relative URLs against the serving shell).
  */
-import type { Card, Digest, MapEdgeData, MapGlobal, MapStatePayload } from '../shared/model.ts'
+import type { Card, Digest, MapEdgeData, MapGlobal, MapImage, MapStatePayload } from '../shared/model.ts'
 
 /** Error shape thrown on non-2xx: `code` carries the host's structured
  * error code (e.g. 'session-not-live') when the body provides one. */
@@ -49,6 +49,25 @@ export const talkMapApi = {
   },
   deleteCards(ids: readonly string[]): Promise<void> {
     return postJson('/talk-map/cards/delete', { ids })
+  },
+  upsertImages(images: Record<string, MapImage>): Promise<void> {
+    return postJson('/talk-map/images/upsert', { images })
+  },
+  deleteImages(ids: readonly string[]): Promise<void> {
+    return postJson('/talk-map/images/delete', { ids })
+  },
+  /** Upload raw image bytes; the host stores them content-addressed. */
+  uploadImage(blob: Blob): Promise<{ src: string }> {
+    return fetch('/talk-map/images/upload', {
+      method: 'POST',
+      headers: { 'content-type': blob.type || 'application/octet-stream' },
+      body: blob,
+    }).then(async (response) => {
+      if (!response.ok) {
+        throw new Error(`/talk-map/images/upload -> ${response.status}`)
+      }
+      return await response.json() as { src: string }
+    })
   },
   upsertEdges(edges: Record<string, MapEdgeData>): Promise<void> {
     return postJson('/talk-map/edges/upsert', { edges })

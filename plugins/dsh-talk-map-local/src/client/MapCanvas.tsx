@@ -12,7 +12,7 @@
  * Interaction: right/middle-drag pans, plain right-click opens the context
  * menu, left-drag box-selects on the pane and drags nodes.
  */
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import {
   Background, BackgroundVariant, ConnectionMode, ControlButton, Controls, ReactFlow, ReactFlowProvider,
   SelectionMode, useReactFlow, type Connection, type Edge, type EdgeChange, type FinalConnectionState,
@@ -20,7 +20,7 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import type { RootSlotStandardProps, SessionListState, WorkspaceListState } from './dsh.ts'
-import type { Card, FrameGeometry, MapEdgeData } from '../shared/model.ts'
+import type { ArchivedCardPlacement, Card, FrameGeometry, MapEdgeData } from '../shared/model.ts'
 import { canvas, INBOX_BOARD_ID, newCardId, type CanvasState } from './canvas-store.ts'
 import { COLOR_TAGS } from './colors.ts'
 import { buildPushText, digestIsEmpty } from './digest-text.ts'
@@ -28,15 +28,16 @@ import { getServices, mapUi, openSessionInMain, unwrapRemote, useArchivedSession
 import { ContextMenu, type MenuItem, type MenuState } from './ContextMenu.tsx'
 import { InteractionMenu } from './InteractionMenu.tsx'
 import { completions, interactions, interactionMenu } from './interactions.ts'
-import { DraftCardNode, type DraftCardNodeType, type DraftParent } from './DraftCard.tsx'
-import { SessionCardNode, type SessionCardData, type SessionCardNodeType } from './SessionCard.tsx'
+import { DraftCardNode, type DraftCardData, type DraftCardNodeType, type DraftParent } from './DraftCard.tsx'
+import { ImageNodeView, type ImageNodeType } from './ImageNode.tsx'
+import { SessionCardNode, relativeTime, type SessionCardData, type SessionCardNodeType } from './SessionCard.tsx'
 import { WsFrameNode, type WsFrameData, type WsFrameNodeType } from './WsFrame.tsx'
 import { activeLocale, subscribeLocale, t } from './i18n.ts'
 import { talkMapApi, type ApiError } from './api.ts'
 import { useDsDarkTheme } from './use-dark.ts'
 import styles from './talk-map.module.css'
 
-const nodeTypes = { sessionCard: SessionCardNode, wsFrame: WsFrameNode, draftCard: DraftCardNode }
+const nodeTypes = { sessionCard: SessionCardNode, wsFrame: WsFrameNode, draftCard: DraftCardNode, imageNode: ImageNodeView }
 
 const GRID = 16
 const CARD_W = 250
@@ -48,7 +49,7 @@ const FRAME_PAD = 32
 const FRAME_LABEL_H = 30
 const LAYOUT_VERSION = 3
 
-type TalkMapNode = SessionCardNodeType | WsFrameNodeType | DraftCardNodeType
+type TalkMapNode = SessionCardNodeType | WsFrameNodeType | DraftCardNodeType | ImageNodeType
 
 /** Shallow compare of the fields a SessionCard renders — the node cache reuses
  *  the previous node object (and thus skips the card's render) while equal. */
@@ -59,16 +60,12 @@ function sameSessionCardData(left: SessionCardData, right: SessionCardData): boo
     && left.running === right.running
     && left.ghost === right.ghost
     && left.updatedAt === right.updatedAt
-    && left.nextStep === right.nextStep
-    && left.summary === right.summary
-    && left.stale === right.stale
     && left.colorTag === right.colorTag
+    && left.timeLabel === right.timeLabel
     && left.waiting === right.waiting
     && left.done === right.done
     && left.foreignLabel === right.foreignLabel
     && left.foreignTouch === right.foreignTouch
-    && left.archived === right.archived
-    && left.nowMinute === right.nowMinute
 }
 
 /** Same idea for frames: geometry/counts/colors are the whole render input. */
@@ -307,6 +304,26 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
   // `locale` in their dependency lists below.
   const locale = useSyncExternalStore(subscribeLocale, activeLocale, activeLocale)
 
+  // A draft box is open in the middle of the map. Keep its node data (and
+  // callbacks) referentially stable so map/session updates do not re-render
+  // the open form; only the draft itself changing (position/parent) does.
+  const draftWorkspaceOptions = useMemo(
+    () => workspaces.items.map(item => ({ id: item.workspaceId, title: item.title, path: item.path })),
+    [workspaces.items],
+  )
+  const closeDraft = useCallback(() => { setDraft(null) }, [])
+  const draftNodeData = useMemo<DraftCardData | null>(() => {
+    if (draft === null) return null
+    return {
+      workspaceOptions: draftWorkspaceOptions,
+      ...(draft.workspaceId !== undefined ? { defaultWorkspaceId: draft.workspaceId } : {}),
+      ...(draft.groupId !== undefined ? { groupId: draft.groupId } : {}),
+      ...(draft.parent !== undefined ? { parent: draft.parent } : {}),
+      onClose: closeDraft,
+      ...(props.onOpenChat !== undefined ? { onOpenChat: props.onOpenChat } : {}),
+    }
+  }, [draft, draftWorkspaceOptions, closeDraft, props.onOpenChat])
+
   const sessionWs = useMemo(() => sessionWorkspaceIndex(workspaces), [workspaces])
   const wsTitles = useMemo(
     () => new Map(workspaces.items.map(item => [item.workspaceId, item.title])),
@@ -383,13 +400,54 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
     const out: Record<string, Card> = {}
     for (const [cardId, card] of Object.entries(canvasState.cards)) {
       if (blankSessions.has(card.sessionId)) continue
+      // Archiving a conversation (sidebar or the card menu) removes its node
+      // from the board; the placement survives so unarchiving brings it back.
+      if (archivedIds.has(card.sessionId)) continue
       out[cardId] = card
     }
     return out
-  }, [canvasState.cards, blankSessions])
+  }, [canvasState.cards, blankSessions, archivedIds])
   // Stable id set: dragging changes positions (a new visibleCards object every
   // frame) but not this key, so the height observer does not reattach per move.
   const cardIdsKey = useMemo(() => Object.keys(visibleCards).sort().join('|'), [visibleCards])
+
+  // Archive <-> board placement bridge. Archiving a Session (sidebar or card
+  // menu) removes its card from the board and remembers the placement in the
+  // global store; unarchiving restores the card and its edges exactly where
+  // they were. The sidebar archive never touches the map, so this is the one
+  // place that reconciles the two.
+  useEffect(() => {
+    if (canvasState.global === null) return
+    const placements = canvasState.global.archivedCards ?? {}
+    let nextPlacements: Record<string, ArchivedCardPlacement> = placements
+    const toRemove: string[] = []
+    const toRestore: ArchivedCardPlacement[] = []
+    let moved = false
+    for (const [cardId, card] of Object.entries(canvasState.cards)) {
+      if (!archivedIds.has(card.sessionId)) continue
+      const edges = Object.fromEntries(
+        Object.entries(canvasState.edges).filter(([, edge]) => edge.fromCardId === cardId || edge.toCardId === cardId),
+      )
+      nextPlacements = { ...nextPlacements, [card.sessionId]: { cardId, card, edges } }
+      toRemove.push(cardId)
+      moved = true
+    }
+    for (const [sessionId, placement] of Object.entries(nextPlacements)) {
+      if (archivedIds.has(sessionId)) continue
+      const remaining = { ...nextPlacements }
+      delete remaining[sessionId]
+      nextPlacements = remaining
+      toRestore.push(placement)
+      moved = true
+    }
+    if (!moved) return
+    canvas.patchGlobalNow({ archivedCards: nextPlacements })
+    for (const cardId of toRemove) canvas.removeCard(cardId)
+    for (const placement of toRestore) {
+      canvas.addCards({ [placement.cardId]: placement.card })
+      if (Object.keys(placement.edges).length > 0) canvas.addEdges(placement.edges)
+    }
+  }, [archivedIds, canvasState.cards, canvasState.edges, canvasState.global])
 
   // Membership mirrors the sidebar truth: a card belongs to its session's
   // real workspace (dsh binds that to the session's cwd; sessions cannot
@@ -557,12 +615,14 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
     for (const id of selectedIds) {
       if (id.startsWith('frame-')) {
         if (wsFrames[id.slice('frame-'.length)] !== undefined) next.add(id)
+      } else if (id.startsWith('image-')) {
+        if (canvasState.images[id.slice('image-'.length)] !== undefined) next.add(id)
       } else if (visibleCards[id] !== undefined) {
         next.add(id)
       }
     }
     return next
-  }, [selectedIds, visibleCards, wsFrames])
+  }, [selectedIds, visibleCards, wsFrames, canvasState.images])
   const liveSelectedEdgeIds = useMemo(() => {
     const next = new Set<string>()
     for (const id of selectedEdgeIds) {
@@ -590,6 +650,21 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
         const target = event.target as HTMLElement | null
         if (target !== null && target.closest('input, textarea, [contenteditable="true"]') !== null) return
         const frameIds = [...liveSelectedIdsRef.current].filter(id => id.startsWith('frame-'))
+        const imageIds = [...liveSelectedIdsRef.current]
+          .filter(id => id.startsWith('image-'))
+          .map(id => id.slice('image-'.length))
+        if (imageIds.length > 0) {
+          event.preventDefault()
+          event.stopPropagation()
+          canvas.removeImages(imageIds)
+          setSelectedIds((previous) => {
+            const next = new Set(previous)
+            for (const id of previous) {
+              if (id.startsWith('image-')) next.delete(id)
+            }
+            return next
+          })
+        }
         if (frameIds.length === 0) return
         for (const frameId of frameIds) removeGroupRef.current(frameId.slice('frame-'.length))
         setSelectedIds((previous) => {
@@ -605,6 +680,10 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
       release()
     }
   }, [hasSelection])
+
+  const handleImageResize = useCallback((id: string, width: number, height: number): void => {
+    canvas.resizeImage(id, width, height)
+  }, [])
 
   const liveNodes = useMemo<TalkMapNode[]>(() => {
     // While a rubber-band selection is in flight the node array is frozen so a
@@ -658,7 +737,6 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
       .filter(([, card]) => card.boardId === INBOX_BOARD_ID)
       .map(([cardId, card]) => {
         const summary = sessions.byId[card.sessionId]
-        const digest = canvasState.digests[card.sessionId]
         const selected = liveSelectedIds.has(cardId)
         const data: SessionCardData = {
           cardId,
@@ -667,15 +745,12 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
           running: summary?.running ?? false,
           ghost: summary === undefined,
           updatedAt: summary?.updatedAt,
-          nextStep: digest?.nextStep ?? digest?.todoNext,
-          summary: digest?.summary,
           waiting: pendingInteractions.has(card.sessionId) || summary?.pendingInteraction !== undefined,
           done: completedIds.has(card.sessionId) || summary?.completed === true,
-          ...(archivedIds.has(card.sessionId) ? { archived: true } : {}),
           ...(card.colorTag !== undefined ? { colorTag: card.colorTag } : {}),
           ...(foreign.labels.has(cardId) ? { foreignLabel: foreign.labels.get(cardId) } : {}),
           ...(foreign.touching.has(cardId) ? { foreignTouch: true } : {}),
-          nowMinute,
+          timeLabel: relativeTime(summary?.updatedAt),
         }
         const cached = previousNodes.get(cardId)
         if (
@@ -697,7 +772,7 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
         nextCache.set(cardId, node)
         return node
       })
-    const draftNodes: TalkMapNode[] = draft === null
+    const draftNodes: TalkMapNode[] = draft === null || draftNodeData === null
       ? []
       : [{
           id: 'draft',
@@ -705,22 +780,19 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
           position: { x: draft.x, y: draft.y },
           selectable: false,
           zIndex: 10,
-          data: {
-            workspaceOptions: workspaces.items.map(item => ({
-              id: item.workspaceId,
-              title: item.title,
-              path: item.path,
-            })),
-            ...(draft.workspaceId !== undefined ? { defaultWorkspaceId: draft.workspaceId } : {}),
-            ...(draft.groupId !== undefined ? { groupId: draft.groupId } : {}),
-            ...(draft.parent !== undefined ? { parent: draft.parent } : {}),
-            onClose: () => { setDraft(null) },
-            ...(props.onOpenChat !== undefined ? { onOpenChat: props.onOpenChat } : {}),
-          },
+          data: draftNodeData,
         }]
+    const imageNodes: TalkMapNode[] = Object.entries(canvasState.images).map(([imageId, image]) => ({
+      id: `image-${imageId}`,
+      type: 'imageNode' as const,
+      position: { x: image.x, y: image.y },
+      width: image.width,
+      height: image.height,
+      data: { image, onResize: handleImageResize },
+    }))
     nodeCacheRef.current = nextCache
-    return [...frameNodes, ...cardNodes, ...draftNodes]
-  }, [frameGeometry, membersByGroup, wsTitles, visibleCards, wsColors, canvasState.digests, sessions, liveSelectedIds, draft, workspaces.items, locale, pendingInteractions, completedIds, foreign, archivedIds, nowMinute, isSelecting, props.onOpenChat])
+    return [...frameNodes, ...imageNodes, ...cardNodes, ...draftNodes]
+  }, [frameGeometry, membersByGroup, wsTitles, visibleCards, wsColors, sessions, liveSelectedIds, draft, draftNodeData, workspaces.items, locale, pendingInteractions, completedIds, foreign, archivedIds, nowMinute, isSelecting, props.onOpenChat, canvasState.images, handleImageResize])
 
   const sessionIdToCardId = useMemo(() => {
     const index = new Map<string, string>()
@@ -816,10 +888,16 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
     const removedCardIds = changes
       .filter((change): change is Extract<NodeChange<TalkMapNode>, { type: 'remove' }> => change.type === 'remove')
       .map(change => change.id)
-      .filter(id => !id.startsWith('frame-') && id !== 'draft')
+      .filter(id => !id.startsWith('frame-') && id !== 'draft' && !id.startsWith('image-'))
     // Collect every card move in this batch and commit once: a frame drag used
     // to copy the whole card map once per member (O(n²) per pointer move).
     const positionUpdates: Record<string, { x: number; y: number }> = {}
+    const imagePositionUpdates: Record<string, { x: number; y: number }> = {}
+    const removedImageIds = changes
+      .filter((change): change is Extract<NodeChange<TalkMapNode>, { type: 'remove' }> => change.type === 'remove')
+      .map(change => change.id)
+      .filter(id => id.startsWith('image-'))
+      .map(id => id.slice('image-'.length))
     for (const change of changes) {
       if (change.type === 'position' && change.position !== undefined) {
         if (change.id === 'draft') {
@@ -849,6 +927,8 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
               height: rect.height,
             })
           }
+        } else if (change.id.startsWith('image-')) {
+          imagePositionUpdates[change.id.slice('image-'.length)] = { x: change.position.x, y: change.position.y }
         } else {
           // Free dragging — the frame stretches after its members.
           positionUpdates[change.id] = { x: change.position.x, y: change.position.y }
@@ -877,6 +957,8 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
       }
     }
     if (Object.keys(positionUpdates).length > 0) canvas.moveCards(positionUpdates)
+    if (Object.keys(imagePositionUpdates).length > 0) canvas.moveImages(imagePositionUpdates)
+    if (removedImageIds.length > 0) canvas.removeImages(removedImageIds)
     // AFTER the removals (and after the first removeCard pushed the undo
     // snapshot with frames intact): a batch that emptied a group takes the
     // group's now-empty frame with it — rubber-band can't select frames, so
@@ -1085,7 +1167,7 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
       sessionId: card.sessionId,
       title: summary.displayTitle,
       ...(parentWorkspaceId !== undefined ? { workspaceId: parentWorkspaceId } : {}),
-    })
+    }, true)
   }
 
   const openSession = (sessionId: string): void => {
@@ -1106,8 +1188,10 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
     return undefined
   }
 
-  const openDraftAt = (flowX: number, flowY: number, parent?: DraftParent): void => {
-    const x = snap(flowX - CARD_W / 2)
+  const openDraftAt = (flowX: number, flowY: number, parent?: DraftParent, alignLeft = false): void => {
+    // Dropping a connection pins the box's LEFT edge on the drop point; the
+    // click/shortcut paths keep centering on the click.
+    const x = alignLeft ? flowX : snap(flowX - CARD_W / 2)
     const y = snap(flowY - 40)
     const groupId = groupAtPoint(flowX, flowY)
     const isWorkspace = groupId !== undefined && wsTitles.has(groupId)
@@ -1237,11 +1321,6 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
     const card = canvasState.cards[cardId]
     if (card === undefined) return
     const sessionId = card.sessionId
-    const cardSnapshot: Card = { ...card }
-    const edgeSnapshot: Record<string, MapEdgeData> = {}
-    for (const [edgeId, edge] of Object.entries(canvasState.edges)) {
-      if (edge.fromCardId === cardId || edge.toCardId === cardId) edgeSnapshot[edgeId] = edge
-    }
     void (async () => {
       try {
         await talkMapApi.archiveSession(sessionId)
@@ -1250,32 +1329,18 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
         return
       }
       if (!mountedRef.current) return
-      canvas.removeCard(cardId)
+      // The archive bridge above removes the card and keeps the placement;
+      // the undo only has to unarchive.
       showActionToast(t('toast.archived'), t('toast.undo'), () => {
         void (async () => {
           try {
             await talkMapApi.unarchiveSession(sessionId)
-            canvas.addCards({ [cardId]: cardSnapshot })
-            if (Object.keys(edgeSnapshot).length > 0) canvas.addEdges(edgeSnapshot)
             if (mountedRef.current) showToast(t('toast.unarchived'))
           } catch (error) {
             if (mountedRef.current) showToast(`${t('toast.unarchiveFailed')}${errorText(error)}`)
           }
         })()
       })
-    })()
-  }
-
-  /** The card is still on the board but its Session was archived elsewhere
-   *  (sidebar): the menu offers the inverse action. */
-  const unarchiveCard = (sessionId: string): void => {
-    void (async () => {
-      try {
-        await talkMapApi.unarchiveSession(sessionId)
-        if (mountedRef.current) showToast(t('toast.unarchived'))
-      } catch (error) {
-        if (mountedRef.current) showToast(`${t('toast.unarchiveFailed')}${errorText(error)}`)
-      }
     })()
   }
 
@@ -1436,37 +1501,15 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
           })
         }
       }
-      items.push({
-        key: 'digest',
-        label: t('card.refresh'),
-        onPick: () => {
-          close()
-          if (card !== undefined) void talkMapApi.refreshDigest(card.sessionId).catch(() => undefined)
-        },
-      })
       if (card !== undefined) {
-        const archived = new Set(
-          getServices()?.workspaces.list?.getSnapshot().archivedSessionIds ?? [],
-        )
-        if (archived.has(card.sessionId)) {
-          items.push({
-            key: 'unarchive',
-            label: t('menu.unarchive'),
-            onPick: () => {
-              close()
-              unarchiveCard(card.sessionId)
-            },
-          })
-        } else {
-          items.push({
-            key: 'archive',
-            label: t('menu.archive'),
-            onPick: () => {
-              close()
-              archiveCard(cardId)
-            },
-          })
-        }
+        items.push({
+          key: 'archive',
+          label: t('menu.archive'),
+          onPick: () => {
+            close()
+            archiveCard(cardId)
+          },
+        })
       }
       items.push({
         key: 'remove',
@@ -1548,6 +1591,62 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
   const savedCamera = canvas.savedCamera(INBOX_BOARD_ID)
   const hasContent = Object.keys(visibleCards).length > 0 || Object.keys(wsFrames).length > 0
 
+  const imageNaturalSize = (src: string): Promise<{ width: number; height: number }> => new Promise((resolve) => {
+    const image = new Image()
+    image.onload = () => resolve({ width: image.naturalWidth || 480, height: image.naturalHeight || 360 })
+    image.onerror = () => resolve({ width: 480, height: 360 })
+    image.src = src
+  })
+
+  const addImageFromDrop = async (payload: { src: string; title?: string }, clientX: number, clientY: number): Promise<void> => {
+    const position = screenToFlowPosition({ x: clientX, y: clientY })
+    try {
+      const response = await fetch(payload.src)
+      if (!response.ok) throw new Error(`fetch ${response.status}`)
+      const blob = await response.blob()
+      if (!blob.type.startsWith('image/')) throw new Error(blob.type === '' ? 'not an image' : blob.type)
+      const uploaded = await talkMapApi.uploadImage(blob)
+      const size = await imageNaturalSize(uploaded.src)
+      const width = Math.round(Math.min(size.width, 480) || 480)
+      const height = Math.round((size.height * width) / (size.width || width))
+      canvas.addImages({
+        [`image-${crypto.randomUUID()}`]: {
+          boardId: canvasState.global?.activeBoard ?? INBOX_BOARD_ID,
+          src: uploaded.src,
+          ...(payload.title !== undefined && payload.title.trim() !== '' ? { title: payload.title.trim() } : {}),
+          x: Math.round(position.x - width / 2),
+          y: Math.round(position.y - 24),
+          width,
+          height,
+          createdAt: Date.now(),
+        },
+      })
+    } catch (error) {
+      showToast(`${t('image.failed')}${errorText(error)}`)
+    }
+  }
+
+  const onImageDrop = (event: React.DragEvent<HTMLDivElement>): void => {
+    const raw = event.dataTransfer.getData('application/x-talk-map-image')
+    if (raw === '') return
+    event.preventDefault()
+    try {
+      const payload = JSON.parse(raw) as { src?: unknown; title?: unknown }
+      if (typeof payload.src !== 'string' || payload.src === '') return
+      void addImageFromDrop(
+        { src: payload.src, ...(typeof payload.title === 'string' ? { title: payload.title } : {}) },
+        event.clientX,
+        event.clientY,
+      )
+    } catch { /* malformed drag payload */ }
+  }
+
+  const onImageDragOver = (event: React.DragEvent<HTMLDivElement>): void => {
+    if (!event.dataTransfer.types.includes('application/x-talk-map-image')) return
+    event.preventDefault()
+    event.dataTransfer.dropEffect = 'copy'
+  }
+
   return (
     <div
       ref={wrapperRef}
@@ -1575,6 +1674,8 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
         const position = screenToFlowPosition({ x: event.clientX, y: event.clientY })
         openDraftAt(position.x, position.y)
       }}
+      onDragOver={onImageDragOver}
+      onDrop={onImageDrop}
       onPointerDown={trackRightDown}
       onPointerMove={trackRightMove}
       onContextMenu={handleContextMenu}

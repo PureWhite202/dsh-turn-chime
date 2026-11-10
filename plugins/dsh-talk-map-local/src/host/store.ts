@@ -83,6 +83,19 @@ export const digestSchema = z.object({
 export type Digest = z.infer<typeof digestSchema>
 
 export const cameraSchema = z.object({ x: z.number(), y: z.number(), zoom: z.number() })
+export const imageSchema = z.object({
+  boardId: z.string(),
+  /** Plugin-served image URL (/talk-map/images/<sha>). */
+  src: z.string(),
+  title: z.string().optional(),
+  x: z.number(),
+  y: z.number(),
+  width: z.number(),
+  height: z.number(),
+  createdAt: z.number(),
+})
+export type MapImage = z.infer<typeof imageSchema>
+
 export const globalSchema = z.object({
   version: z.number(),
   activeBoard: z.string(),
@@ -108,6 +121,13 @@ export const globalSchema = z.object({
     y: z.number(),
     colorTag: z.string().optional(),
   })).optional(),
+  /** Archived conversations keep their board placement here, so unarchiving
+   *  brings the card (and its edges) back exactly where it was. */
+  archivedCards: z.record(z.string(), z.object({
+    cardId: z.string(),
+    card: cardSchema,
+    edges: z.record(z.string(), edgeSchema),
+  })).optional(),
 })
 export type MapGlobal = z.infer<typeof globalSchema>
 
@@ -123,6 +143,7 @@ export const TALK_MAP_SPEC: DomainSpec = {
     cards: { valueSchema: cardSchema },
     edges: { valueSchema: edgeSchema },
     digests: { valueSchema: digestSchema },
+    images: { valueSchema: imageSchema },
   },
 }
 
@@ -133,6 +154,7 @@ export interface TalkMapStore {
   cards: KvTable<Card>
   edges: KvTable<MapEdge>
   digests: KvTable<Digest>
+  images: KvTable<MapImage>
   global(): MapGlobal
   setGlobal(value: MapGlobal): Promise<void>
 }
@@ -147,6 +169,7 @@ export async function openTalkMapStore(
     cards: domain.table('cards') as KvTable<Card>,
     edges: domain.table('edges') as KvTable<MapEdge>,
     digests: domain.table('digests') as KvTable<Digest>,
+    images: domain.table('images') as KvTable<MapImage>,
     global: () => domain.global.get() as MapGlobal,
     setGlobal: value => domain.global.set(value),
   }

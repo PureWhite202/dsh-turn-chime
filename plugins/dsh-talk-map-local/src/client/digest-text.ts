@@ -1,7 +1,7 @@
 /**
  * Digest → injectable text. Two shapes over the same body: the fork panel's
  * background block (buildInjectionText) and the pipe push's timestamped
- * update (buildPushText, mirrored host-side in host/auto-sync.ts).
+ * update (buildPushText).
  */
 import type { Digest } from '../shared/model.ts'
 import { t } from './i18n.ts'
@@ -13,8 +13,6 @@ function digestBody(digest: Digest): string[] {
     parts.push(t('inject.findings'))
     for (const finding of digest.keyFindings) parts.push(`- ${finding}`)
   }
-  const next = digest.nextStep !== '' ? digest.nextStep : digest.todoNext ?? ''
-  if (next !== '') parts.push(`${t('inject.next')}${next}`)
   return parts
 }
 

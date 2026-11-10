@@ -4,13 +4,13 @@
  * running state. A card whose session no longer exists renders as a ghost
  * (grey, removable) — the host never auto-deletes placements.
  */
-import { memo, useState } from 'react'
+import { memo } from 'react'
 import { Handle, Position, type NodeProps, type Node } from '@xyflow/react'
-import { talkMapApi } from './api.ts'
 import { interactionMenu } from './interactions.ts'
 import { canvas } from './canvas-store.ts'
 import { colorOf } from './colors.ts'
 import { t } from './i18n.ts'
+import { toggleSessionPin, useArchivedSessionIds, usePinnedSessionIds } from './map-state.ts'
 import styles from './talk-map.module.css'
 
 export interface SessionCardData extends Record<string, unknown> {
@@ -20,11 +20,7 @@ export interface SessionCardData extends Record<string, unknown> {
   running: boolean
   ghost: boolean
   updatedAt?: number
-  nextStep?: string
-  stale?: boolean
   colorTag?: string
-  /** Digest summary, shown as the card body (2-line clamp). */
-  summary?: string
   /** Session is blocked on the user (approval / question). */
   waiting?: boolean
   /** Finished while unwatched and not yet opened. */
@@ -34,16 +30,14 @@ export interface SessionCardData extends Record<string, unknown> {
   foreignLabel?: string
   /** The card edge is touching/crossing that frame's dashed border. */
   foreignTouch?: boolean
-  /** Host-marked archived Session: the host rejects new turns for it. */
-  archived?: boolean
-  /** Minute bucket: a cheap re-render trigger so the relative time label
-   *  stays fresh even when memo() skips an otherwise unchanged card. */
-  nowMinute?: number
+  /** Precomputed relative-time label: memo() only re-renders the card when
+   *  the label text actually changes (not every minute bucket). */
+  timeLabel?: string
 }
 
 export type SessionCardNodeType = Node<SessionCardData, 'sessionCard'>
 
-function relativeTime(timestamp: number | undefined): string {
+export function relativeTime(timestamp: number | undefined): string {
   if (timestamp === undefined) return ''
   const delta = Date.now() - timestamp
   const minutes = Math.round(delta / 60_000)
@@ -55,26 +49,34 @@ function relativeTime(timestamp: number | undefined): string {
   return `${days}${t('time.d')}`
 }
 
+/** Pushpin glyph shared by the card's pin toggle (filled while pinned). */
+function PinIcon(props: { readonly filled: boolean }): React.JSX.Element {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill={props.filled ? 'currentColor' : 'none'}
+      stroke="currentColor"
+      strokeWidth={props.filled ? 0 : 1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M16 9V4h1a1 1 0 0 0 0-2H7a1 1 0 0 0 0 2h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z" />
+    </svg>
+  )
+}
+
 function SessionCard(props: NodeProps<SessionCardNodeType>): React.JSX.Element {
   const { data, selected } = props
-  const [refreshing, setRefreshing] = useState(false)
+  const pinned = usePinnedSessionIds().has(data.sessionId)
+  const archived = useArchivedSessionIds().has(data.sessionId)
   const classNames = [styles['card']]
   if (data.ghost) classNames.push(styles['cardGhost'])
   if (selected === true) classNames.push(styles['cardSelected'])
   if (data.foreignLabel !== undefined) classNames.push(styles['cardForeign'])
   if (data.foreignTouch === true) classNames.push(styles['cardForeignTouch'])
-
-  const refreshDigest = async (): Promise<void> => {
-    if (refreshing) return
-    setRefreshing(true)
-    try {
-      await talkMapApi.refreshDigest(data.sessionId)
-    } catch (error) {
-      console.error('[dsh-talk-map] digest refresh failed:', error)
-    } finally {
-      setRefreshing(false)
-    }
-  }
 
   const color = colorOf(data.colorTag)
 
@@ -96,22 +98,28 @@ function SessionCard(props: NodeProps<SessionCardNodeType>): React.JSX.Element {
           ? <span className={styles['cardDoneDot']} title={t('card.done')} aria-label={t('card.done')} />
           : null}
         <span className={styles['cardTitle']}>{data.ghost ? t('card.ghostTitle') : data.title}</span>
-        {data.ghost
-          ? null
-          : (
+        {data.ghost !== true && !archived
+          ? (
               <button
                 type="button"
-                className={`${styles['cardRefresh']} nodrag${refreshing ? ` ${styles['cardRefreshBusy']}` : ''}`}
-                title={t('card.refresh')}
-                aria-label={t('card.refresh')}
+                // `nodrag` keeps a click from starting a card drag; archived
+                // Sessions are skipped because the host refuses to pin them.
+                className={pinned
+                  ? `nodrag ${styles['cardPin'] ?? ''} ${styles['cardPinActive'] ?? ''}`
+                  : `nodrag ${styles['cardPin'] ?? ''}`}
+                title={pinned ? t('card.unpin') : t('card.pin')}
+                aria-label={pinned ? t('card.unpin') : t('card.pin')}
+                aria-pressed={pinned}
                 onClick={(event) => {
                   event.stopPropagation()
-                  void refreshDigest()
+                  toggleSessionPin(data.sessionId)
                 }}
+                onPointerDown={(event) => { event.stopPropagation() }}
               >
-                ⟳
+                <PinIcon filled={pinned} />
               </button>
-            )}
+            )
+          : null}
       </div>
       {data.ghost
         ? (
@@ -123,31 +131,9 @@ function SessionCard(props: NodeProps<SessionCardNodeType>): React.JSX.Element {
               {t('card.remove')}
             </button>
           )
-        : (
-            <>
-              {data.summary !== undefined && data.summary !== ''
-                ? <div className={styles['cardSummary']}>{data.summary}</div>
-                : null}
-              {data.nextStep !== undefined && data.nextStep !== ''
-                ? (
-                    <div className={styles['cardNext']}>
-                      <span className={styles['cardNextLabel']}>{t('card.next')}</span>
-                      <span className={styles['cardNextText']}>{data.nextStep}</span>
-                      {data.stale === true ? <span className={styles['cardStale']} title={t('card.stale')}>⟳</span> : null}
-                    </div>
-                  )
-                : null}
-            </>
-          )}
+        : null}
       <div className={styles['cardFooter']}>
         <span className={styles['cardFooterLeft']}>
-          {data.archived === true
-            ? (
-                <span className={styles['cardArchivedChip']} title={t('card.archivedHint')}>
-                  {t('card.archived')}
-                </span>
-              )
-            : null}
           {data.foreignLabel !== undefined
             ? (
                 <span
@@ -158,7 +144,7 @@ function SessionCard(props: NodeProps<SessionCardNodeType>): React.JSX.Element {
                 </span>
               )
             : null}
-          <span className={styles['cardTime']}>{relativeTime(data.updatedAt)}</span>
+          <span className={styles['cardTime']}>{data.timeLabel ?? ''}</span>
         </span>
         {data.waiting === true
           ? (

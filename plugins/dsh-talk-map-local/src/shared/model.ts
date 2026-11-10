@@ -83,6 +83,9 @@ export interface MapGlobal {
   hotkey?: string
   /** Interface language; absent = 'auto' (follow dsh's <html lang>). */
   locale?: LocalePref
+  /** Conversation drawer width in px (drag the drawer's left edge); absent =
+   *  the responsive default from the stylesheet. */
+  drawerWidth?: number
   /** Last known placement per session — re-imports restore the arrangement. */
   layoutMemory?: Record<string, LayoutMemoryEntry>
   /** Archived conversations keep their board placement (and edges) here: the

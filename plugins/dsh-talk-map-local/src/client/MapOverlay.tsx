@@ -43,6 +43,14 @@ interface ChatNotice {
   readonly sessionId: string
 }
 
+/** Conversation drawer resize bounds (px). The default comes from the CSS
+ *  clamp; once the user drags, the px width is remembered in the canvas global. */
+const DRAWER_MIN_WIDTH = 360
+/** Board sliver that must stay visible to the left of the drawer. */
+const DRAWER_MIN_MAP_WIDTH = 280
+/** Arrow-key step for the resize strip. */
+const DRAWER_RESIZE_STEP = 24
+
 function CloseIcon(): React.JSX.Element {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
@@ -131,6 +139,14 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
   const sessionCount = props.useSessions(state => state.ids.length)
   const [chat, setChat] = useState<ChatTarget | null>(null)
   const [notice, setNotice] = useState<ChatNotice | null>(null)
+  // Drawer width: the CSS clamp is the default, a drag remembers an explicit
+  // px width in the canvas global. While dragging, the width is written
+  // straight to the DOM (no per-pointermove React render of the transcript).
+  const storedDrawerWidth = useSyncExternalStore(canvas.subscribe, () => canvas.get().global?.drawerWidth ?? 0)
+  const [resizingDrawer, setResizingDrawer] = useState(false)
+  const drawerRef = useRef<HTMLElement | null>(null)
+  const drawerWidthRef = useRef<number | null>(null)
+  const drawerResizeRef = useRef<{ pointerId: number; startX: number; startWidth: number; width: number } | null>(null)
   /** The notice's 「refresh main view」 retry is in flight. */
   const [retrying, setRetrying] = useState(false)
   const chatRef = useRef<ChatTarget | null>(null)
@@ -712,6 +728,117 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
     mainClearedRef.current = false
   }, [])
 
+  /** Clamp a drawer width to the allowed range for the current window. */
+  const clampDrawerWidth = (width: number): number => {
+    const maximum = Math.max(DRAWER_MIN_WIDTH, window.innerWidth - DRAWER_MIN_MAP_WIDTH)
+    return Math.round(Math.min(Math.max(width, DRAWER_MIN_WIDTH), maximum))
+  }
+
+  /** Write the width straight to the drawer while dragging. */
+  const applyDrawerWidth = (width: number | null): void => {
+    drawerWidthRef.current = width
+    const drawer = drawerRef.current
+    if (drawer === null) return
+    if (width === null) {
+      if (storedDrawerWidth > 0) drawer.style.width = `${storedDrawerWidth}px`
+      else drawer.style.removeProperty('width')
+      return
+    }
+    drawer.style.width = `${width}px`
+  }
+
+  const startDrawerResize = (event: React.PointerEvent<HTMLDivElement>): void => {
+    if (event.button !== 0) return
+    event.preventDefault()
+    event.stopPropagation()
+    const drawer = drawerRef.current
+    if (drawer === null) return
+    const startWidth = drawer.getBoundingClientRect().width
+    drawerResizeRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startWidth,
+      width: Math.round(startWidth),
+    }
+    event.currentTarget.setPointerCapture(event.pointerId)
+    document.body.style.userSelect = 'none'
+    setResizingDrawer(true)
+  }
+
+  const moveDrawerResize = (event: React.PointerEvent<HTMLDivElement>): void => {
+    const resize = drawerResizeRef.current
+    if (resize === null || resize.pointerId !== event.pointerId) return
+    // The drawer is anchored right: moving the strip left makes it wider.
+    const width = clampDrawerWidth(resize.startWidth + (resize.startX - event.clientX))
+    resize.width = width
+    applyDrawerWidth(width)
+  }
+
+  const finishDrawerResize = (event: React.PointerEvent<HTMLDivElement>, commit: boolean): void => {
+    const resize = drawerResizeRef.current
+    if (resize === null || resize.pointerId !== event.pointerId) return
+    drawerResizeRef.current = null
+    document.body.style.removeProperty('user-select')
+    setResizingDrawer(false)
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
+    if (!commit) {
+      applyDrawerWidth(null)
+      drawerWidthRef.current = null
+      return
+    }
+    const width = resize.width
+    drawerWidthRef.current = null
+    applyDrawerWidth(width)
+    canvas.patchGlobalNow({ drawerWidth: width })
+  }
+
+  /** Double-click the strip: forget the explicit width, back to the CSS clamp. */
+  const resetDrawerWidth = (event: React.MouseEvent<HTMLDivElement>): void => {
+    event.preventDefault()
+    event.stopPropagation()
+    drawerWidthRef.current = null
+    applyDrawerWidth(null)
+    canvas.patchGlobalNow({ drawerWidth: undefined })
+  }
+
+  /** Arrow keys on the focused strip nudge the width, persisted immediately. */
+  const nudgeDrawerWidth = (event: React.KeyboardEvent<HTMLDivElement>): void => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+    event.preventDefault()
+    const drawer = drawerRef.current
+    const current = drawerWidthRef.current
+      ?? (storedDrawerWidth > 0 ? storedDrawerWidth : drawer?.getBoundingClientRect().width ?? DRAWER_MIN_WIDTH)
+    const next = clampDrawerWidth(current + (event.key === 'ArrowLeft' ? DRAWER_RESIZE_STEP : -DRAWER_RESIZE_STEP))
+    drawerWidthRef.current = null
+    applyDrawerWidth(null)
+    canvas.patchGlobalNow({ drawerWidth: next })
+  }
+
+  const resizeStrip = (
+    <div
+      className={styles['chatDrawerResize']}
+      role="separator"
+      aria-orientation="vertical"
+      aria-label={t('map.resizeDrawer')}
+      title={t('map.resizeDrawerHint')}
+      tabIndex={0}
+      data-resizing={resizingDrawer ? 'true' : undefined}
+      onPointerDown={startDrawerResize}
+      onPointerMove={moveDrawerResize}
+      onPointerUp={(event) => { finishDrawerResize(event, true) }}
+      onPointerCancel={(event) => { finishDrawerResize(event, false) }}
+      onDoubleClick={resetDrawerWidth}
+      onKeyDown={nudgeDrawerWidth}
+    />
+  )
+
+  // One source for the rendered width: the live drag value (ref, no render of
+  // its own) or the remembered one. Re-renders mid-drag therefore keep it.
+  const renderedDrawerWidth = drawerWidthRef.current ?? (storedDrawerWidth > 0 ? storedDrawerWidth : undefined)
+  const drawerStyle = renderedDrawerWidth !== undefined ? { width: `${renderedDrawerWidth}px` } : undefined
+
   const drawerSessionId = chat?.sessionId ?? notice?.sessionId
   const chatTitle = props.useSessions(
     state => (drawerSessionId === undefined ? undefined : state.byId[drawerSessionId]?.displayTitle),
@@ -719,7 +846,8 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
 
   const drawer = notice !== null
     ? (
-        <aside className={styles['chatDrawer']} aria-label={t('map.chat')}>
+        <aside className={styles['chatDrawer']} aria-label={t('map.chat')} ref={drawerRef} style={drawerStyle}>
+          {resizeStrip}
           <div className={styles['chatDrawerHeader']}>
             <span className={styles['chatDrawerTitle']} title={chatTitle}>{chatTitle}</span>
             <span className={styles['chatDrawerSpace']} />
@@ -757,7 +885,8 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
       )
     : chat !== null && props.SessionProvider !== undefined && props.renderSlot !== undefined
       ? (
-        <aside className={styles['chatDrawer']} aria-label={t('map.chat')}>
+        <aside className={styles['chatDrawer']} aria-label={t('map.chat')} ref={drawerRef} style={drawerStyle}>
+          {resizeStrip}
           <div className={styles['chatDrawerHeader']}>
             <span className={styles['chatDrawerTitle']} title={chatTitle}>{chatTitle}</span>
             <span className={styles['chatDrawerSpace']} />

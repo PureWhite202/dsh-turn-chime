@@ -115,6 +115,9 @@ export const globalSchema = z.object({
   hotkey: z.string().optional(),
   /** Interface language of the map's own copy; absent = follow <html lang>. */
   locale: z.enum(['auto', 'zh', 'en']).optional(),
+  /** Conversation drawer width in px (drag the drawer's left edge); absent =
+   *  the responsive default from the stylesheet. */
+  drawerWidth: z.number().optional(),
   /** Last known placement per session — re-imports restore the arrangement. */
   layoutMemory: z.record(z.string(), z.object({
     x: z.number(),

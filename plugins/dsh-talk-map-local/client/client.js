@@ -148,6 +148,8 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			"map.sessions": "个会话",
 			"map.chat": "会话窗口",
 			"map.closeChat": "关闭会话窗口",
+			"map.resizeDrawer": "拖动调整会话窗口宽度",
+			"map.resizeDrawerHint": "拖动调宽，双击恢复默认",
 			"map.sameSessionHint": "这个会话已经在主界面打开了。侧栏需要先把主界面临时切到同工作区的另一个会话，才能在这里打开它；当前没有可用的会话。可以点「刷新主页重试」再试一次（会话列表可能刚加载出来），或关闭地图继续在主界面输入。",
 			"map.showMain": "关闭地图查看会话",
 			"map.retryParking": "刷新主页重试",
@@ -287,6 +289,8 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			"map.sessions": "sessions",
 			"map.chat": "Conversation panel",
 			"map.closeChat": "Close conversation panel",
+			"map.resizeDrawer": "Resize the conversation panel",
+			"map.resizeDrawerHint": "Drag to resize, double-click to reset",
 			"map.sameSessionHint": "This conversation is already open in the main view. The panel parks the main view on another conversation in the same workspace to open it here, and none is available right now. Try 「Refresh main view & retry」 (the session list may still be loading), or close the map to keep typing in the main view.",
 			"map.showMain": "Close map to view it",
 			"map.retryParking": "Refresh main view & retry",
@@ -1359,7 +1363,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 		};
 		//#endregion
 		//#region \0dsh-css:module:src/client/talk-map.module.css.mjs
-		const css$1 = ".O81TBq_toggleButton{width:32px;height:32px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:8px;justify-content:center;align-items:center;gap:6px;padding:0;display:flex}.O81TBq_toggleButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.O81TBq_toggleButtonActive{background:var(--dsw-alias-interactive-bg-active);color:var(--dsw-alias-brand-primary)}.O81TBq_toggleRow{width:100%;color:var(--dsw-alias-label-secondary);cursor:pointer;text-align:left;background:0 0;border:none;border-radius:8px;align-items:center;gap:8px;padding:6px 10px;font-size:13px;display:flex}.O81TBq_toggleRow:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.O81TBq_toggleLabel{white-space:nowrap}.O81TBq_toggleIcon{flex:none;width:18px;height:18px}.O81TBq_overlay{background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);pointer-events:auto;flex-direction:column;display:flex;position:absolute;top:0;bottom:0;left:0;right:0}[data-windows-titlebar] .O81TBq_overlay{padding-top:var(--dsh-windows-titlebar-height,40px)}html[data-platform=darwin]:not([data-fullscreen]) .O81TBq_overlay{padding-top:var(--dsh-frame-top-clearance,48px)}html[data-platform=darwin]:not([data-fullscreen]) .O81TBq_overlay:before{content:\"\";height:var(--dsh-frame-top-clearance,48px);-webkit-app-region:drag;position:absolute;top:0;left:0;right:0}.O81TBq_header{border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);flex:none;align-items:center;gap:10px;padding:8px 14px;display:flex}.O81TBq_headerTitle{color:var(--dsw-alias-label-primary);font-size:14px;font-weight:600}.O81TBq_headerBadge{color:var(--dsw-alias-label-tertiary);font-size:12px}.O81TBq_headerSpace{flex:1}.O81TBq_hotkeyButton{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;background:0 0;border-radius:999px;flex:none;padding:3px 10px;font-size:12px}.O81TBq_hotkeyButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.O81TBq_langButton{border:1px solid var(--dsw-alias-border-l2);min-width:58px;color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;background:0 0;border-radius:999px;flex:none;padding:3px 10px;font-size:12px}.O81TBq_langButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.O81TBq_zoomResetLabel{letter-spacing:-.5px;font-size:9px;font-weight:700}.O81TBq_closeButton{width:28px;height:28px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:6px;justify-content:center;align-items:center;padding:0;display:flex}.O81TBq_closeButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.O81TBq_canvas{flex:1;min-height:0;position:relative}.O81TBq_canvas .react-flow__nodesselection{pointer-events:none!important;display:none!important}.O81TBq_canvas .react-flow__nodesselection-rect{pointer-events:none!important;display:none!important}.O81TBq_card{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);width:224px;min-height:104px;color:var(--dsw-alias-label-primary);box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1);border-radius:10px;flex-direction:column;gap:6px;padding:10px 12px;font-size:13px;display:flex}.O81TBq_cardSelected{border-color:var(--dsw-alias-brand-primary)}.O81TBq_cardGhost{opacity:.55;border-style:dashed}.O81TBq_cardTop{align-items:center;gap:6px;min-width:0;display:flex}.O81TBq_cardTitle{-webkit-line-clamp:2;word-break:break-word;-webkit-box-orient:vertical;flex:auto;min-width:0;font-size:13px;font-weight:600;line-height:1.3;display:-webkit-box;overflow:hidden}.O81TBq_cardPin{width:22px;height:22px;color:var(--dsw-alias-label-tertiary);cursor:pointer;opacity:.55;background:0 0;border:none;border-radius:6px;flex:none;justify-content:center;align-items:center;margin-left:auto;padding:0;transition:opacity .12s,background-color .12s,color .12s;display:flex;transform:translate(6px,-6px)}.O81TBq_card:hover .O81TBq_cardPin{opacity:1}.O81TBq_cardPin:focus-visible{opacity:1}.O81TBq_cardPin:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.O81TBq_cardPinActive{opacity:1;color:var(--dsw-alias-brand-primary)}.O81TBq_cardPinActive:hover{color:var(--dsw-alias-brand-primary)}.O81TBq_runningDot{background:var(--dsw-alias-state-success-primary);border-radius:50%;flex:none;width:8px;height:8px;animation:1.6s ease-in-out infinite O81TBq_talkmap-pulse}@keyframes O81TBq_talkmap-pulse{50%{opacity:.35}}.O81TBq_cardDoneDot{width:12px;height:12px;color:var(--dsw-alias-state-success-primary,#22c55e);flex:none;display:inline-block;position:relative}.O81TBq_cardDoneDot:after{content:\"\";background:currentColor;border-radius:50%;position:absolute;top:20%;bottom:20%;left:20%;right:20%}.O81TBq_cardFooter{color:var(--dsw-alias-label-tertiary);justify-content:space-between;align-items:center;gap:8px;margin-top:auto;font-size:11px;display:flex}.O81TBq_cardTime{flex:none}.O81TBq_cardForeign{outline-offset:2px;outline:2px dashed #e0a33a}.O81TBq_cardFooterLeft{align-items:center;gap:6px;min-width:0;display:flex}.O81TBq_cardForeignTouch{animation:1.3s ease-in-out infinite O81TBq_cardForeignPulse}@keyframes O81TBq_cardForeignPulse{0%,to{box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1), 0 0 0 0 #e0a33a00}50%{box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1), 0 0 0 7px #e0a33a59}}.O81TBq_cardForeignChip{text-overflow:ellipsis;white-space:nowrap;min-width:0;max-width:118px;color:color-mix(in oklab, #e0a33a 78%, var(--dsw-alias-label-primary));background:#e0a33a29;background:color(display-p3 .842337 .649058 .309/.16);background:lab(71.621% 16.4145 60.6886/.16);border:1px solid #e0a33a8c;border:1px solid color(display-p3 .842337 .649058 .309/.55);border:1px solid lab(71.621% 16.4145 60.6886/.55);border-radius:999px;padding:1px 7px;font-size:10px;font-weight:600;overflow:hidden}.O81TBq_wsFrameForeign{color:color-mix(in oklab, #e0a33a 78%, var(--dsw-alias-label-primary));border:1px dashed #e0a33a8c;border:1px dashed color(display-p3 .842337 .649058 .309/.55);border:1px dashed lab(71.621% 16.4145 60.6886/.55);border-radius:999px;margin-left:6px;padding:1px 7px;font-size:10px;font-weight:600}.O81TBq_cardBadgeRunning{color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-state-success-tertiary);border-radius:999px;align-items:center;gap:5px;padding:1px 7px;font-size:10px;display:inline-flex}.O81TBq_cardBadgeWaiting{color:var(--dsw-alias-state-warn-label);background:var(--dsw-alias-state-warn-tertiary);border-radius:999px;padding:1px 7px;font-size:10px}.O81TBq_cardBadgeDone{color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-state-success-tertiary);border-radius:999px;padding:1px 7px;font-size:10px}.O81TBq_cardRemove{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:6px;align-self:flex-start;padding:3px 8px;font-size:12px}.O81TBq_cardRemove:hover{background:var(--dsw-alias-interactive-bg-hover-danger);color:var(--dsw-alias-state-error-primary)}.O81TBq_card .O81TBq_cardHandle{opacity:.55;background:0 0;border:none;width:18px;height:18px}.O81TBq_cardHandle:after{content:\"\";background:var(--dsw-alias-label-tertiary);border:2px solid var(--dsw-alias-bg-layer-1);border-radius:50%;position:absolute;top:5px;bottom:5px;left:5px;right:5px}.O81TBq_card:hover .O81TBq_cardHandle,.O81TBq_canvasConnecting .O81TBq_cardHandle,.O81TBq_cardHandle:hover{opacity:1}.O81TBq_cardHandle:hover:after{background:var(--dsw-alias-brand-primary)}.O81TBq_spawnFrom{color:var(--dsw-alias-label-secondary);font-size:12px}.O81TBq_spawnModes{gap:6px;display:flex}.O81TBq_spawnModeBtn{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:8px;flex:1;padding:5px 0;font-size:12px}.O81TBq_spawnModeBtn:hover{background:var(--dsw-alias-interactive-bg-hover)}.O81TBq_spawnModeActive{border-color:var(--dsw-alias-brand-primary);color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-interactive-bg-active)}.O81TBq_spawnHint{color:var(--dsw-alias-label-tertiary);font-size:12px}.O81TBq_spawnTextarea{box-sizing:border-box;resize:vertical;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;min-height:140px;color:var(--dsw-alias-label-primary);border-radius:8px;padding:10px;font-family:inherit;font-size:13px;line-height:1.5}.O81TBq_spawnError{color:var(--dsw-alias-state-error-primary);word-break:break-all;font-size:12px}.O81TBq_spawnActions{justify-content:flex-end;gap:8px;display:flex}.O81TBq_spawnBtnPrimary{background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground);cursor:pointer;border:none;border-radius:8px;padding:6px 16px;font-size:13px}.O81TBq_spawnBtnPrimary:hover{background:var(--dsw-alias-button-primary-hover)}.O81TBq_spawnBtnPrimary:disabled{background:var(--dsw-alias-button-primary-dimmed);cursor:default}.O81TBq_spawnBtnGhost{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:8px;padding:6px 16px;font-size:13px}.O81TBq_spawnBtnGhost:hover{background:var(--dsw-alias-interactive-bg-hover)}.O81TBq_wsFrame{border:2px dashed color-mix(in oklab, var(--dsw-alias-label-primary) 32%, transparent);background:color-mix(in oklab, var(--dsw-alias-bg-layer-1) 55%, transparent);border-radius:16px;position:relative}.O81TBq_wsFrameSelected{border-style:solid;border-color:var(--dsw-alias-brand-primary);background:color-mix(in oklab, var(--dsw-alias-brand-primary) 8%, transparent)}.O81TBq_wsFrameLabel{border:1px solid color-mix(in oklab, var(--dsw-alias-label-primary) 22%, transparent);background:var(--dsw-alias-bg-layer-1);box-shadow:0 2px 10px color-mix(in oklab, var(--dsw-alias-bg-mask-2) 55%, transparent);color:var(--dsw-alias-label-primary);white-space:nowrap;pointer-events:auto;cursor:grab;border-radius:999px;align-items:center;gap:6px;padding:3px 12px;font-size:12px;font-weight:600;display:flex;position:absolute;top:-12px;left:14px}.O81TBq_wsFrameLabel:active{cursor:grabbing}.O81TBq_wsFrameEdge{pointer-events:auto;cursor:grab;position:absolute}.O81TBq_wsFrameEdge:active{cursor:grabbing}.O81TBq_wsFrameResize{pointer-events:auto;cursor:nwse-resize;border-right:3px solid var(--dsw-alias-border-l3);border-bottom:3px solid var(--dsw-alias-border-l3);opacity:.7;border-bottom-right-radius:14px;width:16px;height:16px;position:absolute;bottom:-2px;right:-2px}.O81TBq_wsFrameResize:hover{border-color:var(--dsw-alias-brand-primary);opacity:1}.O81TBq_wsFrameCount{color:var(--dsw-alias-label-tertiary);font-weight:400}.O81TBq_draftCard{box-sizing:border-box;border:1.5px solid var(--dsw-alias-brand-primary);background:var(--dsw-alias-bg-layer-1);width:360px;box-shadow:0 8px 30px var(--dsw-alias-bg-mask-2);border-radius:12px;flex-direction:column;gap:8px;padding:14px;font-size:13px;display:flex}.O81TBq_draftHeading{color:var(--dsw-alias-label-primary);font-size:13px;font-weight:600}.O81TBq_draftRow{align-items:center;gap:8px;display:flex}.O81TBq_draftLabel{width:52px;color:var(--dsw-alias-label-tertiary);flex:none;font-size:12px}.O81TBq_draftSelect{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);min-width:0;color:var(--dsw-alias-label-primary);border-radius:7px;flex:1;padding:5px 8px;font-size:12px}.O81TBq_draftGrow{flex-direction:column;flex:1;gap:3px;min-width:0;display:flex}.O81TBq_draftInput{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;color:var(--dsw-alias-label-primary);border-radius:7px;padding:5px 8px;font-family:inherit;font-size:12px}.O81TBq_draftPathPreview{color:var(--dsw-alias-label-tertiary);word-break:break-all;font-size:11px}.O81TBq_draftTextarea{box-sizing:border-box;resize:vertical;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;min-height:88px;color:var(--dsw-alias-label-primary);border-radius:8px;padding:9px;font-family:inherit;font-size:13px;line-height:1.5}.O81TBq_draftAttachments{scrollbar-width:thin;gap:8px;max-height:72px;padding:2px 2px 4px;display:flex;overflow-x:auto;overflow-y:hidden}.O81TBq_draftAttachmentImage{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);border-radius:10px;flex:none;width:64px;height:64px;position:relative;overflow:hidden}.O81TBq_draftAttachmentImage img{object-fit:cover;width:100%;height:100%;display:block}.O81TBq_draftAttachmentFile{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:190px;height:64px;color:var(--dsw-alias-label-primary);border-radius:10px;flex:none;align-items:center;gap:8px;padding:8px 10px;display:flex;position:relative}.O81TBq_draftAttachmentFileIcon{width:24px;height:24px;color:var(--dsw-alias-brand-primary);flex:none}.O81TBq_draftAttachmentFileText{flex-direction:column;gap:2px;min-width:0;display:flex}.O81TBq_draftAttachmentFileName{text-overflow:ellipsis;white-space:nowrap;font-size:12px;overflow:hidden}.O81TBq_draftAttachmentFileMeta{color:var(--dsw-alias-label-tertiary);font-size:11px}.O81TBq_draftAttachmentRemove{background:var(--dsw-alias-button-contrast-fill,#0000008c);width:18px;height:18px;color:var(--dsw-alias-label-primary-inverted,#fff);cursor:pointer;opacity:0;border:none;border-radius:50%;place-items:center;padding:0;font-size:12px;line-height:1;transition:opacity .12s ease-in-out;display:grid;position:absolute;top:2px;right:2px}.O81TBq_draftAttachmentImage:hover .O81TBq_draftAttachmentRemove,.O81TBq_draftAttachmentFile:hover .O81TBq_draftAttachmentRemove{opacity:1}.O81TBq_draftAttachmentRemove:focus-visible{opacity:1}@media (hover:none),(pointer:coarse){.O81TBq_draftAttachmentRemove{opacity:1}}.O81TBq_draftAttachmentProgress{background:var(--dsw-alias-fill-tertiary,#0000001f);border-radius:1px;height:2px;position:absolute;bottom:4px;left:6px;right:6px;overflow:hidden}.O81TBq_draftAttachmentProgressBar{background:var(--dsw-alias-brand-primary);height:100%;transition:width .15s ease-out}.O81TBq_draftCardDrop{background:color-mix(in oklab, var(--dsw-alias-brand-primary) 6%, var(--dsw-alias-bg-layer-1))}.O81TBq_draftDropHint{color:var(--dsw-alias-brand-primary);font-size:12px}.O81TBq_colorToolbar{z-index:7;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);box-shadow:0 2px 10px var(--dsw-alias-bg-mask-1);border-radius:10px;align-items:center;gap:6px;padding:6px 10px;display:flex;position:absolute;top:12px;left:12px}.O81TBq_colorToolbarLabel{color:var(--dsw-alias-label-tertiary);margin-right:2px;font-size:12px}.O81TBq_colorSwatch{border:1px solid var(--dsw-alias-border-l2);cursor:pointer;width:18px;height:18px;color:var(--dsw-alias-label-secondary);border-radius:50%;justify-content:center;align-items:center;padding:0;font-size:11px;line-height:1;display:flex}.O81TBq_colorSwatch:hover{transform:scale(1.15)}.O81TBq_colorSwatchClear{background:0 0}.O81TBq_menu{z-index:9;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);min-width:200px;max-width:280px;max-height:380px;box-shadow:0 8px 30px var(--dsw-alias-bg-mask-2);border-radius:10px;flex-direction:column;padding:6px;display:flex;position:absolute;overflow-y:auto}.O81TBq_menuTitle{color:var(--dsw-alias-label-tertiary);flex:none;padding:4px 10px 6px;font-size:11px}.O81TBq_menuSearch{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:calc(100% - 8px);color:var(--dsw-alias-label-primary);border-radius:7px;flex:none;margin:2px 4px 6px;padding:5px 8px;font-family:inherit;font-size:12px}.O81TBq_menuHint{color:var(--dsw-alias-label-dimmed);font-size:11px}.O81TBq_menuPreview{color:var(--dsw-alias-label-tertiary);word-break:break-all;flex:none;padding:0 10px 4px;font-size:11px}.O81TBq_menuError{color:var(--dsw-alias-state-error-primary);word-break:break-all;flex:none;padding:0 10px 4px;font-size:11px}.O81TBq_menuEmpty{color:var(--dsw-alias-label-tertiary);padding:8px 10px;font-size:12px}.O81TBq_menuItem{text-align:left;width:100%;color:var(--dsw-alias-label-primary);cursor:pointer;white-space:nowrap;text-overflow:ellipsis;background:0 0;border:none;border-radius:7px;flex:none;padding:6px 10px;font-size:13px;display:block;overflow:hidden}.O81TBq_menuItem:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.O81TBq_menuItem:disabled{color:var(--dsw-alias-label-dimmed);cursor:default}.O81TBq_wsFrameHidden{color:var(--dsw-alias-state-warn-primary);font-weight:400}.O81TBq_emptyHint{color:var(--dsw-alias-label-tertiary);pointer-events:none;z-index:4;font-size:13px;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}.O81TBq_toast{z-index:8;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);max-width:70%;box-shadow:0 4px 16px var(--dsw-alias-bg-mask-2);color:var(--dsw-alias-label-primary);pointer-events:none;white-space:nowrap;text-overflow:ellipsis;border-radius:999px;padding:7px 16px;font-size:12px;position:absolute;bottom:28px;left:50%;overflow:hidden;transform:translate(-50%)}.O81TBq_toastActionable{pointer-events:auto;align-items:center;gap:10px;padding-right:8px;display:inline-flex}.O81TBq_toastText{text-overflow:ellipsis;min-width:0;overflow:hidden}.O81TBq_toastAction{background:var(--dsw-alias-bg-layer-2,#7f7f7f29);color:var(--dsw-alias-label-primary);font:inherit;cursor:pointer;border:0;border-radius:999px;flex:none;padding:2px 8px;font-weight:600}.O81TBq_toastAction:hover{background:var(--dsw-alias-bg-layer-3,#7f7f7f3d)}.O81TBq_body{flex:1;min-height:0;display:flex;position:relative}.O81TBq_chatDrawer{z-index:6;background:var(--dsw-alias-bg-base);border-left:1px solid var(--dsw-alias-border-l1);width:max(360px,min(42%,720px));box-shadow:-12px 0 28px -18px var(--dsw-alias-bg-mask-2);flex-direction:column;display:flex;position:absolute;top:0;bottom:0;right:0;container:O81TBq_talk-map-drawer/inline-size}.O81TBq_chatDrawerHeader{border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);flex:none;align-items:center;gap:8px;padding:6px 10px;display:flex}.O81TBq_chatDrawerTitle{text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--dsw-alias-label-primary);font-size:12px;font-weight:600;overflow:hidden}.O81TBq_chatDrawerSpace{flex:1}.O81TBq_chatDrawerClose{width:26px;height:26px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:6px;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.O81TBq_chatDrawerClose:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.O81TBq_chatDrawerArchived{color:var(--dsw-alias-label-primary);background:#e0a33a1f;background:color(display-p3 .842337 .649058 .309/.12);background:lab(71.621% 16.4145 60.6886/.12);border-bottom:1px solid #e0a33a59;border-bottom:1px solid color(display-p3 .842337 .649058 .309/.35);border-bottom:1px solid lab(71.621% 16.4145 60.6886/.35);align-items:center;gap:10px;padding:8px 12px;font-size:12px;display:flex}.O81TBq_chatDrawerArchivedText{flex:1;min-width:0}.O81TBq_chatDrawerArchivedButton{color:inherit;cursor:pointer;background:0 0;border:1px solid #e0a33a8c;border:1px solid color(display-p3 .842337 .649058 .309/.55);border:1px solid lab(71.621% 16.4145 60.6886/.55);border-radius:999px;flex:none;padding:2px 10px;font-size:12px}.O81TBq_chatDrawerArchivedButton:hover{background:#e0a33a2e;background:color(display-p3 .842337 .649058 .309/.18);background:lab(71.621% 16.4145 60.6886/.18)}.O81TBq_chatDrawerBody{flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}@container O81TBq_talk-map-drawer (width>=560px){.O81TBq_chatDrawer nav[aria-label]{display:block}}.O81TBq_chatDrawerNotice{flex-direction:column;flex:1;align-items:flex-start;gap:14px;padding:22px 20px;display:flex}.O81TBq_chatDrawerNoticeText{color:var(--dsw-alias-label-secondary);margin:0;font-size:13px;line-height:1.7}.O81TBq_chatDrawerNoticeActions{flex-wrap:wrap;gap:8px;display:flex}.O81TBq_chatDrawerNoticeButton{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);cursor:pointer;border-radius:8px;padding:6px 14px;font-size:13px}.O81TBq_chatDrawerNoticeButton:hover{background:var(--dsw-alias-interactive-bg-hover)}.O81TBq_chatDrawerNoticeButton:disabled{opacity:.55;cursor:default}.O81TBq_chatPanel{flex-direction:column;flex:1;min-height:0;display:flex}.O81TBq_cardWaitingButton{color:var(--dsw-alias-state-warn-label);background:var(--dsw-alias-state-warn-tertiary);cursor:pointer;border:none;border-radius:999px;padding:1px 7px;font-size:10px}.O81TBq_cardWaitingButton:hover{filter:brightness(1.15)}.O81TBq_interactMenu{gap:4px;max-height:min(420px,70vh)}.O81TBq_interactTitle{color:var(--dsw-alias-label-primary);padding:4px 6px 0;font-size:12px;font-weight:600}.O81TBq_interactText{color:var(--dsw-alias-label-secondary);white-space:pre-wrap;word-break:break-word;padding:2px 6px 4px;font-size:12px;line-height:1.45}.O81TBq_interactNote{color:var(--dsw-alias-label-tertiary);padding:0 6px 4px;font-size:11px}.O81TBq_interactScroll{flex-direction:column;gap:6px;max-height:260px;display:flex;overflow-y:auto}.O81TBq_interactGroup{flex-direction:column;gap:4px;display:flex}.O81TBq_interactOptions{flex-wrap:wrap;gap:6px;padding:2px 6px 4px;display:flex}.O81TBq_interactOption{text-align:left;border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;flex:100%;padding:7px 10px;font-size:12px}.O81TBq_interactOption:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.O81TBq_interactOptionActive{border-color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-interactive-bg-active)}.O81TBq_interactActions{gap:6px;padding:4px 6px 6px;display:flex}.O81TBq_interactAllow{background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground);cursor:pointer;border:none;border-radius:8px;flex:1;padding:7px 10px;font-size:12px}.O81TBq_interactAllow:hover:not(:disabled){background:var(--dsw-alias-button-primary-hover)}.O81TBq_interactDanger{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-state-error-primary);cursor:pointer;background:0 0;border-radius:8px;flex:1;padding:7px 10px;font-size:12px}.O81TBq_interactDanger:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover-danger)}.O81TBq_interactSubmit,.O81TBq_interactOpen{border:1px solid var(--dsw-alias-border-l2);width:100%;color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;margin-top:4px;padding:7px 10px;font-size:12px}.O81TBq_interactSubmit:hover:not(:disabled),.O81TBq_interactOpen:hover{background:var(--dsw-alias-interactive-bg-hover)}.O81TBq_interactSubmit:disabled{color:var(--dsw-alias-label-dimmed);cursor:default}.O81TBq_interactError{color:var(--dsw-alias-state-error-primary);word-break:break-word;padding:2px 6px 4px;font-size:11px}.O81TBq_mapFallback{background:var(--dsw-alias-bg-base);min-height:0;color:var(--dsw-alias-label-primary);flex-direction:column;flex:1;justify-content:center;align-items:center;gap:10px;padding:24px;display:flex}.O81TBq_mapFallbackTitle{font-size:14px;font-weight:600}.O81TBq_mapFallbackText{text-align:center;max-width:420px;color:var(--dsw-alias-label-secondary);font-size:12px}.O81TBq_mapFallbackButton{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;padding:6px 14px;font-size:12px}.O81TBq_mapFallbackButton:hover{background:var(--dsw-alias-interactive-bg-hover)}.O81TBq_imageCard{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);width:100%;height:100%;box-shadow:0 10px 26px -18px var(--dsw-alias-bg-mask-2);border-radius:10px;overflow:hidden}.O81TBq_imageCardSelected{border-color:var(--dsw-alias-brand-primary);box-shadow:0 0 0 2px var(--dsw-alias-brand-primary)}.O81TBq_imageCardImg{object-fit:contain;background:var(--dsw-alias-bg-base);width:100%;height:100%;display:block}";
+		const css$1 = ".O81TBq_toggleButton{width:32px;height:32px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:8px;justify-content:center;align-items:center;gap:6px;padding:0;display:flex}.O81TBq_toggleButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.O81TBq_toggleButtonActive{background:var(--dsw-alias-interactive-bg-active);color:var(--dsw-alias-brand-primary)}.O81TBq_toggleRow{width:100%;color:var(--dsw-alias-label-secondary);cursor:pointer;text-align:left;background:0 0;border:none;border-radius:8px;align-items:center;gap:8px;padding:6px 10px;font-size:13px;display:flex}.O81TBq_toggleRow:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.O81TBq_toggleLabel{white-space:nowrap}.O81TBq_toggleIcon{flex:none;width:18px;height:18px}.O81TBq_overlay{background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);pointer-events:auto;flex-direction:column;display:flex;position:absolute;top:0;bottom:0;left:0;right:0}[data-windows-titlebar] .O81TBq_overlay{padding-top:var(--dsh-windows-titlebar-height,40px)}html[data-platform=darwin]:not([data-fullscreen]) .O81TBq_overlay{padding-top:var(--dsh-frame-top-clearance,48px)}html[data-platform=darwin]:not([data-fullscreen]) .O81TBq_overlay:before{content:\"\";height:var(--dsh-frame-top-clearance,48px);-webkit-app-region:drag;position:absolute;top:0;left:0;right:0}.O81TBq_header{border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);flex:none;align-items:center;gap:10px;padding:8px 14px;display:flex}.O81TBq_headerTitle{color:var(--dsw-alias-label-primary);font-size:14px;font-weight:600}.O81TBq_headerBadge{color:var(--dsw-alias-label-tertiary);font-size:12px}.O81TBq_headerSpace{flex:1}.O81TBq_hotkeyButton{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;background:0 0;border-radius:999px;flex:none;padding:3px 10px;font-size:12px}.O81TBq_hotkeyButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.O81TBq_langButton{border:1px solid var(--dsw-alias-border-l2);min-width:58px;color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;background:0 0;border-radius:999px;flex:none;padding:3px 10px;font-size:12px}.O81TBq_langButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.O81TBq_zoomResetLabel{letter-spacing:-.5px;font-size:9px;font-weight:700}.O81TBq_closeButton{width:28px;height:28px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:6px;justify-content:center;align-items:center;padding:0;display:flex}.O81TBq_closeButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.O81TBq_canvas{flex:1;min-height:0;position:relative}.O81TBq_canvas .react-flow__nodesselection{pointer-events:none!important;display:none!important}.O81TBq_canvas .react-flow__nodesselection-rect{pointer-events:none!important;display:none!important}.O81TBq_card{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);width:224px;min-height:104px;color:var(--dsw-alias-label-primary);box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1);border-radius:10px;flex-direction:column;gap:6px;padding:10px 12px;font-size:13px;display:flex}.O81TBq_cardSelected{border-color:var(--dsw-alias-brand-primary)}.O81TBq_cardGhost{opacity:.55;border-style:dashed}.O81TBq_cardTop{align-items:center;gap:6px;min-width:0;display:flex}.O81TBq_cardTitle{-webkit-line-clamp:2;word-break:break-word;-webkit-box-orient:vertical;flex:auto;min-width:0;font-size:13px;font-weight:600;line-height:1.3;display:-webkit-box;overflow:hidden}.O81TBq_cardPin{width:22px;height:22px;color:var(--dsw-alias-label-tertiary);cursor:pointer;opacity:.55;background:0 0;border:none;border-radius:6px;flex:none;justify-content:center;align-items:center;margin-left:auto;padding:0;transition:opacity .12s,background-color .12s,color .12s;display:flex;transform:translate(6px,-6px)}.O81TBq_card:hover .O81TBq_cardPin{opacity:1}.O81TBq_cardPin:focus-visible{opacity:1}.O81TBq_cardPin:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.O81TBq_cardPinActive{opacity:1;color:var(--dsw-alias-brand-primary)}.O81TBq_cardPinActive:hover{color:var(--dsw-alias-brand-primary)}.O81TBq_runningDot{background:var(--dsw-alias-state-success-primary);border-radius:50%;flex:none;width:8px;height:8px;animation:1.6s ease-in-out infinite O81TBq_talkmap-pulse}@keyframes O81TBq_talkmap-pulse{50%{opacity:.35}}.O81TBq_cardDoneDot{width:12px;height:12px;color:var(--dsw-alias-state-success-primary,#22c55e);flex:none;display:inline-block;position:relative}.O81TBq_cardDoneDot:after{content:\"\";background:currentColor;border-radius:50%;position:absolute;top:20%;bottom:20%;left:20%;right:20%}.O81TBq_cardFooter{color:var(--dsw-alias-label-tertiary);justify-content:space-between;align-items:center;gap:8px;margin-top:auto;font-size:11px;display:flex}.O81TBq_cardTime{flex:none}.O81TBq_cardForeign{outline-offset:2px;outline:2px dashed #e0a33a}.O81TBq_cardFooterLeft{align-items:center;gap:6px;min-width:0;display:flex}.O81TBq_cardForeignTouch{animation:1.3s ease-in-out infinite O81TBq_cardForeignPulse}@keyframes O81TBq_cardForeignPulse{0%,to{box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1), 0 0 0 0 #e0a33a00}50%{box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1), 0 0 0 7px #e0a33a59}}.O81TBq_cardForeignChip{text-overflow:ellipsis;white-space:nowrap;min-width:0;max-width:118px;color:color-mix(in oklab, #e0a33a 78%, var(--dsw-alias-label-primary));background:#e0a33a29;background:color(display-p3 .842337 .649058 .309/.16);background:lab(71.621% 16.4145 60.6886/.16);border:1px solid #e0a33a8c;border:1px solid color(display-p3 .842337 .649058 .309/.55);border:1px solid lab(71.621% 16.4145 60.6886/.55);border-radius:999px;padding:1px 7px;font-size:10px;font-weight:600;overflow:hidden}.O81TBq_wsFrameForeign{color:color-mix(in oklab, #e0a33a 78%, var(--dsw-alias-label-primary));border:1px dashed #e0a33a8c;border:1px dashed color(display-p3 .842337 .649058 .309/.55);border:1px dashed lab(71.621% 16.4145 60.6886/.55);border-radius:999px;margin-left:6px;padding:1px 7px;font-size:10px;font-weight:600}.O81TBq_cardBadgeRunning{color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-state-success-tertiary);border-radius:999px;align-items:center;gap:5px;padding:1px 7px;font-size:10px;display:inline-flex}.O81TBq_cardBadgeWaiting{color:var(--dsw-alias-state-warn-label);background:var(--dsw-alias-state-warn-tertiary);border-radius:999px;padding:1px 7px;font-size:10px}.O81TBq_cardBadgeDone{color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-state-success-tertiary);border-radius:999px;padding:1px 7px;font-size:10px}.O81TBq_cardRemove{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:6px;align-self:flex-start;padding:3px 8px;font-size:12px}.O81TBq_cardRemove:hover{background:var(--dsw-alias-interactive-bg-hover-danger);color:var(--dsw-alias-state-error-primary)}.O81TBq_card .O81TBq_cardHandle{opacity:.55;background:0 0;border:none;width:18px;height:18px}.O81TBq_cardHandle:after{content:\"\";background:var(--dsw-alias-label-tertiary);border:2px solid var(--dsw-alias-bg-layer-1);border-radius:50%;position:absolute;top:5px;bottom:5px;left:5px;right:5px}.O81TBq_card:hover .O81TBq_cardHandle,.O81TBq_canvasConnecting .O81TBq_cardHandle,.O81TBq_cardHandle:hover{opacity:1}.O81TBq_cardHandle:hover:after{background:var(--dsw-alias-brand-primary)}.O81TBq_spawnFrom{color:var(--dsw-alias-label-secondary);font-size:12px}.O81TBq_spawnModes{gap:6px;display:flex}.O81TBq_spawnModeBtn{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:8px;flex:1;padding:5px 0;font-size:12px}.O81TBq_spawnModeBtn:hover{background:var(--dsw-alias-interactive-bg-hover)}.O81TBq_spawnModeActive{border-color:var(--dsw-alias-brand-primary);color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-interactive-bg-active)}.O81TBq_spawnHint{color:var(--dsw-alias-label-tertiary);font-size:12px}.O81TBq_spawnTextarea{box-sizing:border-box;resize:vertical;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;min-height:140px;color:var(--dsw-alias-label-primary);border-radius:8px;padding:10px;font-family:inherit;font-size:13px;line-height:1.5}.O81TBq_spawnError{color:var(--dsw-alias-state-error-primary);word-break:break-all;font-size:12px}.O81TBq_spawnActions{justify-content:flex-end;gap:8px;display:flex}.O81TBq_spawnBtnPrimary{background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground);cursor:pointer;border:none;border-radius:8px;padding:6px 16px;font-size:13px}.O81TBq_spawnBtnPrimary:hover{background:var(--dsw-alias-button-primary-hover)}.O81TBq_spawnBtnPrimary:disabled{background:var(--dsw-alias-button-primary-dimmed);cursor:default}.O81TBq_spawnBtnGhost{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:8px;padding:6px 16px;font-size:13px}.O81TBq_spawnBtnGhost:hover{background:var(--dsw-alias-interactive-bg-hover)}.O81TBq_wsFrame{border:2px dashed color-mix(in oklab, var(--dsw-alias-label-primary) 32%, transparent);background:color-mix(in oklab, var(--dsw-alias-bg-layer-1) 55%, transparent);border-radius:16px;position:relative}.O81TBq_wsFrameSelected{border-style:solid;border-color:var(--dsw-alias-brand-primary);background:color-mix(in oklab, var(--dsw-alias-brand-primary) 8%, transparent)}.O81TBq_wsFrameLabel{border:1px solid color-mix(in oklab, var(--dsw-alias-label-primary) 22%, transparent);background:var(--dsw-alias-bg-layer-1);box-shadow:0 2px 10px color-mix(in oklab, var(--dsw-alias-bg-mask-2) 55%, transparent);color:var(--dsw-alias-label-primary);white-space:nowrap;pointer-events:auto;cursor:grab;border-radius:999px;align-items:center;gap:6px;padding:3px 12px;font-size:12px;font-weight:600;display:flex;position:absolute;top:-12px;left:14px}.O81TBq_wsFrameLabel:active{cursor:grabbing}.O81TBq_wsFrameEdge{pointer-events:auto;cursor:grab;position:absolute}.O81TBq_wsFrameEdge:active{cursor:grabbing}.O81TBq_wsFrameResize{pointer-events:auto;cursor:nwse-resize;border-right:3px solid var(--dsw-alias-border-l3);border-bottom:3px solid var(--dsw-alias-border-l3);opacity:.7;border-bottom-right-radius:14px;width:16px;height:16px;position:absolute;bottom:-2px;right:-2px}.O81TBq_wsFrameResize:hover{border-color:var(--dsw-alias-brand-primary);opacity:1}.O81TBq_wsFrameCount{color:var(--dsw-alias-label-tertiary);font-weight:400}.O81TBq_draftCard{box-sizing:border-box;border:1.5px solid var(--dsw-alias-brand-primary);background:var(--dsw-alias-bg-layer-1);width:360px;box-shadow:0 8px 30px var(--dsw-alias-bg-mask-2);border-radius:12px;flex-direction:column;gap:8px;padding:14px;font-size:13px;display:flex}.O81TBq_draftHeading{color:var(--dsw-alias-label-primary);font-size:13px;font-weight:600}.O81TBq_draftRow{align-items:center;gap:8px;display:flex}.O81TBq_draftLabel{width:52px;color:var(--dsw-alias-label-tertiary);flex:none;font-size:12px}.O81TBq_draftSelect{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);min-width:0;color:var(--dsw-alias-label-primary);border-radius:7px;flex:1;padding:5px 8px;font-size:12px}.O81TBq_draftGrow{flex-direction:column;flex:1;gap:3px;min-width:0;display:flex}.O81TBq_draftInput{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;color:var(--dsw-alias-label-primary);border-radius:7px;padding:5px 8px;font-family:inherit;font-size:12px}.O81TBq_draftPathPreview{color:var(--dsw-alias-label-tertiary);word-break:break-all;font-size:11px}.O81TBq_draftTextarea{box-sizing:border-box;resize:vertical;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;min-height:88px;color:var(--dsw-alias-label-primary);border-radius:8px;padding:9px;font-family:inherit;font-size:13px;line-height:1.5}.O81TBq_draftAttachments{scrollbar-width:thin;gap:8px;max-height:72px;padding:2px 2px 4px;display:flex;overflow-x:auto;overflow-y:hidden}.O81TBq_draftAttachmentImage{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);border-radius:10px;flex:none;width:64px;height:64px;position:relative;overflow:hidden}.O81TBq_draftAttachmentImage img{object-fit:cover;width:100%;height:100%;display:block}.O81TBq_draftAttachmentFile{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:190px;height:64px;color:var(--dsw-alias-label-primary);border-radius:10px;flex:none;align-items:center;gap:8px;padding:8px 10px;display:flex;position:relative}.O81TBq_draftAttachmentFileIcon{width:24px;height:24px;color:var(--dsw-alias-brand-primary);flex:none}.O81TBq_draftAttachmentFileText{flex-direction:column;gap:2px;min-width:0;display:flex}.O81TBq_draftAttachmentFileName{text-overflow:ellipsis;white-space:nowrap;font-size:12px;overflow:hidden}.O81TBq_draftAttachmentFileMeta{color:var(--dsw-alias-label-tertiary);font-size:11px}.O81TBq_draftAttachmentRemove{background:var(--dsw-alias-button-contrast-fill,#0000008c);width:18px;height:18px;color:var(--dsw-alias-label-primary-inverted,#fff);cursor:pointer;opacity:0;border:none;border-radius:50%;place-items:center;padding:0;font-size:12px;line-height:1;transition:opacity .12s ease-in-out;display:grid;position:absolute;top:2px;right:2px}.O81TBq_draftAttachmentImage:hover .O81TBq_draftAttachmentRemove,.O81TBq_draftAttachmentFile:hover .O81TBq_draftAttachmentRemove{opacity:1}.O81TBq_draftAttachmentRemove:focus-visible{opacity:1}@media (hover:none),(pointer:coarse){.O81TBq_draftAttachmentRemove{opacity:1}}.O81TBq_draftAttachmentProgress{background:var(--dsw-alias-fill-tertiary,#0000001f);border-radius:1px;height:2px;position:absolute;bottom:4px;left:6px;right:6px;overflow:hidden}.O81TBq_draftAttachmentProgressBar{background:var(--dsw-alias-brand-primary);height:100%;transition:width .15s ease-out}.O81TBq_draftCardDrop{background:color-mix(in oklab, var(--dsw-alias-brand-primary) 6%, var(--dsw-alias-bg-layer-1))}.O81TBq_draftDropHint{color:var(--dsw-alias-brand-primary);font-size:12px}.O81TBq_colorToolbar{z-index:7;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);box-shadow:0 2px 10px var(--dsw-alias-bg-mask-1);border-radius:10px;align-items:center;gap:6px;padding:6px 10px;display:flex;position:absolute;top:12px;left:12px}.O81TBq_colorToolbarLabel{color:var(--dsw-alias-label-tertiary);margin-right:2px;font-size:12px}.O81TBq_colorSwatch{border:1px solid var(--dsw-alias-border-l2);cursor:pointer;width:18px;height:18px;color:var(--dsw-alias-label-secondary);border-radius:50%;justify-content:center;align-items:center;padding:0;font-size:11px;line-height:1;display:flex}.O81TBq_colorSwatch:hover{transform:scale(1.15)}.O81TBq_colorSwatchClear{background:0 0}.O81TBq_menu{z-index:9;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);min-width:200px;max-width:280px;max-height:380px;box-shadow:0 8px 30px var(--dsw-alias-bg-mask-2);border-radius:10px;flex-direction:column;padding:6px;display:flex;position:absolute;overflow-y:auto}.O81TBq_menuTitle{color:var(--dsw-alias-label-tertiary);flex:none;padding:4px 10px 6px;font-size:11px}.O81TBq_menuSearch{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:calc(100% - 8px);color:var(--dsw-alias-label-primary);border-radius:7px;flex:none;margin:2px 4px 6px;padding:5px 8px;font-family:inherit;font-size:12px}.O81TBq_menuHint{color:var(--dsw-alias-label-dimmed);font-size:11px}.O81TBq_menuPreview{color:var(--dsw-alias-label-tertiary);word-break:break-all;flex:none;padding:0 10px 4px;font-size:11px}.O81TBq_menuError{color:var(--dsw-alias-state-error-primary);word-break:break-all;flex:none;padding:0 10px 4px;font-size:11px}.O81TBq_menuEmpty{color:var(--dsw-alias-label-tertiary);padding:8px 10px;font-size:12px}.O81TBq_menuItem{text-align:left;width:100%;color:var(--dsw-alias-label-primary);cursor:pointer;white-space:nowrap;text-overflow:ellipsis;background:0 0;border:none;border-radius:7px;flex:none;padding:6px 10px;font-size:13px;display:block;overflow:hidden}.O81TBq_menuItem:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.O81TBq_menuItem:disabled{color:var(--dsw-alias-label-dimmed);cursor:default}.O81TBq_wsFrameHidden{color:var(--dsw-alias-state-warn-primary);font-weight:400}.O81TBq_emptyHint{color:var(--dsw-alias-label-tertiary);pointer-events:none;z-index:4;font-size:13px;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}.O81TBq_toast{z-index:8;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);max-width:70%;box-shadow:0 4px 16px var(--dsw-alias-bg-mask-2);color:var(--dsw-alias-label-primary);pointer-events:none;white-space:nowrap;text-overflow:ellipsis;border-radius:999px;padding:7px 16px;font-size:12px;position:absolute;bottom:28px;left:50%;overflow:hidden;transform:translate(-50%)}.O81TBq_toastActionable{pointer-events:auto;align-items:center;gap:10px;padding-right:8px;display:inline-flex}.O81TBq_toastText{text-overflow:ellipsis;min-width:0;overflow:hidden}.O81TBq_toastAction{background:var(--dsw-alias-bg-layer-2,#7f7f7f29);color:var(--dsw-alias-label-primary);font:inherit;cursor:pointer;border:0;border-radius:999px;flex:none;padding:2px 8px;font-weight:600}.O81TBq_toastAction:hover{background:var(--dsw-alias-bg-layer-3,#7f7f7f3d)}.O81TBq_body{flex:1;min-height:0;display:flex;position:relative}.O81TBq_chatDrawer{z-index:6;background:var(--dsw-alias-bg-base);border-left:1px solid var(--dsw-alias-border-l1);width:max(360px,min(42%,720px));max-width:calc(100vw - 280px);box-shadow:-12px 0 28px -18px var(--dsw-alias-bg-mask-2);flex-direction:column;display:flex;position:absolute;top:0;bottom:0;right:0;container:O81TBq_talk-map-drawer/inline-size}.O81TBq_chatDrawerResize{z-index:1;cursor:col-resize;touch-action:none;background:0 0;border:0;width:10px;padding:0;position:absolute;top:0;bottom:0;left:-4px}.O81TBq_chatDrawerResize:after{content:\"\";background:0 0;width:2px;transition:background-color .12s;position:absolute;top:0;bottom:0;left:4px}.O81TBq_chatDrawerResize:hover:after,.O81TBq_chatDrawerResize[data-resizing=true]:after{background:var(--dsw-alias-border-l2)}.O81TBq_chatDrawerResize:focus-visible:after{background:var(--dsw-alias-border-l2)}.O81TBq_chatDrawerResize:focus-visible{outline:none}.O81TBq_chatDrawerHeader{border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);flex:none;align-items:center;gap:8px;padding:6px 10px;display:flex}.O81TBq_chatDrawerTitle{text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--dsw-alias-label-primary);font-size:12px;font-weight:600;overflow:hidden}.O81TBq_chatDrawerSpace{flex:1}.O81TBq_chatDrawerClose{width:26px;height:26px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:6px;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.O81TBq_chatDrawerClose:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.O81TBq_chatDrawerArchived{color:var(--dsw-alias-label-primary);background:#e0a33a1f;background:color(display-p3 .842337 .649058 .309/.12);background:lab(71.621% 16.4145 60.6886/.12);border-bottom:1px solid #e0a33a59;border-bottom:1px solid color(display-p3 .842337 .649058 .309/.35);border-bottom:1px solid lab(71.621% 16.4145 60.6886/.35);align-items:center;gap:10px;padding:8px 12px;font-size:12px;display:flex}.O81TBq_chatDrawerArchivedText{flex:1;min-width:0}.O81TBq_chatDrawerArchivedButton{color:inherit;cursor:pointer;background:0 0;border:1px solid #e0a33a8c;border:1px solid color(display-p3 .842337 .649058 .309/.55);border:1px solid lab(71.621% 16.4145 60.6886/.55);border-radius:999px;flex:none;padding:2px 10px;font-size:12px}.O81TBq_chatDrawerArchivedButton:hover{background:#e0a33a2e;background:color(display-p3 .842337 .649058 .309/.18);background:lab(71.621% 16.4145 60.6886/.18)}.O81TBq_chatDrawerBody{flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}@container O81TBq_talk-map-drawer (width>=560px){.O81TBq_chatDrawer nav[aria-label]{display:block}}.O81TBq_chatDrawerNotice{flex-direction:column;flex:1;align-items:flex-start;gap:14px;padding:22px 20px;display:flex}.O81TBq_chatDrawerNoticeText{color:var(--dsw-alias-label-secondary);margin:0;font-size:13px;line-height:1.7}.O81TBq_chatDrawerNoticeActions{flex-wrap:wrap;gap:8px;display:flex}.O81TBq_chatDrawerNoticeButton{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);cursor:pointer;border-radius:8px;padding:6px 14px;font-size:13px}.O81TBq_chatDrawerNoticeButton:hover{background:var(--dsw-alias-interactive-bg-hover)}.O81TBq_chatDrawerNoticeButton:disabled{opacity:.55;cursor:default}.O81TBq_chatPanel{flex-direction:column;flex:1;min-height:0;display:flex}.O81TBq_cardWaitingButton{color:var(--dsw-alias-state-warn-label);background:var(--dsw-alias-state-warn-tertiary);cursor:pointer;border:none;border-radius:999px;padding:1px 7px;font-size:10px}.O81TBq_cardWaitingButton:hover{filter:brightness(1.15)}.O81TBq_interactMenu{gap:4px;max-height:min(420px,70vh)}.O81TBq_interactTitle{color:var(--dsw-alias-label-primary);padding:4px 6px 0;font-size:12px;font-weight:600}.O81TBq_interactText{color:var(--dsw-alias-label-secondary);white-space:pre-wrap;word-break:break-word;padding:2px 6px 4px;font-size:12px;line-height:1.45}.O81TBq_interactNote{color:var(--dsw-alias-label-tertiary);padding:0 6px 4px;font-size:11px}.O81TBq_interactScroll{flex-direction:column;gap:6px;max-height:260px;display:flex;overflow-y:auto}.O81TBq_interactGroup{flex-direction:column;gap:4px;display:flex}.O81TBq_interactOptions{flex-wrap:wrap;gap:6px;padding:2px 6px 4px;display:flex}.O81TBq_interactOption{text-align:left;border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;flex:100%;padding:7px 10px;font-size:12px}.O81TBq_interactOption:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.O81TBq_interactOptionActive{border-color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-interactive-bg-active)}.O81TBq_interactActions{gap:6px;padding:4px 6px 6px;display:flex}.O81TBq_interactAllow{background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground);cursor:pointer;border:none;border-radius:8px;flex:1;padding:7px 10px;font-size:12px}.O81TBq_interactAllow:hover:not(:disabled){background:var(--dsw-alias-button-primary-hover)}.O81TBq_interactDanger{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-state-error-primary);cursor:pointer;background:0 0;border-radius:8px;flex:1;padding:7px 10px;font-size:12px}.O81TBq_interactDanger:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover-danger)}.O81TBq_interactSubmit,.O81TBq_interactOpen{border:1px solid var(--dsw-alias-border-l2);width:100%;color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;margin-top:4px;padding:7px 10px;font-size:12px}.O81TBq_interactSubmit:hover:not(:disabled),.O81TBq_interactOpen:hover{background:var(--dsw-alias-interactive-bg-hover)}.O81TBq_interactSubmit:disabled{color:var(--dsw-alias-label-dimmed);cursor:default}.O81TBq_interactError{color:var(--dsw-alias-state-error-primary);word-break:break-word;padding:2px 6px 4px;font-size:11px}.O81TBq_mapFallback{background:var(--dsw-alias-bg-base);min-height:0;color:var(--dsw-alias-label-primary);flex-direction:column;flex:1;justify-content:center;align-items:center;gap:10px;padding:24px;display:flex}.O81TBq_mapFallbackTitle{font-size:14px;font-weight:600}.O81TBq_mapFallbackText{text-align:center;max-width:420px;color:var(--dsw-alias-label-secondary);font-size:12px}.O81TBq_mapFallbackButton{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;padding:6px 14px;font-size:12px}.O81TBq_mapFallbackButton:hover{background:var(--dsw-alias-interactive-bg-hover)}.O81TBq_imageCard{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);width:100%;height:100%;box-shadow:0 10px 26px -18px var(--dsw-alias-bg-mask-2);border-radius:10px;overflow:hidden}.O81TBq_imageCardSelected{border-color:var(--dsw-alias-brand-primary);box-shadow:0 0 0 2px var(--dsw-alias-brand-primary)}.O81TBq_imageCardImg{object-fit:contain;background:var(--dsw-alias-bg-base);width:100%;height:100%;display:block}";
 		const tagId$1 = "dsh-talk-map-local/talk-map.module.css";
 		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$1) + "]") === null) {
 			const tag = document.createElement("style");
@@ -1369,139 +1373,140 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			document.head.appendChild(tag);
 		}
 		var talk_map_module_css_default = {
-			"wsFrameResize": "O81TBq_wsFrameResize",
-			"interactDanger": "O81TBq_interactDanger",
-			"menuItem": "O81TBq_menuItem",
-			"spawnError": "O81TBq_spawnError",
-			"cardBadgeWaiting": "O81TBq_cardBadgeWaiting",
-			"cardHandle": "O81TBq_cardHandle",
-			"toggleIcon": "O81TBq_toggleIcon",
-			"talkmap-pulse": "O81TBq_talkmap-pulse",
-			"headerTitle": "O81TBq_headerTitle",
-			"cardGhost": "O81TBq_cardGhost",
-			"spawnModeActive": "O81TBq_spawnModeActive",
-			"cardSelected": "O81TBq_cardSelected",
-			"draftTextarea": "O81TBq_draftTextarea",
-			"draftAttachmentProgress": "O81TBq_draftAttachmentProgress",
-			"toastActionable": "O81TBq_toastActionable",
-			"chatDrawerArchivedButton": "O81TBq_chatDrawerArchivedButton",
-			"langButton": "O81TBq_langButton",
-			"draftAttachments": "O81TBq_draftAttachments",
-			"chatDrawer": "O81TBq_chatDrawer",
-			"spawnModeBtn": "O81TBq_spawnModeBtn",
-			"spawnModes": "O81TBq_spawnModes",
-			"toggleRow": "O81TBq_toggleRow",
-			"menuEmpty": "O81TBq_menuEmpty",
-			"draftCard": "O81TBq_draftCard",
-			"hotkeyButton": "O81TBq_hotkeyButton",
-			"colorToolbarLabel": "O81TBq_colorToolbarLabel",
-			"interactNote": "O81TBq_interactNote",
-			"wsFrameHidden": "O81TBq_wsFrameHidden",
-			"cardTime": "O81TBq_cardTime",
-			"imageCardSelected": "O81TBq_imageCardSelected",
-			"emptyHint": "O81TBq_emptyHint",
-			"draftAttachmentFileIcon": "O81TBq_draftAttachmentFileIcon",
-			"draftSelect": "O81TBq_draftSelect",
-			"overlay": "O81TBq_overlay",
-			"mapFallbackTitle": "O81TBq_mapFallbackTitle",
-			"header": "O81TBq_header",
-			"wsFrameEdge": "O81TBq_wsFrameEdge",
-			"canvas": "O81TBq_canvas",
-			"draftRow": "O81TBq_draftRow",
-			"chatDrawerNotice": "O81TBq_chatDrawerNotice",
-			"draftAttachmentRemove": "O81TBq_draftAttachmentRemove",
-			"cardPin": "O81TBq_cardPin",
-			"draftDropHint": "O81TBq_draftDropHint",
-			"wsFrameLabel": "O81TBq_wsFrameLabel",
-			"imageCardImg": "O81TBq_imageCardImg",
-			"interactAllow": "O81TBq_interactAllow",
-			"cardBadgeDone": "O81TBq_cardBadgeDone",
-			"colorToolbar": "O81TBq_colorToolbar",
-			"cardBadgeRunning": "O81TBq_cardBadgeRunning",
-			"interactMenu": "O81TBq_interactMenu",
-			"interactScroll": "O81TBq_interactScroll",
-			"chatDrawerNoticeButton": "O81TBq_chatDrawerNoticeButton",
-			"wsFrameCount": "O81TBq_wsFrameCount",
-			"cardForeignPulse": "O81TBq_cardForeignPulse",
-			"draftHeading": "O81TBq_draftHeading",
-			"toggleButton": "O81TBq_toggleButton",
-			"spawnTextarea": "O81TBq_spawnTextarea",
-			"draftAttachmentFileName": "O81TBq_draftAttachmentFileName",
-			"body": "O81TBq_body",
-			"spawnBtnPrimary": "O81TBq_spawnBtnPrimary",
-			"zoomResetLabel": "O81TBq_zoomResetLabel",
-			"chatDrawerClose": "O81TBq_chatDrawerClose",
-			"cardForeign": "O81TBq_cardForeign",
-			"menuPreview": "O81TBq_menuPreview",
-			"draftCardDrop": "O81TBq_draftCardDrop",
-			"cardFooter": "O81TBq_cardFooter",
-			"chatDrawerSpace": "O81TBq_chatDrawerSpace",
 			"cardForeignChip": "O81TBq_cardForeignChip",
-			"canvasConnecting": "O81TBq_canvasConnecting",
-			"cardTitle": "O81TBq_cardTitle",
-			"interactError": "O81TBq_interactError",
-			"interactOptions": "O81TBq_interactOptions",
-			"chatDrawerHeader": "O81TBq_chatDrawerHeader",
-			"cardRemove": "O81TBq_cardRemove",
-			"headerSpace": "O81TBq_headerSpace",
-			"chatDrawerArchivedText": "O81TBq_chatDrawerArchivedText",
-			"interactOpen": "O81TBq_interactOpen",
-			"cardForeignTouch": "O81TBq_cardForeignTouch",
-			"spawnFrom": "O81TBq_spawnFrom",
-			"wsFrameSelected": "O81TBq_wsFrameSelected",
-			"talk-map-drawer": "O81TBq_talk-map-drawer",
-			"interactOption": "O81TBq_interactOption",
-			"interactActions": "O81TBq_interactActions",
-			"spawnBtnGhost": "O81TBq_spawnBtnGhost",
-			"draftAttachmentImage": "O81TBq_draftAttachmentImage",
-			"mapFallbackText": "O81TBq_mapFallbackText",
-			"menuHint": "O81TBq_menuHint",
-			"chatDrawerNoticeActions": "O81TBq_chatDrawerNoticeActions",
-			"draftLabel": "O81TBq_draftLabel",
-			"interactGroup": "O81TBq_interactGroup",
-			"mapFallbackButton": "O81TBq_mapFallbackButton",
-			"cardFooterLeft": "O81TBq_cardFooterLeft",
-			"draftAttachmentFileMeta": "O81TBq_draftAttachmentFileMeta",
+			"toggleButton": "O81TBq_toggleButton",
 			"cardWaitingButton": "O81TBq_cardWaitingButton",
-			"mapFallback": "O81TBq_mapFallback",
-			"toggleLabel": "O81TBq_toggleLabel",
-			"draftAttachmentFileText": "O81TBq_draftAttachmentFileText",
-			"chatDrawerTitle": "O81TBq_chatDrawerTitle",
-			"draftInput": "O81TBq_draftInput",
-			"colorSwatchClear": "O81TBq_colorSwatchClear",
-			"wsFrameForeign": "O81TBq_wsFrameForeign",
-			"runningDot": "O81TBq_runningDot",
-			"menuSearch": "O81TBq_menuSearch",
-			"cardPinActive": "O81TBq_cardPinActive",
-			"chatDrawerArchived": "O81TBq_chatDrawerArchived",
-			"imageCard": "O81TBq_imageCard",
-			"card": "O81TBq_card",
-			"spawnHint": "O81TBq_spawnHint",
-			"toggleButtonActive": "O81TBq_toggleButtonActive",
-			"draftPathPreview": "O81TBq_draftPathPreview",
-			"cardDoneDot": "O81TBq_cardDoneDot",
-			"draftGrow": "O81TBq_draftGrow",
-			"toast": "O81TBq_toast",
-			"menuError": "O81TBq_menuError",
-			"toastAction": "O81TBq_toastAction",
-			"chatDrawerNoticeText": "O81TBq_chatDrawerNoticeText",
-			"menuTitle": "O81TBq_menuTitle",
-			"interactText": "O81TBq_interactText",
-			"menu": "O81TBq_menu",
-			"draftAttachmentProgressBar": "O81TBq_draftAttachmentProgressBar",
+			"wsFrameLabel": "O81TBq_wsFrameLabel",
+			"chatDrawerClose": "O81TBq_chatDrawerClose",
 			"headerBadge": "O81TBq_headerBadge",
-			"interactSubmit": "O81TBq_interactSubmit",
-			"chatDrawerBody": "O81TBq_chatDrawerBody",
-			"interactOptionActive": "O81TBq_interactOptionActive",
-			"colorSwatch": "O81TBq_colorSwatch",
-			"closeButton": "O81TBq_closeButton",
-			"spawnActions": "O81TBq_spawnActions",
+			"cardFooterLeft": "O81TBq_cardFooterLeft",
 			"cardTop": "O81TBq_cardTop",
 			"draftAttachmentFile": "O81TBq_draftAttachmentFile",
-			"chatPanel": "O81TBq_chatPanel",
-			"toastText": "O81TBq_toastText",
+			"draftDropHint": "O81TBq_draftDropHint",
+			"menuPreview": "O81TBq_menuPreview",
+			"chatDrawerNoticeButton": "O81TBq_chatDrawerNoticeButton",
+			"chatDrawerNotice": "O81TBq_chatDrawerNotice",
+			"mapFallbackTitle": "O81TBq_mapFallbackTitle",
+			"interactOpen": "O81TBq_interactOpen",
+			"emptyHint": "O81TBq_emptyHint",
+			"menu": "O81TBq_menu",
+			"cardPinActive": "O81TBq_cardPinActive",
+			"closeButton": "O81TBq_closeButton",
+			"interactOption": "O81TBq_interactOption",
+			"spawnModeBtn": "O81TBq_spawnModeBtn",
+			"mapFallbackText": "O81TBq_mapFallbackText",
+			"draftAttachmentFileMeta": "O81TBq_draftAttachmentFileMeta",
+			"cardTitle": "O81TBq_cardTitle",
+			"spawnTextarea": "O81TBq_spawnTextarea",
+			"spawnError": "O81TBq_spawnError",
+			"spawnBtnPrimary": "O81TBq_spawnBtnPrimary",
+			"interactNote": "O81TBq_interactNote",
+			"spawnFrom": "O81TBq_spawnFrom",
+			"toast": "O81TBq_toast",
+			"menuTitle": "O81TBq_menuTitle",
+			"chatDrawer": "O81TBq_chatDrawer",
+			"colorSwatchClear": "O81TBq_colorSwatchClear",
+			"draftAttachments": "O81TBq_draftAttachments",
+			"spawnModes": "O81TBq_spawnModes",
+			"wsFrameEdge": "O81TBq_wsFrameEdge",
+			"chatDrawerNoticeActions": "O81TBq_chatDrawerNoticeActions",
+			"runningDot": "O81TBq_runningDot",
+			"talk-map-drawer": "O81TBq_talk-map-drawer",
+			"spawnModeActive": "O81TBq_spawnModeActive",
+			"wsFrame": "O81TBq_wsFrame",
+			"chatDrawerHeader": "O81TBq_chatDrawerHeader",
+			"langButton": "O81TBq_langButton",
+			"cardBadgeDone": "O81TBq_cardBadgeDone",
+			"cardHandle": "O81TBq_cardHandle",
+			"colorToolbar": "O81TBq_colorToolbar",
+			"mapFallbackButton": "O81TBq_mapFallbackButton",
+			"draftInput": "O81TBq_draftInput",
+			"draftAttachmentFileText": "O81TBq_draftAttachmentFileText",
+			"cardForeignPulse": "O81TBq_cardForeignPulse",
+			"toggleIcon": "O81TBq_toggleIcon",
+			"card": "O81TBq_card",
+			"cardDoneDot": "O81TBq_cardDoneDot",
+			"menuSearch": "O81TBq_menuSearch",
+			"colorToolbarLabel": "O81TBq_colorToolbarLabel",
+			"menuEmpty": "O81TBq_menuEmpty",
+			"headerTitle": "O81TBq_headerTitle",
+			"spawnActions": "O81TBq_spawnActions",
+			"spawnBtnGhost": "O81TBq_spawnBtnGhost",
+			"draftPathPreview": "O81TBq_draftPathPreview",
 			"interactTitle": "O81TBq_interactTitle",
-			"wsFrame": "O81TBq_wsFrame"
+			"interactOptionActive": "O81TBq_interactOptionActive",
+			"imageCardSelected": "O81TBq_imageCardSelected",
+			"chatDrawerBody": "O81TBq_chatDrawerBody",
+			"cardFooter": "O81TBq_cardFooter",
+			"cardSelected": "O81TBq_cardSelected",
+			"colorSwatch": "O81TBq_colorSwatch",
+			"chatDrawerArchivedButton": "O81TBq_chatDrawerArchivedButton",
+			"interactGroup": "O81TBq_interactGroup",
+			"toastAction": "O81TBq_toastAction",
+			"draftAttachmentProgress": "O81TBq_draftAttachmentProgress",
+			"menuItem": "O81TBq_menuItem",
+			"wsFrameHidden": "O81TBq_wsFrameHidden",
+			"interactSubmit": "O81TBq_interactSubmit",
+			"wsFrameCount": "O81TBq_wsFrameCount",
+			"draftCard": "O81TBq_draftCard",
+			"toggleButtonActive": "O81TBq_toggleButtonActive",
+			"draftTextarea": "O81TBq_draftTextarea",
+			"canvas": "O81TBq_canvas",
+			"mapFallback": "O81TBq_mapFallback",
+			"draftAttachmentFileName": "O81TBq_draftAttachmentFileName",
+			"zoomResetLabel": "O81TBq_zoomResetLabel",
+			"draftHeading": "O81TBq_draftHeading",
+			"draftAttachmentFileIcon": "O81TBq_draftAttachmentFileIcon",
+			"menuError": "O81TBq_menuError",
+			"interactScroll": "O81TBq_interactScroll",
+			"cardTime": "O81TBq_cardTime",
+			"draftAttachmentProgressBar": "O81TBq_draftAttachmentProgressBar",
+			"spawnHint": "O81TBq_spawnHint",
+			"wsFrameResize": "O81TBq_wsFrameResize",
+			"chatDrawerTitle": "O81TBq_chatDrawerTitle",
+			"hotkeyButton": "O81TBq_hotkeyButton",
+			"imageCardImg": "O81TBq_imageCardImg",
+			"toggleLabel": "O81TBq_toggleLabel",
+			"toggleRow": "O81TBq_toggleRow",
+			"interactMenu": "O81TBq_interactMenu",
+			"interactText": "O81TBq_interactText",
+			"chatDrawerArchived": "O81TBq_chatDrawerArchived",
+			"draftAttachmentImage": "O81TBq_draftAttachmentImage",
+			"cardGhost": "O81TBq_cardGhost",
+			"draftGrow": "O81TBq_draftGrow",
+			"draftAttachmentRemove": "O81TBq_draftAttachmentRemove",
+			"toastText": "O81TBq_toastText",
+			"toastActionable": "O81TBq_toastActionable",
+			"cardBadgeWaiting": "O81TBq_cardBadgeWaiting",
+			"imageCard": "O81TBq_imageCard",
+			"wsFrameForeign": "O81TBq_wsFrameForeign",
+			"chatDrawerResize": "O81TBq_chatDrawerResize",
+			"cardForeignTouch": "O81TBq_cardForeignTouch",
+			"chatPanel": "O81TBq_chatPanel",
+			"interactAllow": "O81TBq_interactAllow",
+			"headerSpace": "O81TBq_headerSpace",
+			"interactActions": "O81TBq_interactActions",
+			"canvasConnecting": "O81TBq_canvasConnecting",
+			"wsFrameSelected": "O81TBq_wsFrameSelected",
+			"cardRemove": "O81TBq_cardRemove",
+			"chatDrawerNoticeText": "O81TBq_chatDrawerNoticeText",
+			"menuHint": "O81TBq_menuHint",
+			"interactDanger": "O81TBq_interactDanger",
+			"chatDrawerArchivedText": "O81TBq_chatDrawerArchivedText",
+			"header": "O81TBq_header",
+			"cardPin": "O81TBq_cardPin",
+			"talkmap-pulse": "O81TBq_talkmap-pulse",
+			"draftRow": "O81TBq_draftRow",
+			"chatDrawerSpace": "O81TBq_chatDrawerSpace",
+			"cardForeign": "O81TBq_cardForeign",
+			"cardBadgeRunning": "O81TBq_cardBadgeRunning",
+			"draftCardDrop": "O81TBq_draftCardDrop",
+			"body": "O81TBq_body",
+			"interactOptions": "O81TBq_interactOptions",
+			"interactError": "O81TBq_interactError",
+			"overlay": "O81TBq_overlay",
+			"draftLabel": "O81TBq_draftLabel",
+			"draftSelect": "O81TBq_draftSelect"
 		};
 		//#endregion
 		//#region src/client/ChatPanel.tsx
@@ -15736,6 +15741,13 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 		* Factory), so it stays fully interactive — composer, streaming, approvals —
 		* while the board keeps its exact position underneath.
 		*/
+		/** Conversation drawer resize bounds (px). The default comes from the CSS
+		*  clamp; once the user drags, the px width is remembered in the canvas global. */
+		const DRAWER_MIN_WIDTH = 360;
+		/** Board sliver that must stay visible to the left of the drawer. */
+		const DRAWER_MIN_MAP_WIDTH = 280;
+		/** Arrow-key step for the resize strip. */
+		const DRAWER_RESIZE_STEP = 24;
 		function CloseIcon() {
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("svg", {
 				width: "16",
@@ -15823,6 +15835,11 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			const sessionCount = props.useSessions((state) => state.ids.length);
 			const [chat, setChat] = (0, react.useState)(null);
 			const [notice, setNotice] = (0, react.useState)(null);
+			const storedDrawerWidth = (0, react.useSyncExternalStore)(canvas.subscribe, () => canvas.get().global?.drawerWidth ?? 0);
+			const [resizingDrawer, setResizingDrawer] = (0, react.useState)(false);
+			const drawerRef = (0, react.useRef)(null);
+			const drawerWidthRef = (0, react.useRef)(null);
+			const drawerResizeRef = (0, react.useRef)(null);
 			/** The notice's 「refresh main view」 retry is in flight. */
 			const [retrying, setRetrying] = (0, react.useState)(false);
 			const chatRef = (0, react.useRef)(null);
@@ -16359,61 +16376,168 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				clearedSessionRef.current = void 0;
 				mainClearedRef.current = false;
 			}, []);
+			/** Clamp a drawer width to the allowed range for the current window. */
+			const clampDrawerWidth = (width) => {
+				const maximum = Math.max(DRAWER_MIN_WIDTH, window.innerWidth - DRAWER_MIN_MAP_WIDTH);
+				return Math.round(Math.min(Math.max(width, DRAWER_MIN_WIDTH), maximum));
+			};
+			/** Write the width straight to the drawer while dragging. */
+			const applyDrawerWidth = (width) => {
+				drawerWidthRef.current = width;
+				const drawer = drawerRef.current;
+				if (drawer === null) return;
+				if (width === null) {
+					if (storedDrawerWidth > 0) drawer.style.width = `${storedDrawerWidth}px`;
+					else drawer.style.removeProperty("width");
+					return;
+				}
+				drawer.style.width = `${width}px`;
+			};
+			const startDrawerResize = (event) => {
+				if (event.button !== 0) return;
+				event.preventDefault();
+				event.stopPropagation();
+				const drawer = drawerRef.current;
+				if (drawer === null) return;
+				const startWidth = drawer.getBoundingClientRect().width;
+				drawerResizeRef.current = {
+					pointerId: event.pointerId,
+					startX: event.clientX,
+					startWidth,
+					width: Math.round(startWidth)
+				};
+				event.currentTarget.setPointerCapture(event.pointerId);
+				document.body.style.userSelect = "none";
+				setResizingDrawer(true);
+			};
+			const moveDrawerResize = (event) => {
+				const resize = drawerResizeRef.current;
+				if (resize === null || resize.pointerId !== event.pointerId) return;
+				const width = clampDrawerWidth(resize.startWidth + (resize.startX - event.clientX));
+				resize.width = width;
+				applyDrawerWidth(width);
+			};
+			const finishDrawerResize = (event, commit) => {
+				const resize = drawerResizeRef.current;
+				if (resize === null || resize.pointerId !== event.pointerId) return;
+				drawerResizeRef.current = null;
+				document.body.style.removeProperty("user-select");
+				setResizingDrawer(false);
+				if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+				if (!commit) {
+					applyDrawerWidth(null);
+					drawerWidthRef.current = null;
+					return;
+				}
+				const width = resize.width;
+				drawerWidthRef.current = null;
+				applyDrawerWidth(width);
+				canvas.patchGlobalNow({ drawerWidth: width });
+			};
+			/** Double-click the strip: forget the explicit width, back to the CSS clamp. */
+			const resetDrawerWidth = (event) => {
+				event.preventDefault();
+				event.stopPropagation();
+				drawerWidthRef.current = null;
+				applyDrawerWidth(null);
+				canvas.patchGlobalNow({ drawerWidth: void 0 });
+			};
+			/** Arrow keys on the focused strip nudge the width, persisted immediately. */
+			const nudgeDrawerWidth = (event) => {
+				if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+				event.preventDefault();
+				const drawer = drawerRef.current;
+				const current = drawerWidthRef.current ?? (storedDrawerWidth > 0 ? storedDrawerWidth : drawer?.getBoundingClientRect().width ?? DRAWER_MIN_WIDTH);
+				const next = clampDrawerWidth(current + (event.key === "ArrowLeft" ? DRAWER_RESIZE_STEP : -24));
+				drawerWidthRef.current = null;
+				applyDrawerWidth(null);
+				canvas.patchGlobalNow({ drawerWidth: next });
+			};
+			const resizeStrip = /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+				className: talk_map_module_css_default["chatDrawerResize"],
+				role: "separator",
+				"aria-orientation": "vertical",
+				"aria-label": t("map.resizeDrawer"),
+				title: t("map.resizeDrawerHint"),
+				tabIndex: 0,
+				"data-resizing": resizingDrawer ? "true" : void 0,
+				onPointerDown: startDrawerResize,
+				onPointerMove: moveDrawerResize,
+				onPointerUp: (event) => {
+					finishDrawerResize(event, true);
+				},
+				onPointerCancel: (event) => {
+					finishDrawerResize(event, false);
+				},
+				onDoubleClick: resetDrawerWidth,
+				onKeyDown: nudgeDrawerWidth
+			});
+			const renderedDrawerWidth = drawerWidthRef.current ?? (storedDrawerWidth > 0 ? storedDrawerWidth : void 0);
+			const drawerStyle = renderedDrawerWidth !== void 0 ? { width: `${renderedDrawerWidth}px` } : void 0;
 			const drawerSessionId = chat?.sessionId ?? notice?.sessionId;
 			const chatTitle = props.useSessions((state) => drawerSessionId === void 0 ? void 0 : state.byId[drawerSessionId]?.displayTitle) ?? "";
 			const drawer = notice !== null ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("aside", {
 				className: talk_map_module_css_default["chatDrawer"],
 				"aria-label": t("map.chat"),
-				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-					className: talk_map_module_css_default["chatDrawerHeader"],
-					children: [
-						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-							className: talk_map_module_css_default["chatDrawerTitle"],
-							title: chatTitle,
-							children: chatTitle
-						}),
-						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { className: talk_map_module_css_default["chatDrawerSpace"] }),
-						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
-							type: "button",
-							className: talk_map_module_css_default["chatDrawerClose"],
-							title: t("map.closeChat"),
-							"aria-label": t("map.closeChat"),
-							onClick: () => {
-								setNotice(null);
-							},
-							children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(CloseIcon, {})
-						})
-					]
-				}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-					className: talk_map_module_css_default["chatDrawerNotice"],
-					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-						className: talk_map_module_css_default["chatDrawerNoticeText"],
-						children: t("map.sameSessionHint")
-					}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: talk_map_module_css_default["chatDrawerNoticeActions"],
-						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
-							type: "button",
-							className: talk_map_module_css_default["chatDrawerNoticeButton"],
-							onClick: () => {
-								setNotice(null);
-								mapUi.setOpen(false);
-							},
-							children: t("map.showMain")
-						}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
-							type: "button",
-							className: talk_map_module_css_default["chatDrawerNoticeButton"],
-							onClick: () => {
-								retryParking(notice.sessionId);
-							},
-							disabled: retrying,
-							children: retrying ? t("map.retryParkingBusy") : t("map.retryParking")
+				ref: drawerRef,
+				style: drawerStyle,
+				children: [
+					resizeStrip,
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+						className: talk_map_module_css_default["chatDrawerHeader"],
+						children: [
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+								className: talk_map_module_css_default["chatDrawerTitle"],
+								title: chatTitle,
+								children: chatTitle
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { className: talk_map_module_css_default["chatDrawerSpace"] }),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+								type: "button",
+								className: talk_map_module_css_default["chatDrawerClose"],
+								title: t("map.closeChat"),
+								"aria-label": t("map.closeChat"),
+								onClick: () => {
+									setNotice(null);
+								},
+								children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(CloseIcon, {})
+							})
+						]
+					}),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+						className: talk_map_module_css_default["chatDrawerNotice"],
+						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+							className: talk_map_module_css_default["chatDrawerNoticeText"],
+							children: t("map.sameSessionHint")
+						}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+							className: talk_map_module_css_default["chatDrawerNoticeActions"],
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+								type: "button",
+								className: talk_map_module_css_default["chatDrawerNoticeButton"],
+								onClick: () => {
+									setNotice(null);
+									mapUi.setOpen(false);
+								},
+								children: t("map.showMain")
+							}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+								type: "button",
+								className: talk_map_module_css_default["chatDrawerNoticeButton"],
+								onClick: () => {
+									retryParking(notice.sessionId);
+								},
+								disabled: retrying,
+								children: retrying ? t("map.retryParkingBusy") : t("map.retryParking")
+							})]
 						})]
-					})]
-				})]
+					})
+				]
 			}) : chat !== null && props.SessionProvider !== void 0 && props.renderSlot !== void 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("aside", {
 				className: talk_map_module_css_default["chatDrawer"],
 				"aria-label": t("map.chat"),
+				ref: drawerRef,
+				style: drawerStyle,
 				children: [
+					resizeStrip,
 					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 						className: talk_map_module_css_default["chatDrawerHeader"],
 						children: [

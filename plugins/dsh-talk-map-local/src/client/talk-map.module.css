@@ -1076,6 +1076,8 @@ html[data-platform='darwin']:not([data-fullscreen]) .overlay::before {
   bottom: 0;
   z-index: 6;
   width: clamp(360px, 42%, 720px);
+  /* A remembered px width must never squeeze the board out of the window. */
+  max-width: calc(100vw - 280px);
   /* Named container for the turn-rail override below; the drawer already
    * has an explicit width, so inline-size containment changes nothing. */
   container: talk-map-drawer / inline-size;
@@ -1084,6 +1086,45 @@ html[data-platform='darwin']:not([data-fullscreen]) .overlay::before {
   background: var(--dsw-alias-bg-base);
   border-left: 1px solid var(--dsw-alias-border-l1);
   box-shadow: -12px 0 28px -18px var(--dsw-alias-bg-mask-2);
+}
+
+
+/* Drag strip on the drawer's left edge: resize the conversation panel. It
+ * straddles the border so the hit area is easy to grab; the visible line only
+ * appears on hover / focus / while dragging. */
+.chatDrawerResize {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -4px;
+  width: 10px;
+  z-index: 1;
+  cursor: col-resize;
+  touch-action: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+.chatDrawerResize::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 4px;
+  width: 2px;
+  background: transparent;
+  transition: background-color 120ms ease;
+}
+
+.chatDrawerResize:hover::after,
+.chatDrawerResize:focus-visible::after,
+.chatDrawerResize[data-resizing='true']::after {
+  background: var(--dsw-alias-border-l2);
+}
+
+.chatDrawerResize:focus-visible {
+  outline: none;
 }
 
 .chatDrawerHeader {

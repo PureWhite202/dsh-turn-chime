@@ -38,6 +38,7 @@ Restart `dsh web`; a map button appears at the sidebar foot.
 | Drag from a card's right handle to empty space | preview injection → fork a new session |
 | ⟳ on a card | regenerate the digest |
 | Language pill in the map header | cycle Auto → 中文 → English |
+| Drag the conversation panel's left edge | resize the right-hand panel (double-click resets, arrow keys nudge) |
 
 ## Where data lives
 

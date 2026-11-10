@@ -26,8 +26,8 @@ codex/grok/hermes/kimi-cli-calling 和 memory-consolidate 由 `dsh-memory-evolve
 
 ## 配置
 
+只存全局提示词。profile 的 `cordis.patch.yml` 与插件清单（原 `config/plugins.json`）不再入库：它们含本机路径与机器偏好，还会被插件管理器、设置页写回，各机各自维护。
+
 | 文件 | 对应 |
 | --- | --- |
 | [config/AGENTS.md](config/AGENTS.md) | `~/.dsh/AGENTS.md` |
-| [config/cordis.patch.yml](config/cordis.patch.yml) | profile 的 `cordis.patch.yml` |
-| [config/plugins.json](config/plugins.json) | profile 已启用的 bundles 与依赖清单 |

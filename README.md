@@ -15,7 +15,6 @@
 | [dsh-memory-evolve](plugins/dsh-memory-evolve/SOURCE.md) | 记忆、待办 | github |
 | [dsh-talk-map-local](plugins/dsh-talk-map-local/) | 会话地图，本地大改版 | 基于 github:Tasihi89/dsh-talk-map |
 | [dsh-purewhite-toolkit](plugins/dsh-purewhite-toolkit/) | 自用工具集：截图（整屏/窗口/区域，直接返回图片） | 自制 |
-| [dsh-context](plugins/dsh-context/SOURCE.md) | 上下文构成面板与 `context` 命令 | npm 0.83.0 |
 
 ## 技能
 

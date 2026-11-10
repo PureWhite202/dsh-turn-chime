@@ -21,16 +21,20 @@
     "dsh-auto-archive",
     "dsh-ops",
     "dsh-talk-map-local",
-    "dsh-purewhite-toolkit"
+    "dsh-purewhite-toolkit",
+    "dshmarket",
+    "ds-harness-remote"
   ],
   "dependencies": {
     "@deepseek-ai/dsh-experimental-plugin-market-bundle": "0.2.2-rc.1",
     "@zfdx123/dsh-superpowers": "1.0.16",
     "dsh-auto-archive": "link:plugins/dsh-auto-archive",
     "dsh-memory-evolve": "github:csyangwen/dsh-memory-evolve",
-    "dsh-ops": "0.5.0",
+    "dsh-ops": "0.5.2",
     "dsh-purewhite-toolkit": "link:plugins/dsh-purewhite-toolkit",
     "dsh-talk-map-local": "file:plugins/dsh-talk-map-local",
-    "dsh-turn-chime": "link:plugins/dsh-turn-chime"
+    "dsh-turn-chime": "link:plugins/dsh-turn-chime",
+    "dshmarket": "1.73.17",
+    "ds-harness-remote": "0.6.4"
   }
 }

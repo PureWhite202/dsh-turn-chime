@@ -494,6 +494,48 @@ async function main() {
       await poll(async () => (await sessionCards(page)) === before + 1, 'post-abort send creates a session card')
     })
 
+    // Regression: React Flow's default nodeClickDistance (0) swallows the
+    // card's click after ANY pointer travel between press and release, so a
+    // trackpad's few-pixel drift made a click do nothing until clicked again.
+    // The board now tolerates 5px; the drawer must switch on both cards.
+    await scenario('a jittery card click switches the drawer', async () => {
+      await openMap(page)
+      await closeDrawer(page)
+      const cards = page.locator('.react-flow__node-sessionCard')
+      const total = await cards.count()
+      assert(total >= 2, `need two cards, have ${total}`)
+      const drawer = page.locator('aside[aria-label="Conversation panel"], aside[aria-label="会话窗口"]').first()
+
+      // The drawer covers the right edge: pick the two left-most cards so the
+      // second click cannot land on the open drawer.
+      const candidates = []
+      for (let index = 0; index < total; index += 1) {
+        const node = cards.nth(index)
+        const box = await node.boundingBox()
+        if (box === null) continue
+        candidates.push({ index, box, title: (await node.locator('[class*="cardTitle"]').innerText()).trim() })
+      }
+      candidates.sort((left, right) => left.box.x - right.box.x)
+      const targets = candidates.slice(0, 2)
+      assert(targets.length === 2, 'two measurable cards')
+
+      const clickWithJitter = async (target) => {
+        await page.mouse.move(target.box.x + target.box.width / 2, target.box.y + 22)
+        await page.mouse.down()
+        await page.mouse.move(target.box.x + target.box.width / 2 + 3, target.box.y + 24)
+        await page.mouse.up()
+        await drawer.waitFor({ state: 'visible', timeout: 5000 })
+        await poll(async () => {
+          const shown = await drawer.locator('[class*="chatDrawerTitle"]').innerText().catch(() => '')
+          return shown.trim() === target.title
+        }, `drawer shows the jitter-clicked card (${target.title})`, 5000)
+      }
+
+      await clickWithJitter(targets[0])
+      await clickWithJitter(targets[1])
+      await page.keyboard.press('Escape')
+    })
+
     assert(pageErrors.length === 0, `page errors: ${pageErrors.map(error => error.message).join(' | ')}`)
     process.stdout.write('\nAll draft-attachment intake scenarios passed.\n')
   } catch (error) {

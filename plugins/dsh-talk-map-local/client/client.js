@@ -1369,139 +1369,139 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			document.head.appendChild(tag);
 		}
 		var talk_map_module_css_default = {
-			"closeButton": "O81TBq_closeButton",
-			"interactOptions": "O81TBq_interactOptions",
-			"talk-map-drawer": "O81TBq_talk-map-drawer",
-			"toastText": "O81TBq_toastText",
-			"chatDrawerBody": "O81TBq_chatDrawerBody",
-			"draftAttachmentRemove": "O81TBq_draftAttachmentRemove",
-			"interactGroup": "O81TBq_interactGroup",
-			"draftSelect": "O81TBq_draftSelect",
-			"spawnTextarea": "O81TBq_spawnTextarea",
-			"draftAttachmentFileIcon": "O81TBq_draftAttachmentFileIcon",
-			"chatDrawerTitle": "O81TBq_chatDrawerTitle",
-			"toggleRow": "O81TBq_toggleRow",
-			"menuSearch": "O81TBq_menuSearch",
-			"chatDrawerClose": "O81TBq_chatDrawerClose",
-			"spawnActions": "O81TBq_spawnActions",
-			"mapFallbackText": "O81TBq_mapFallbackText",
-			"chatDrawerArchivedText": "O81TBq_chatDrawerArchivedText",
-			"cardBadgeRunning": "O81TBq_cardBadgeRunning",
-			"cardHandle": "O81TBq_cardHandle",
-			"colorSwatchClear": "O81TBq_colorSwatchClear",
-			"draftPathPreview": "O81TBq_draftPathPreview",
-			"card": "O81TBq_card",
-			"draftAttachmentFileText": "O81TBq_draftAttachmentFileText",
-			"interactMenu": "O81TBq_interactMenu",
-			"cardBadgeDone": "O81TBq_cardBadgeDone",
-			"wsFrame": "O81TBq_wsFrame",
-			"interactError": "O81TBq_interactError",
-			"cardTop": "O81TBq_cardTop",
-			"cardTitle": "O81TBq_cardTitle",
-			"cardForeignTouch": "O81TBq_cardForeignTouch",
-			"colorSwatch": "O81TBq_colorSwatch",
-			"menu": "O81TBq_menu",
-			"spawnModes": "O81TBq_spawnModes",
-			"chatDrawerNoticeActions": "O81TBq_chatDrawerNoticeActions",
-			"wsFrameForeign": "O81TBq_wsFrameForeign",
-			"cardWaitingButton": "O81TBq_cardWaitingButton",
-			"interactActions": "O81TBq_interactActions",
-			"draftAttachments": "O81TBq_draftAttachments",
-			"chatDrawerNoticeButton": "O81TBq_chatDrawerNoticeButton",
-			"talkmap-pulse": "O81TBq_talkmap-pulse",
-			"wsFrameSelected": "O81TBq_wsFrameSelected",
-			"mapFallbackButton": "O81TBq_mapFallbackButton",
-			"interactDanger": "O81TBq_interactDanger",
-			"draftDropHint": "O81TBq_draftDropHint",
-			"wsFrameResize": "O81TBq_wsFrameResize",
-			"cardSelected": "O81TBq_cardSelected",
-			"colorToolbarLabel": "O81TBq_colorToolbarLabel",
-			"interactNote": "O81TBq_interactNote",
-			"cardRemove": "O81TBq_cardRemove",
-			"headerSpace": "O81TBq_headerSpace",
-			"colorToolbar": "O81TBq_colorToolbar",
-			"menuItem": "O81TBq_menuItem",
-			"draftAttachmentFile": "O81TBq_draftAttachmentFile",
-			"interactSubmit": "O81TBq_interactSubmit",
-			"headerBadge": "O81TBq_headerBadge",
-			"spawnModeBtn": "O81TBq_spawnModeBtn",
-			"overlay": "O81TBq_overlay",
-			"headerTitle": "O81TBq_headerTitle",
-			"menuEmpty": "O81TBq_menuEmpty",
-			"cardBadgeWaiting": "O81TBq_cardBadgeWaiting",
-			"chatDrawerNotice": "O81TBq_chatDrawerNotice",
-			"interactTitle": "O81TBq_interactTitle",
-			"draftAttachmentFileName": "O81TBq_draftAttachmentFileName",
-			"cardFooterLeft": "O81TBq_cardFooterLeft",
-			"cardPinActive": "O81TBq_cardPinActive",
-			"draftTextarea": "O81TBq_draftTextarea",
+			"cardTime": "O81TBq_cardTime",
+			"imageCardImg": "O81TBq_imageCardImg",
 			"cardFooter": "O81TBq_cardFooter",
-			"runningDot": "O81TBq_runningDot",
-			"toggleLabel": "O81TBq_toggleLabel",
-			"interactOptionActive": "O81TBq_interactOptionActive",
-			"menuError": "O81TBq_menuError",
-			"draftAttachmentImage": "O81TBq_draftAttachmentImage",
-			"interactOpen": "O81TBq_interactOpen",
-			"imageCard": "O81TBq_imageCard",
-			"toggleIcon": "O81TBq_toggleIcon",
-			"toastAction": "O81TBq_toastAction",
-			"mapFallbackTitle": "O81TBq_mapFallbackTitle",
-			"wsFrameCount": "O81TBq_wsFrameCount",
+			"cardPinActive": "O81TBq_cardPinActive",
+			"spawnBtnPrimary": "O81TBq_spawnBtnPrimary",
+			"cardTitle": "O81TBq_cardTitle",
+			"menuSearch": "O81TBq_menuSearch",
+			"canvas": "O81TBq_canvas",
+			"spawnModeActive": "O81TBq_spawnModeActive",
+			"menuItem": "O81TBq_menuItem",
+			"wsFrameEdge": "O81TBq_wsFrameEdge",
+			"draftAttachmentFileIcon": "O81TBq_draftAttachmentFileIcon",
+			"canvasConnecting": "O81TBq_canvasConnecting",
+			"chatDrawerClose": "O81TBq_chatDrawerClose",
+			"spawnError": "O81TBq_spawnError",
+			"mapFallbackButton": "O81TBq_mapFallbackButton",
+			"langButton": "O81TBq_langButton",
+			"toastText": "O81TBq_toastText",
+			"toggleRow": "O81TBq_toggleRow",
+			"wsFrame": "O81TBq_wsFrame",
 			"chatDrawerHeader": "O81TBq_chatDrawerHeader",
 			"draftRow": "O81TBq_draftRow",
+			"chatDrawerArchivedText": "O81TBq_chatDrawerArchivedText",
+			"toggleIcon": "O81TBq_toggleIcon",
+			"draftGrow": "O81TBq_draftGrow",
+			"card": "O81TBq_card",
+			"toggleButtonActive": "O81TBq_toggleButtonActive",
 			"chatPanel": "O81TBq_chatPanel",
-			"draftAttachmentProgressBar": "O81TBq_draftAttachmentProgressBar",
+			"chatDrawerArchived": "O81TBq_chatDrawerArchived",
+			"closeButton": "O81TBq_closeButton",
+			"chatDrawerNoticeText": "O81TBq_chatDrawerNoticeText",
+			"wsFrameSelected": "O81TBq_wsFrameSelected",
+			"colorToolbarLabel": "O81TBq_colorToolbarLabel",
+			"chatDrawerSpace": "O81TBq_chatDrawerSpace",
+			"draftAttachmentFileName": "O81TBq_draftAttachmentFileName",
+			"colorToolbar": "O81TBq_colorToolbar",
+			"cardTop": "O81TBq_cardTop",
+			"spawnBtnGhost": "O81TBq_spawnBtnGhost",
+			"draftAttachmentFileText": "O81TBq_draftAttachmentFileText",
 			"toastActionable": "O81TBq_toastActionable",
-			"cardGhost": "O81TBq_cardGhost",
-			"body": "O81TBq_body",
-			"wsFrameLabel": "O81TBq_wsFrameLabel",
-			"cardForeignPulse": "O81TBq_cardForeignPulse",
-			"cardTime": "O81TBq_cardTime",
+			"chatDrawerBody": "O81TBq_chatDrawerBody",
+			"colorSwatch": "O81TBq_colorSwatch",
+			"mapFallbackTitle": "O81TBq_mapFallbackTitle",
+			"draftAttachmentProgressBar": "O81TBq_draftAttachmentProgressBar",
+			"draftCardDrop": "O81TBq_draftCardDrop",
+			"menuError": "O81TBq_menuError",
+			"wsFrameForeign": "O81TBq_wsFrameForeign",
+			"cardForeignTouch": "O81TBq_cardForeignTouch",
+			"draftDropHint": "O81TBq_draftDropHint",
+			"draftAttachments": "O81TBq_draftAttachments",
+			"wsFrameCount": "O81TBq_wsFrameCount",
+			"chatDrawerTitle": "O81TBq_chatDrawerTitle",
+			"spawnActions": "O81TBq_spawnActions",
 			"menuPreview": "O81TBq_menuPreview",
-			"interactScroll": "O81TBq_interactScroll",
+			"cardSelected": "O81TBq_cardSelected",
+			"cardForeign": "O81TBq_cardForeign",
+			"interactDanger": "O81TBq_interactDanger",
+			"toggleButton": "O81TBq_toggleButton",
+			"menuEmpty": "O81TBq_menuEmpty",
+			"mapFallback": "O81TBq_mapFallback",
 			"zoomResetLabel": "O81TBq_zoomResetLabel",
+			"interactTitle": "O81TBq_interactTitle",
+			"cardRemove": "O81TBq_cardRemove",
+			"toggleLabel": "O81TBq_toggleLabel",
+			"chatDrawerArchivedButton": "O81TBq_chatDrawerArchivedButton",
 			"draftAttachmentProgress": "O81TBq_draftAttachmentProgress",
+			"interactSubmit": "O81TBq_interactSubmit",
+			"talkmap-pulse": "O81TBq_talkmap-pulse",
 			"toast": "O81TBq_toast",
 			"cardDoneDot": "O81TBq_cardDoneDot",
-			"spawnHint": "O81TBq_spawnHint",
-			"menuHint": "O81TBq_menuHint",
-			"wsFrameEdge": "O81TBq_wsFrameEdge",
-			"spawnBtnGhost": "O81TBq_spawnBtnGhost",
-			"draftHeading": "O81TBq_draftHeading",
-			"chatDrawer": "O81TBq_chatDrawer",
-			"emptyHint": "O81TBq_emptyHint",
-			"interactAllow": "O81TBq_interactAllow",
-			"spawnBtnPrimary": "O81TBq_spawnBtnPrimary",
-			"header": "O81TBq_header",
-			"imageCardImg": "O81TBq_imageCardImg",
-			"toggleButton": "O81TBq_toggleButton",
-			"draftAttachmentFileMeta": "O81TBq_draftAttachmentFileMeta",
-			"cardForeign": "O81TBq_cardForeign",
-			"canvas": "O81TBq_canvas",
-			"draftCardDrop": "O81TBq_draftCardDrop",
-			"chatDrawerArchivedButton": "O81TBq_chatDrawerArchivedButton",
-			"mapFallback": "O81TBq_mapFallback",
-			"spawnError": "O81TBq_spawnError",
-			"hotkeyButton": "O81TBq_hotkeyButton",
-			"chatDrawerNoticeText": "O81TBq_chatDrawerNoticeText",
-			"cardForeignChip": "O81TBq_cardForeignChip",
-			"canvasConnecting": "O81TBq_canvasConnecting",
-			"draftGrow": "O81TBq_draftGrow",
-			"draftInput": "O81TBq_draftInput",
 			"draftCard": "O81TBq_draftCard",
-			"chatDrawerSpace": "O81TBq_chatDrawerSpace",
-			"interactOption": "O81TBq_interactOption",
+			"body": "O81TBq_body",
+			"header": "O81TBq_header",
+			"cardForeignPulse": "O81TBq_cardForeignPulse",
+			"chatDrawer": "O81TBq_chatDrawer",
+			"draftInput": "O81TBq_draftInput",
+			"talk-map-drawer": "O81TBq_talk-map-drawer",
+			"interactGroup": "O81TBq_interactGroup",
+			"spawnTextarea": "O81TBq_spawnTextarea",
 			"cardPin": "O81TBq_cardPin",
-			"spawnFrom": "O81TBq_spawnFrom",
-			"toggleButtonActive": "O81TBq_toggleButtonActive",
-			"wsFrameHidden": "O81TBq_wsFrameHidden",
-			"imageCardSelected": "O81TBq_imageCardSelected",
+			"menu": "O81TBq_menu",
 			"interactText": "O81TBq_interactText",
-			"langButton": "O81TBq_langButton",
-			"chatDrawerArchived": "O81TBq_chatDrawerArchived",
 			"menuTitle": "O81TBq_menuTitle",
+			"draftAttachmentFile": "O81TBq_draftAttachmentFile",
+			"wsFrameResize": "O81TBq_wsFrameResize",
+			"wsFrameLabel": "O81TBq_wsFrameLabel",
+			"draftAttachmentImage": "O81TBq_draftAttachmentImage",
+			"hotkeyButton": "O81TBq_hotkeyButton",
+			"cardHandle": "O81TBq_cardHandle",
+			"interactScroll": "O81TBq_interactScroll",
+			"emptyHint": "O81TBq_emptyHint",
+			"spawnModeBtn": "O81TBq_spawnModeBtn",
+			"mapFallbackText": "O81TBq_mapFallbackText",
+			"chatDrawerNoticeButton": "O81TBq_chatDrawerNoticeButton",
+			"cardWaitingButton": "O81TBq_cardWaitingButton",
+			"interactError": "O81TBq_interactError",
+			"draftHeading": "O81TBq_draftHeading",
+			"interactMenu": "O81TBq_interactMenu",
+			"interactOption": "O81TBq_interactOption",
+			"interactOptionActive": "O81TBq_interactOptionActive",
+			"interactOpen": "O81TBq_interactOpen",
 			"draftLabel": "O81TBq_draftLabel",
-			"spawnModeActive": "O81TBq_spawnModeActive"
+			"headerTitle": "O81TBq_headerTitle",
+			"draftAttachmentFileMeta": "O81TBq_draftAttachmentFileMeta",
+			"headerBadge": "O81TBq_headerBadge",
+			"draftAttachmentRemove": "O81TBq_draftAttachmentRemove",
+			"cardFooterLeft": "O81TBq_cardFooterLeft",
+			"cardBadgeDone": "O81TBq_cardBadgeDone",
+			"chatDrawerNotice": "O81TBq_chatDrawerNotice",
+			"headerSpace": "O81TBq_headerSpace",
+			"cardForeignChip": "O81TBq_cardForeignChip",
+			"interactNote": "O81TBq_interactNote",
+			"spawnModes": "O81TBq_spawnModes",
+			"draftPathPreview": "O81TBq_draftPathPreview",
+			"interactActions": "O81TBq_interactActions",
+			"runningDot": "O81TBq_runningDot",
+			"draftSelect": "O81TBq_draftSelect",
+			"overlay": "O81TBq_overlay",
+			"colorSwatchClear": "O81TBq_colorSwatchClear",
+			"spawnHint": "O81TBq_spawnHint",
+			"cardBadgeRunning": "O81TBq_cardBadgeRunning",
+			"cardBadgeWaiting": "O81TBq_cardBadgeWaiting",
+			"draftTextarea": "O81TBq_draftTextarea",
+			"interactOptions": "O81TBq_interactOptions",
+			"cardGhost": "O81TBq_cardGhost",
+			"menuHint": "O81TBq_menuHint",
+			"imageCardSelected": "O81TBq_imageCardSelected",
+			"spawnFrom": "O81TBq_spawnFrom",
+			"toastAction": "O81TBq_toastAction",
+			"interactAllow": "O81TBq_interactAllow",
+			"chatDrawerNoticeActions": "O81TBq_chatDrawerNoticeActions",
+			"wsFrameHidden": "O81TBq_wsFrameHidden",
+			"imageCard": "O81TBq_imageCard"
 		};
 		//#endregion
 		//#region src/client/ChatPanel.tsx
@@ -13921,8 +13921,13 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 		const FRAME_PAD = 32;
 		const FRAME_LABEL_H = 30;
 		const LAYOUT_VERSION = 3;
-		/** Right-button travel (px) that turns a click into a drag: a pan, not a menu. */
-		const RIGHT_MOVED_BEYOND_CLICK = 5;
+		/**
+		* Pointer travel (px) that still counts as a click rather than a drag. Used
+		* twice: a right drag past it is a pan (no menu), and a left drag past it is
+		* no longer a card click. The board snaps to a 16px grid, so a sub-slop drag
+		* never actually moves a card.
+		*/
+		const POINTER_CLICK_SLOP = 5;
 		/** Shallow compare of the fields a SessionCard renders — the node cache reuses
 		*  the previous node object (and thus skips the card's render) while equal. */
 		function sameSessionCardData(left, right) {
@@ -14133,7 +14138,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				const onMove = (event) => {
 					const gesture = rightGesture.current;
 					if (gesture === null || !gesture.pressed || gesture.moved) return;
-					if (Math.abs(event.clientX - gesture.x) > RIGHT_MOVED_BEYOND_CLICK || Math.abs(event.clientY - gesture.y) > RIGHT_MOVED_BEYOND_CLICK) gesture.moved = true;
+					if (Math.abs(event.clientX - gesture.x) > POINTER_CLICK_SLOP || Math.abs(event.clientY - gesture.y) > POINTER_CLICK_SLOP) gesture.moved = true;
 				};
 				const onUp = (event) => {
 					if (event.button !== 2) return;
@@ -14163,6 +14168,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			const [isSelecting, setIsSelecting] = (0, react.useState)(false);
 			const frozenRef = (0, react.useRef)(null);
 			const nodeCacheRef = (0, react.useRef)(/* @__PURE__ */ new Map());
+			const measuredRef = (0, react.useRef)(/* @__PURE__ */ new Map());
 			const [nowMinute, setNowMinute] = (0, react.useState)(() => Math.floor(Date.now() / 6e4));
 			(0, react.useEffect)(() => {
 				const timer = setInterval(() => {
@@ -14525,6 +14531,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 						nextCache.set(id, cached);
 						return cached;
 					}
+					const measured = measuredRef.current.get(id);
 					const node = {
 						id,
 						type: "wsFrame",
@@ -14533,6 +14540,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 							y: rect.y
 						},
 						data,
+						...measured !== void 0 ? { measured } : {},
 						draggable: true,
 						selectable: false,
 						focusable: false,
@@ -14565,6 +14573,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 						nextCache.set(cardId, cached);
 						return cached;
 					}
+					const measured = measuredRef.current.get(cardId);
 					const node = {
 						id: cardId,
 						type: "sessionCard",
@@ -14573,6 +14582,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 							y: card.y
 						},
 						selected,
+						...measured !== void 0 ? { measured } : {},
 						data
 					};
 					nextCache.set(cardId, node);
@@ -14762,7 +14772,11 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 						x: change.position.x,
 						y: change.position.y
 					};
-				} else if (change.type === "select") setSelectedIds((previous) => {
+				} else if (change.type === "dimensions" && change.dimensions !== void 0) measuredRef.current.set(change.id, {
+					width: change.dimensions.width,
+					height: change.dimensions.height
+				});
+				else if (change.type === "select") setSelectedIds((previous) => {
 					const next = new Set(previous);
 					if (change.selected) next.add(change.id);
 					else next.delete(change.id);
@@ -15527,6 +15541,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 						colorMode: dark ? "dark" : "light",
 						snapToGrid: true,
 						snapGrid: [GRID, GRID],
+						nodeClickDistance: POINTER_CLICK_SLOP,
 						zoomOnDoubleClick: false,
 						panOnDrag: [1, 2],
 						selectionOnDrag: true,

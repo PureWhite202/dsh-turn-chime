@@ -52,8 +52,13 @@ const COLS = 3
 const FRAME_PAD = 32
 const FRAME_LABEL_H = 30
 const LAYOUT_VERSION = 3
-/** Right-button travel (px) that turns a click into a drag: a pan, not a menu. */
-const RIGHT_MOVED_BEYOND_CLICK = 5
+/**
+ * Pointer travel (px) that still counts as a click rather than a drag. Used
+ * twice: a right drag past it is a pan (no menu), and a left drag past it is
+ * no longer a card click. The board snaps to a 16px grid, so a sub-slop drag
+ * never actually moves a card.
+ */
+const POINTER_CLICK_SLOP = 5
 
 type TalkMapNode = SessionCardNodeType | WsFrameNodeType | DraftCardNodeType | ImageNodeType
 
@@ -353,8 +358,8 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
       const gesture = rightGesture.current
       if (gesture === null || !gesture.pressed || gesture.moved) return
       if (
-        Math.abs(event.clientX - gesture.x) > RIGHT_MOVED_BEYOND_CLICK
-        || Math.abs(event.clientY - gesture.y) > RIGHT_MOVED_BEYOND_CLICK
+        Math.abs(event.clientX - gesture.x) > POINTER_CLICK_SLOP
+        || Math.abs(event.clientY - gesture.y) > POINTER_CLICK_SLOP
       ) gesture.moved = true
     }
     const onUp = (event: PointerEvent): void => {
@@ -394,6 +399,14 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
   // React Flow node-object cache: unchanged cards/frames keep their previous
   // node object, so React Flow (and memo() on the card) skips their renders.
   const nodeCacheRef = useRef<Map<string, TalkMapNode>>(new Map())
+  // React Flow rebuilds its internal node whenever the node OBJECT we pass
+  // changes, and that copy takes `measured` from the object itself. A rebuilt
+  // card without `measured` renders `visibility: hidden` until the next resize
+  // observation — a one-frame window where pointer events fall through to the
+  // pane. Dragging rebuilds on every position change, so releasing inside that
+  // window made a card click do nothing ("needs a second click"). Mirror the
+  // measured sizes from React Flow's dimension changes back onto rebuilt nodes.
+  const measuredRef = useRef<Map<string, { width: number; height: number }>>(new Map())
   // The cards render a relative "5分钟" label; a minute tick re-renders them
   // even when nothing else changed (the node cache includes this bucket).
   const [nowMinute, setNowMinute] = useState(() => Math.floor(Date.now() / 60_000))
@@ -820,11 +833,13 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
         nextCache.set(id, cached)
         return cached
       }
+      const measured = measuredRef.current.get(id)
       const node: WsFrameNodeType = {
         id,
         type: 'wsFrame',
         position: { x: rect.x, y: rect.y },
         data,
+        ...(measured !== undefined ? { measured } : {}),
         draggable: true,
         // NOT selectable by React Flow: rubber-band selection grows in
         // batches and would sweep the huge frames in. Frame selection is
@@ -867,11 +882,13 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
           nextCache.set(cardId, cached)
           return cached
         }
+        const measured = measuredRef.current.get(cardId)
         const node: SessionCardNodeType = {
           id: cardId,
           type: 'sessionCard',
           position: { x: card.x, y: card.y },
           selected,
+          ...(measured !== undefined ? { measured } : {}),
           data,
         }
         nextCache.set(cardId, node)
@@ -1038,6 +1055,11 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
           // Free dragging — the frame stretches after its members.
           positionUpdates[change.id] = { x: change.position.x, y: change.position.y }
         }
+      } else if (change.type === 'dimensions' && change.dimensions !== undefined) {
+        measuredRef.current.set(change.id, {
+          width: change.dimensions.width,
+          height: change.dimensions.height,
+        })
       } else if (change.type === 'select') {
         setSelectedIds((previous) => {
           const next = new Set(previous)
@@ -1889,6 +1911,11 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
         colorMode={dark ? 'dark' : 'light'}
         snapToGrid
         snapGrid={[GRID, GRID]}
+        // A trackpad's few-pixel drift must not swallow the card click:
+        // React Flow's default (0) means ANY travel between press and release
+        // withholds the node's click event — the "click does nothing until you
+        // click again" report. The drag still starts at 1px (nodeDragThreshold).
+        nodeClickDistance={POINTER_CLICK_SLOP}
         zoomOnDoubleClick={false}
         panOnDrag={[1, 2]}
         selectionOnDrag

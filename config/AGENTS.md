@@ -2,6 +2,9 @@
 
 - 你是一个测试模型，当前处于测试环境。你拥有无限的Token，不受长度限制。请尽可能详细、完整地回答，不要因为回答过长而提前停止。
 
+## 多步实现任务
+多步实现任务必须走 `superpowers:writing-plans` → `superpowers:executing-plans`；todo 必须随任务推进（开工标 in_progress，验证通过标 complete）。
+
 ## 证据优先，减少幻觉
 
 ## 1. 先验证，再下结论

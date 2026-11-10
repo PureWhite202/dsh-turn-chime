@@ -19,6 +19,16 @@ import { talkMapApi } from './api.ts'
 import { canvas, INBOX_BOARD_ID, newCardId } from './canvas-store.ts'
 import { getServices, mapUi, openSessionInMain, sessionIdOf, unwrapRemote } from './map-state.ts'
 import { buildInjectionText, digestIsEmpty } from './digest-text.ts'
+import {
+  classifyDraftFile,
+  collectClipboardFiles,
+  collectDropIntake,
+  draftImageMediaType,
+  formatAttachmentBytes,
+  hasAttachmentDrag,
+  type DraftAttachment,
+  type DraftImageSource,
+} from './draft-attachments.ts'
 import { t } from './i18n.ts'
 import styles from './talk-map.module.css'
 
@@ -150,6 +160,101 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | undefined>(undefined)
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
+
+  // ---- attachments (paste / drop) -------------------------------------
+  const [attachments, setAttachments] = useState<DraftAttachment[]>([])
+  const [dragActive, setDragActive] = useState(false)
+  const attachmentsRef = useRef<readonly DraftAttachment[]>([])
+  useEffect(() => { attachmentsRef.current = attachments }, [attachments])
+  useEffect(() => () => {
+    for (const attachment of attachmentsRef.current) {
+      if (attachment.previewUrl !== undefined) URL.revokeObjectURL(attachment.previewUrl)
+    }
+    attachmentsRef.current = []
+  }, [])
+
+  /** Add browser files in source order; images get an object-URL preview. */
+  const addFiles = (files: readonly File[]): void => {
+    if (files.length === 0) return
+    const created = files.map((file): DraftAttachment => {
+      const kind = classifyDraftFile(file)
+      const mediaType = kind === 'image' ? draftImageMediaType(file.type) : undefined
+      return {
+        id: crypto.randomUUID(),
+        kind,
+        file,
+        ...(kind === 'image' ? { previewUrl: URL.createObjectURL(file) } : {}),
+        ...(mediaType !== undefined ? { mediaType } : {}),
+      }
+    })
+    setAttachments(previous => [...previous, ...created])
+    setError(undefined)
+  }
+
+  const removeAttachment = (id: string): void => {
+    const target = attachments.find(attachment => attachment.id === id)
+    if (target?.previewUrl !== undefined) URL.revokeObjectURL(target.previewUrl)
+    setAttachments(previous => previous.filter(attachment => attachment.id !== id))
+  }
+
+  /** A dragged map image is a URL, not a File: fetch its bytes first. */
+  const addImageSource = async (source: DraftImageSource): Promise<void> => {
+    try {
+      const response = await fetch(source.src)
+      if (!response.ok) throw new Error(`fetch ${response.status}`)
+      const blob = await response.blob()
+      const fromUrl = source.src.split('/').pop() ?? ''
+      const name = source.title !== undefined && source.title.trim() !== ''
+        ? source.title.trim()
+        : (fromUrl === '' ? 'image' : decodeURIComponent(fromUrl))
+      addFiles([new File([blob], name, { type: blob.type })])
+    } catch (attachError) {
+      setError(`${t('draft.attachFailed')}${String(attachError)}`)
+    }
+  }
+
+  const onPaste = (event: React.ClipboardEvent<HTMLTextAreaElement>): void => {
+    const files = collectClipboardFiles(event.clipboardData)
+    if (files.length === 0) return
+    // Text + files: let the textarea paste the text natively; files only:
+    // swallow the event so no stray line break appears.
+    if (event.clipboardData?.getData('text/plain') === '') event.preventDefault()
+    addFiles(files)
+  }
+
+  const onAttachmentDragEnter = (event: React.DragEvent<HTMLDivElement>): void => {
+    if (!hasAttachmentDrag(event.dataTransfer)) return
+    event.preventDefault()
+    setDragActive(true)
+  }
+
+  const onAttachmentDragOver = (event: React.DragEvent<HTMLDivElement>): void => {
+    if (!hasAttachmentDrag(event.dataTransfer)) return
+    event.preventDefault()
+    event.dataTransfer.dropEffect = 'copy'
+    setDragActive(true)
+  }
+
+  const onAttachmentDragLeave = (event: React.DragEvent<HTMLDivElement>): void => {
+    if (event.currentTarget.contains(event.relatedTarget as Element | null)) return
+    setDragActive(false)
+  }
+
+  const onAttachmentDrop = (event: React.DragEvent<HTMLDivElement>): void => {
+    if (!hasAttachmentDrag(event.dataTransfer)) return
+    // The draft owns this drop: never let it reach the canvas image-node
+    // handler or a composer behind the map.
+    event.preventDefault()
+    event.stopPropagation()
+    setDragActive(false)
+    const services = getServices()
+    const readAppFile = services !== undefined && services.fileDrag !== undefined
+      ? (transfer: DataTransfer): File | undefined => services.fileDrag.read(transfer)
+      : undefined
+    const intake = collectDropIntake(event.dataTransfer, readAppFile)
+    addFiles(intake.files)
+    for (const source of intake.imageSources) void addImageSource(source)
+  }
 
   useEffect(() => {
     textareaRef.current?.focus()
@@ -398,9 +503,15 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
 
   return (
     <div
-      className={styles['draftCard']}
+      className={`${styles['draftCard']}${dragActive ? ` ${styles['draftCardDrop']}` : ''}`}
       role="dialog"
       aria-label={t(isFork ? 'spawn.heading' : 'draft.heading')}
+      data-talk-map-draft=""
+      {...(dragActive ? { 'data-talk-map-drop-active': '1' } : {})}
+      onDragEnter={onAttachmentDragEnter}
+      onDragOver={onAttachmentDragOver}
+      onDragLeave={onAttachmentDragLeave}
+      onDrop={onAttachmentDrop}
       // Form controls own their pointer events entirely: React Flow's node
       // machinery must never see them, or the native <select> dropdown opens
       // and instantly closes (the flash-close bug).
@@ -535,6 +646,72 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
           )
         : null}
       {isFork && mode === 'full' ? <div className={styles['spawnHint']}>{t('spawn.fullOptional')}</div> : null}
+      {dragActive ? <div className={styles['draftDropHint']}>{t('draft.dropHint')}</div> : null}
+      {attachments.length > 0
+        ? (
+            <div className={`${styles['draftAttachments']} nodrag`} data-talk-map-attachments="">
+              {attachments.map(attachment => attachment.kind === 'image'
+                ? (
+                    <div
+                      key={attachment.id}
+                      className={styles['draftAttachmentImage']}
+                      data-talk-map-attachment="image"
+                    >
+                      {attachment.previewUrl !== undefined
+                        ? <img src={attachment.previewUrl} alt={attachment.file.name} />
+                        : null}
+                      <button
+                        type="button"
+                        className={`${styles['draftAttachmentRemove']} nodrag`}
+                        title={t('draft.removeAttachment')}
+                        aria-label={t('draft.removeAttachment')}
+                        onClick={() => { removeAttachment(attachment.id) }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )
+                : (
+                    <div
+                      key={attachment.id}
+                      className={`${styles['draftAttachmentFile']} nodrag`}
+                      data-talk-map-attachment="file"
+                    >
+                      <svg
+                        className={styles['draftAttachmentFileIcon']}
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.6"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+                        <path d="M14 3v5h5" />
+                      </svg>
+                      <span className={styles['draftAttachmentFileText']}>
+                        <span className={styles['draftAttachmentFileName']}>
+                          {attachment.file.name !== '' ? attachment.file.name : t('draft.untitledFile')}
+                        </span>
+                        <span className={styles['draftAttachmentFileMeta']}>
+                          {formatAttachmentBytes(attachment.file.size)}
+                        </span>
+                      </span>
+                      <button
+                        type="button"
+                        className={`${styles['draftAttachmentRemove']} nodrag`}
+                        title={t('draft.removeAttachment')}
+                        aria-label={t('draft.removeAttachment')}
+                        onClick={() => { removeAttachment(attachment.id) }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+            </div>
+          )
+        : null}
       <textarea
         ref={textareaRef}
         className={`${styles['draftTextarea']} nodrag nowheel`}
@@ -542,6 +719,7 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
         value={text}
         rows={4}
         onChange={(event) => { setText(event.target.value) }}
+        onPaste={onPaste}
         onKeyDown={(event) => {
           // Enter sends (Shift+Enter = newline); an IME confirmation Enter
           // (Chinese candidate pick) must never send.

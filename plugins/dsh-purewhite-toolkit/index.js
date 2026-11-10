@@ -17,7 +17,7 @@
  */
 
 import { spawn, spawnSync } from 'node:child_process'
-import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { isAbsolute, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -28,6 +28,7 @@ export const name = 'dsh-purewhite-toolkit'
 export const inject = ['tools']
 
 const PLUGIN_ROOT = fileURLToPath(new URL('.', import.meta.url))
+const SKILLS_DIR = join(PLUGIN_ROOT, 'skills')
 const BUILD_DIR = join(PLUGIN_ROOT, 'build')
 const HELPER_EXE = join(BUILD_DIR, 'dshtool-capture.exe')
 const HELPER_SRC = join(PLUGIN_ROOT, 'native', 'Capture.cs')
@@ -185,14 +186,96 @@ export function apply(ctx, config = {}) {
   const options = normalizeConfig(config ?? {})
   if (!options.enabled) return
   if (ctx === null || typeof ctx !== 'object') return
-  if (ctx.tools === undefined || typeof ctx.tools.register !== 'function') return
 
-  const definition = createScreenshotTool(ctx, options)
-  const register = () => ctx.tools.register(definition)
-  if (typeof ctx.effect === 'function') {
-    ctx.effect(register, 'dsh-purewhite-toolkit: screenshot')
-  } else {
-    register()
+  if (ctx.tools !== undefined && typeof ctx.tools.register === 'function') {
+    const definition = createScreenshotTool(ctx, options)
+    const register = () => ctx.tools.register(definition)
+    if (typeof ctx.effect === 'function') {
+      ctx.effect(register, 'dsh-purewhite-toolkit: screenshot')
+    } else {
+      register()
+    }
+  }
+
+  if (options.skills) registerBundledSkills(ctx)
+}
+
+/**
+ * 把插件自带的技能（skills/<名字>/SKILL.md）注册进宿主技能表。
+ * 技能服务不存在或解析失败时静默跳过，绝不影响 screenshot 工具。
+ * @param ctx Cordis 上下文。
+ */
+function registerBundledSkills(ctx) {
+  if (typeof ctx.inject !== 'function') return
+  try {
+    ctx.inject(['skills'], (skillsCtx) => {
+      let skills
+      try {
+        skills = skillsCtx.skills
+      } catch {
+        return
+      }
+      if (skills === undefined || skills === null || typeof skills.register !== 'function') return
+      let entries
+      try {
+        entries = readdirSync(SKILLS_DIR, { withFileTypes: true })
+      } catch {
+        return
+      }
+      for (const entry of entries) {
+        if (!entry.isDirectory()) continue
+        const filePath = join(SKILLS_DIR, entry.name, 'SKILL.md')
+        let skill
+        try {
+          skill = readBundledSkill(filePath)
+        } catch {
+          continue
+        }
+        if (skill === undefined) continue
+        try {
+          const register = () => skills.register({ ...skill, path: filePath })
+          if (typeof skillsCtx.effect === 'function') {
+            skillsCtx.effect(register, `dsh-purewhite-toolkit: skill ${skill.name}`)
+          } else {
+            register()
+          }
+        } catch (error) {
+          warnSafely(skillsCtx, `dsh-purewhite-toolkit: 技能 ${skill.name} 注册失败：${error instanceof Error ? error.message : String(error)}`)
+        }
+      }
+    })
+  } catch (error) {
+    warnSafely(ctx, `dsh-purewhite-toolkit: 无法注入 skills 服务：${error instanceof Error ? error.message : String(error)}`)
+  }
+}
+
+/**
+ * 读插件自带的 SKILL.md：frontmatter 只取 name / description，正文原样。
+ * @param filePath SKILL.md 绝对路径。
+ * @returns {{name: string, description: string, content: string}|undefined}
+ */
+function readBundledSkill(filePath) {
+  const raw = readFileSync(filePath, 'utf8')
+  const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u.exec(raw)
+  const frontmatter = match === null ? '' : match[1]
+  const content = (match === null ? raw : raw.slice(match[0].length)).trim()
+  const nameMatch = /^name:\s*(.+)$/mu.exec(frontmatter)
+  const descriptionMatch = /^description:\s*(.+)$/mu.exec(frontmatter)
+  if (nameMatch === null || descriptionMatch === null) return undefined
+  const unquote = (value) => String(value).trim().replace(/^(["'])([\s\S]*)\1$/u, '$2')
+  const name = unquote(nameMatch[1])
+  const description = unquote(descriptionMatch[1])
+  if (name === '' || description === '' || content === '') return undefined
+  return { name, description, content }
+}
+
+/** 宿主有 logger 就记一条警告，没有/不许访问就静默。 */
+function warnSafely(ctx, message) {
+  try {
+    const logger = ctx?.logger
+    if (logger !== undefined && logger !== null && typeof logger.warn === 'function') logger.warn(message)
+  } catch {
+    // 拿不到 logger 就算了
   }
 }
 
@@ -974,6 +1057,7 @@ function normalizeConfig(raw) {
       ? config.backend
       : 'auto',
     blankUniformity: Number.isFinite(Number(config.blankUniformity)) ? Number(config.blankUniformity) : 0.995,
+    skills: config.skills !== false,
   }
 }
 

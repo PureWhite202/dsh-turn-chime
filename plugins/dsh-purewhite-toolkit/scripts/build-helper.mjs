@@ -13,6 +13,12 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
+
+if (process.platform !== 'win32') {
+  console.log(`跳过：当前平台 ${process.platform} 不需要编译 Windows helper（macOS 走系统 screencapture）。`)
+  process.exit(0)
+}
+
 const SRC = join(ROOT, 'native', 'Capture.cs')
 const OUT = join(ROOT, 'build', 'dshtool-capture.exe')
 const force = process.argv.includes('--force')

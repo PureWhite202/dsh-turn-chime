@@ -46,6 +46,15 @@
 | `CAPTURE_TIMEOUT` | 截图进程超时（20 秒） |
 | `CAPTURE_SPAWN_FAILED` / `CAPTURE_FAILED` / `CONVERT_FAILED` | 子进程起不来 / 截图失败 / 转码失败 |
 
+## 技能：sync-config（2026-11-10 新增）
+
+插件自带一个技能，随插件加载注册进宿主技能表（`ctx.skills.register`），不需要软链到 `~/.agents/skills`。
+
+- 文件：`skills/sync-config/SKILL.md`
+- 触发：输入 `/sync-config`（技能和命令共用 `/` 菜单），或说「对比本机和云端」「同步个人配置」
+- 内容：全自然语言。仓库与 SSH 连接信息、本机/云端各指什么、对比步骤、报告格式、只读与确认规矩、拉取/推送命令，都写在正文里
+- 关掉：配置项 `skills: false`
+
 ## 配置
 
 `cordis.patch.yml` 里 `config`，全部可省略：
@@ -60,6 +69,7 @@
 | `backend` | `auto` | `auto` / `helper` / `powershell`（Windows）；macOS 恒走 `screencapture`，该键只做兼容 |
 | `cursor` | `false` | 默认是否画鼠标指针 |
 | `blankUniformity` | `0.995` | 判定纯色画面的阈值 |
+| `skills` | `true` | 是否注册插件自带的技能（`skills/` 目录） |
 
 ## 构建与测试
 

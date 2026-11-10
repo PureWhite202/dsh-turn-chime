@@ -1,9 +1,9 @@
 {
   "name": "dsh-purewhite-toolkit",
-  "version": "0.1.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
-  "description": "纯白莱茵自用 DSH 工具集：目前提供 screenshot 工具（整屏 / 指定窗口 / 指定区域截图，直接作为图片返回给模型）。Windows 用自编译 C# helper，macOS 用系统 screencapture。",
+  "description": "纯白莱茵自用 DSH 工具集：screenshot 工具（整屏 / 窗口 / 区域截图）与内置技能 sync-config（对比本机与云端配置仓库）。",
   "main": "index.js",
   "exports": {
     ".": "./index.js",
@@ -12,6 +12,7 @@
   "files": [
     "index.js",
     "cordis.patch.yml",
+    "skills",
     "native",
     "build/dshtool-capture.exe",
     "scripts",

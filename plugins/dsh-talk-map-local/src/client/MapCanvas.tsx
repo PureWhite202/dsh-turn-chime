@@ -166,7 +166,7 @@ interface MenuContext {
   /** Edge menus: endpoint card ids (set for stored AND lineage edges). */
   edgeFrom?: string
   edgeTo?: string
-  view: 'root' | 'import-ws' | 'import-session' | 'new-ws'
+  view: 'root' | 'import-ws' | 'import-session' | 'new-ws' | 'card-title'
 }
 
 /** Where/what a contextmenu event should open, before the panel is shown. */
@@ -189,6 +189,18 @@ export interface MapCanvasProps extends RootSlotStandardProps {
   activeChatSessionId?: string
   /** Double-clicked card: open it full screen; the overlay owns the order. */
   onOpenSession?: (sessionId: string) => void
+  /** Empty-canvas left click (selection cleared): put the drawer away so the
+   *  map's selected card and the open conversation stay the same thing. */
+  onDeselectChat?: () => void
+  /** A fork panel just opened (connection drag from a card, or the card
+   *  menu's "fork from this conversation"): put the drawer away, otherwise it
+   *  sits on top of the box the fork was just dropped into. A pinned drawer
+   *  is the overlay's call — it ignores this, the same way it ignores a
+   *  cleared selection. */
+  onForkChat?: () => void
+  /** The card selection changed; `undefined` when no Session card is selected.
+   *  The drawer's pin uses it to resume the selection when it unlocks. */
+  onSelectionChange?: (sessionId: string | undefined) => void
 }
 
 /** Directory part of a workspace path, lower-cased (both separators). */
@@ -864,7 +876,7 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
         const data: SessionCardData = {
           cardId,
           sessionId: card.sessionId,
-          title: summary?.displayTitle ?? card.sessionId,
+          title: card.title ?? summary?.displayTitle ?? card.sessionId,
           running: summary?.running ?? false,
           ghost: summary === undefined,
           updatedAt: summary?.updatedAt,
@@ -1343,6 +1355,10 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
         : isWorkspace ? { workspaceId: groupId } : {}),
       ...(groupId !== undefined ? { groupId } : {}),
     })
+    // Only a `parent` makes this box a fork panel ("连线分叉"); a plain draft
+    // from the pane menu/shortcut never came out of a card, so there is no
+    // drawer to put away. The overlay owns the pinned-drawer exception.
+    if (parent !== undefined) props.onForkChat?.()
   }
 
   /**
@@ -1552,6 +1568,29 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
     const items: MenuItem[] = []
     let title: string | undefined
 
+    if (menu.view === 'card-title') {
+      const cardId = menu.targetId
+      if (cardId === undefined) return null
+      const card = canvasState.cards[cardId]
+      if (card === undefined) return null
+      const summary = sessions.byId[card.sessionId]
+      const current = card.title ?? summary?.displayTitle ?? card.sessionId
+      return {
+        left: menu.left,
+        top: menu.top,
+        title: t('menu.editTitle'),
+        prompt: {
+          placeholder: current,
+          submitLabel: t('menu.saveTitle'),
+          onSubmit: async (value: string) => {
+            canvas.setCardTitle(cardId, value)
+            close()
+          },
+        },
+        items: [],
+      }
+    }
+
     if (menu.view === 'new-ws') {
       const parentDir = ((): string => {
         const sample = workspaces.items[0]?.path
@@ -1665,6 +1704,21 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
           if (card !== undefined) openSession(card.sessionId)
         },
       })
+      items.push({
+        key: 'edit-title',
+        label: t('menu.editTitle'),
+        onPick: () => { setMenu({ ...menu, view: 'card-title' }) },
+      })
+      if (card?.title !== undefined) {
+        items.push({
+          key: 'reset-title',
+          label: t('menu.resetTitle'),
+          onPick: () => {
+            canvas.setCardTitle(cardId, undefined)
+            close()
+          },
+        })
+      }
       // Discoverable alternative to dragging from a tiny connection dot:
       // opens the same fork panel with the newborn card placed to the right.
       if (card !== undefined && sessions.byId[card.sessionId] !== undefined) {
@@ -1888,6 +1942,17 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
         connectionMode={ConnectionMode.Loose}
         onSelectionStart={onSelectionStart}
         onSelectionEnd={onSelectionEnd}
+        onPaneClick={() => {
+          // Left click on empty canvas clears the selection; the drawer that
+          // showed the previously selected card goes with it.
+          props.onDeselectChat?.()
+        }}
+        onSelectionChange={(params) => {
+          const card = params.nodes.find(node => node.type === 'sessionCard')
+          props.onSelectionChange?.(card
+            ? (card as SessionCardNodeType).data.sessionId
+            : undefined)
+        }}
         onNodeClick={(event, node) => {
           // Click a card: open its conversation in the right-hand drawer.
           // Deferred by the double-click window so a double-click keeps its

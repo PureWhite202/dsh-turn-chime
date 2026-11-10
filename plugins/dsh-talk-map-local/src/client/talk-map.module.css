@@ -647,7 +647,11 @@ html[data-platform='darwin']:not([data-fullscreen]) .overlay::before {
   flex-direction: column;
   gap: 8px;
   padding: 14px;
-  border: 1.5px solid var(--dsw-alias-brand-primary);
+  /* Neutral frame, always. The panel used to carry the brand colour here
+   * unconditionally (a white ring in the dark theme) and briefly gained a
+   * focus ring; both read as "this box is selected", so the frame no longer
+   * highlights at all. The floating shadow is what sets it apart. */
+  border: 1.5px solid var(--dsw-alias-border-l2);
   border-radius: 12px;
   background: var(--dsw-alias-bg-layer-1);
   box-shadow: 0 8px 30px var(--dsw-alias-bg-mask-2);
@@ -1171,6 +1175,33 @@ html[data-platform='darwin']:not([data-fullscreen]) .overlay::before {
   color: var(--dsw-alias-label-primary);
 }
 
+/* Drawer pin: keep the conversation on screen while the map selection moves. */
+.chatDrawerLock {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  cursor: pointer;
+}
+
+.chatDrawerLock:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+.chatDrawerLockActive,
+.chatDrawerLockActive:hover {
+  background: var(--dsw-alias-interactive-bg-active);
+  color: var(--dsw-alias-brand-primary);
+}
+
 .chatDrawerArchived {
   display: flex;
   align-items: center;
@@ -1487,4 +1518,15 @@ html[data-platform='darwin']:not([data-fullscreen]) .overlay::before {
   height: 100%;
   object-fit: contain;
   background: var(--dsw-alias-bg-base);
+}
+
+/* Host composer safety net. The placeholder is an absolutely positioned
+ * sibling of the Lexical editor (ui-primitives InputBar); the host renders it
+ * while its own `draft === ""` state says the input is empty. That React state
+ * and the editor DOM can disagree (IME commits, draft restores after the main
+ * column is remounted), which paints the placeholder over real text. If the
+ * editor already holds a text run the placeholder must never show; this is a
+ * no-op while the host state is correct and heals the stale case by itself. */
+:global([data-composer-input]:has([data-lexical-text]) + [data-composer-placeholder]) {
+  display: none;
 }

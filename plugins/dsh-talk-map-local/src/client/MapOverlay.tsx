@@ -59,6 +59,25 @@ function CloseIcon(): React.JSX.Element {
   )
 }
 
+/** Drawer pin glyph (filled while the drawer is locked to its Session). */
+function PinIcon(props: { readonly filled: boolean }): React.JSX.Element {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill={props.filled ? 'currentColor' : 'none'}
+      stroke="currentColor"
+      strokeWidth={props.filled ? 0 : 1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M16 9V4h1a1 1 0 0 0 0-2H7a1 1 0 0 0 0 2h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z" />
+    </svg>
+  )
+}
+
 function HotkeyButton(): React.JSX.Element {
   const hotkey = useSyncExternalStore(canvas.subscribe, () => canvas.get().global?.hotkey ?? DEFAULT_HOTKEY)
   const [capturing, setCapturing] = useState(false)
@@ -174,6 +193,15 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
    *  (the host clears an unread dot only for the Session the main column
    *  shows); the background re-clear must not fight that visit. */
   const visitingRef = useRef(false)
+  /**
+   * Drawer pin: while locked the drawer keeps its Session even when the map
+   * selection moves (or is cleared). Unlocking resumes the selected card's
+   * Session, or closes the drawer when nothing is selected.
+   */
+  const drawerLockedRef = useRef(false)
+  const [drawerLocked, setDrawerLocked] = useState(false)
+  /** The Session card the map currently has selected (undefined: none). */
+  const selectedSessionRef = useRef<string | undefined>(undefined)
   const archivedIds = useArchivedSessionIds()
   /**
    * References retained for the drawer, kept until the overlay unmounts.
@@ -379,6 +407,10 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
   const closeChatNow = (): void => {
     chatRef.current = null
     chatWantedRef.current = undefined
+    if (drawerLockedRef.current) {
+      drawerLockedRef.current = false
+      setDrawerLocked(false)
+    }
     setChat(null)
   }
 
@@ -400,6 +432,19 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
     persistDrawer(undefined)
     restoreSwap()
     if (sessionId !== undefined) clearUnreadAfterDrawer(sessionId)
+  }
+
+  /**
+   * Put the drawer away for a map action that takes over the screen: an
+   * empty-canvas click (the selection is cleared with it) or a fork panel
+   * opening (its box would otherwise sit behind the drawer). A pinned drawer
+   * is an explicit "keep this conversation on screen" and ignores both.
+   */
+  const putDrawerAway = (): void => {
+    if (drawerLockedRef.current) return
+    if (chatRef.current === null && notice === null) return
+    setNotice(null)
+    closeChat()
   }
 
   /** Retain the card's Session and show it in the drawer (single occurrence). */
@@ -504,6 +549,7 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
    * parked on another Session of the workspace while the drawer shows it.
    */
   const openChat = useCallback((sessionId: string): void => {
+    if (drawerLockedRef.current && chatRef.current !== null) return
     const services = getServices()
     const retain = services?.sessions.retain
     if (services === undefined) return
@@ -545,6 +591,28 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
   }, [parkAndShow, retainAndShow])
 
   /**
+   * Drawer pin toggle. Locking keeps the current Session on screen no matter
+   * which card (or empty canvas) the map selects next. Unlocking follows the
+   * live selection: switch to the selected card's Session, or close the drawer
+   * when nothing is selected.
+   */
+  const toggleDrawerLock = (): void => {
+    if (!drawerLockedRef.current) {
+      drawerLockedRef.current = true
+      setDrawerLocked(true)
+      return
+    }
+    drawerLockedRef.current = false
+    setDrawerLocked(false)
+    const selected = selectedSessionRef.current
+    if (selected === undefined) {
+      closeChat()
+      return
+    }
+    if (selected !== chatRef.current?.sessionId) openChat(selected)
+  }
+
+  /**
    * The notice's manual escape hatch: the parking may have lost a race with
    * the Session list loading (the "偶现" notice). Re-read the current list and
    * retry the same switch; if nothing usable appeared we keep the honest
@@ -568,6 +636,7 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
    * editable occurrences must never overlap).
    */
   const markReadThenOpen = useCallback((sessionId: string): void => {
+    if (drawerLockedRef.current && chatRef.current !== null) return
     const unread = completions.getSnapshot().has(sessionId)
     if (!unread) {
       openChat(sessionId)
@@ -840,9 +909,21 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
   const drawerStyle = renderedDrawerWidth !== undefined ? { width: `${renderedDrawerWidth}px` } : undefined
 
   const drawerSessionId = chat?.sessionId ?? notice?.sessionId
-  const chatTitle = props.useSessions(
+  /** The card's own title wins: renaming a card on the map never renames the
+   *  Session (the sidebar and the main column keep the original title). */
+  const drawerCardTitle = useSyncExternalStore(canvas.subscribe, () => {
+    if (drawerSessionId === undefined) return undefined
+    for (const card of Object.values(canvas.get().cards)) {
+      if (card.sessionId === drawerSessionId) return card.title
+    }
+    return undefined
+  })
+  // Both hooks must run on every render — a `a ?? useHook()` shape would skip
+  // the hook whenever the card title exists and trip React's hook count.
+  const drawerSessionTitle = props.useSessions(
     state => (drawerSessionId === undefined ? undefined : state.byId[drawerSessionId]?.displayTitle),
-  ) ?? ''
+  )
+  const chatTitle = drawerCardTitle ?? drawerSessionTitle ?? ''
 
   const drawer = notice !== null
     ? (
@@ -890,6 +971,18 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
           <div className={styles['chatDrawerHeader']}>
             <span className={styles['chatDrawerTitle']} title={chatTitle}>{chatTitle}</span>
             <span className={styles['chatDrawerSpace']} />
+            <button
+              type="button"
+              className={drawerLocked
+                ? `${styles['chatDrawerLock']} ${styles['chatDrawerLockActive']}`
+                : styles['chatDrawerLock']}
+              title={drawerLocked ? t('map.unlockDrawer') : t('map.lockDrawer')}
+              aria-label={drawerLocked ? t('map.unlockDrawer') : t('map.lockDrawer')}
+              aria-pressed={drawerLocked}
+              onClick={toggleDrawerLock}
+            >
+              <PinIcon filled={drawerLocked} />
+            </button>
             <button
               type="button"
               className={styles['chatDrawerClose']}
@@ -947,6 +1040,9 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
             {...props}
             onOpenChat={markReadThenOpen}
             onOpenSession={handleFullOpen}
+            onDeselectChat={putDrawerAway}
+            onForkChat={putDrawerAway}
+            onSelectionChange={(sessionId) => { selectedSessionRef.current = sessionId }}
             activeChatSessionId={chat?.sessionId}
           />
           {drawer}

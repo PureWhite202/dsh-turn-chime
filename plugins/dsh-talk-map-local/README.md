@@ -6,7 +6,7 @@ A visual conversation map plugin for DeepSeek Harness (dsh): every session becom
 
 - **Spatial memory instead of working memory**: free placement + grid snapping, and nothing ever rearranges your cards — if you remember "that conversation was bottom-left", it stays bottom-left. Designed for ADHD users, useful for everyone.
 - **Double-click to chat**: double-click empty canvas and the session is created and opened on the spot — no form in the way; the card's position is remembered from the exact point you clicked and appears once the first message lands.
-- **Draw an edge to fork**: drag a line from a card onto empty space, preview (and edit) the context digest to inject, confirm — a new session starts *knowing* the old conversation.
+- **Draw an edge to fork**: drag a line from a card onto empty space, preview (and edit) the context digest to inject, confirm — a new session starts *knowing* the old conversation. The panel puts the conversation drawer away as it opens, so it never covers the box you just dragged out.
 - **Card front = resume surface**: title, the digest's "next step", relative time, running state. One glance tells you what to do next.
 - **Automatic digests**: after a session goes idle, a three-field digest (summary / key findings / next step) is generated with your deployment's default model; hit ⟳ on a card to regenerate manually.
 - **Bilingual interface**: the map's own copy renders in Chinese or English. The pill in the map header cycles Auto → 中文 → English; Auto follows dsh's own language, and the choice is remembered across restarts. (Digests stay in the language of the conversation they summarise.)
@@ -34,8 +34,9 @@ Restart `dsh web`; a map button appears at the sidebar foot.
 | Right-click → New conversation | same, create and enter directly |
 | Shift+double-click empty space / right-click → New conversation (fill in first)… | open the draft box: pick workspace/model/preset, write the first message, attach files |
 | Double-click a card | open that session |
+| Click a card / click empty space | open that session in the right-hand panel / put the panel away (a pinned panel stays) |
 | Paste or drop files into the draft box | send them as attachments with the first message |
-| Drag from a card's right handle to empty space | preview injection → fork a new session |
+| Drag from a card's right handle to empty space | preview injection → fork a new session; opening the fork panel puts the conversation panel away |
 | ⟳ on a card | regenerate the digest |
 | Language pill in the map header | cycle Auto → 中文 → English |
 | Drag the conversation panel's left edge | resize the right-hand panel (double-click resets, arrow keys nudge) |

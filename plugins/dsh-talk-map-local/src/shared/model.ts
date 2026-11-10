@@ -10,6 +10,9 @@ export interface Card {
   x: number
   y: number
   colorTag?: string
+  /** Map-only title. Absent = the Session's own title; editing it here never
+   *  touches the Session (the sidebar and the main column keep their title). */
+  title?: string
   /** Map-level group override — the canvas's own organizational layer. */
   wsOverride?: string
   createdAt: number

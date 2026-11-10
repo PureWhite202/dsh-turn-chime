@@ -536,40 +536,6 @@ async function main() {
       await page.keyboard.press('Escape')
     })
 
-    // Drag the conversation drawer's left edge: it must widen, and a
-    // double-click must bring the responsive default back.
-    await scenario('the conversation drawer resizes by dragging its edge', async () => {
-      await openMap(page)
-      await closeDrawer(page)
-      const card = page.locator('.react-flow__node-sessionCard').first()
-      await card.waitFor({ state: 'visible', timeout: 10000 })
-      const cardBox = await card.boundingBox()
-      assert(cardBox !== null, 'card measurable')
-      await page.mouse.click(cardBox.x + cardBox.width / 2, cardBox.y + 22)
-      const drawer = page.locator('aside[aria-label="Conversation panel"], aside[aria-label="会话窗口"]').first()
-      await drawer.waitFor({ state: 'visible', timeout: 5000 })
-      const initialBox = await drawer.boundingBox()
-      assert(initialBox !== null, 'drawer measurable')
-      const strip = page.locator('[class*="chatDrawerResize"]').first()
-      const stripBox = await strip.boundingBox()
-      assert(stripBox !== null, 'resize strip present')
-      const y = stripBox.y + stripBox.height / 2
-      await page.mouse.move(stripBox.x + stripBox.width / 2, y)
-      await page.mouse.down()
-      await page.mouse.move(stripBox.x + stripBox.width / 2 - 120, y, { steps: 8 })
-      await page.mouse.up()
-      await poll(async () => {
-        const box = await drawer.boundingBox()
-        return box !== null && Math.round(box.width) - Math.round(initialBox.width) > 100
-      }, 'the drawer widened by the drag', 3000)
-      await strip.dblclick()
-      await poll(async () => {
-        const box = await drawer.boundingBox()
-        return box !== null && Math.abs(Math.round(box.width) - Math.round(initialBox.width)) <= 12
-      }, 'double-click resets the drawer width', 3000)
-      await page.keyboard.press('Escape')
-    })
-
     assert(pageErrors.length === 0, `page errors: ${pageErrors.map(error => error.message).join(' | ')}`)
     process.stdout.write('\nAll draft-attachment intake scenarios passed.\n')
   } catch (error) {

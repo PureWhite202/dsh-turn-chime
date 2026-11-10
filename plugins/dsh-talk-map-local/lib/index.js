@@ -331,6 +331,9 @@ const cardSchema = z.object({
 	x: z.number(),
 	y: z.number(),
 	colorTag: z.string().optional(),
+	/** Map-only title override: the sidebar/main column keep the Session's own
+	*  title; only this card (and the drawer opened from it) shows it. */
+	title: z.string().optional(),
 	/** Map-level group override (set by dragging a card into another frame).
 	* dsh @0.1.0-rc.6 has no cross-workspace session move RPC, so this is the
 	* canvas's own organizational layer — the sidebar keeps its own truth. */

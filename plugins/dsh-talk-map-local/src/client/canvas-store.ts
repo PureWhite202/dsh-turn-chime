@@ -429,6 +429,23 @@ export const canvas = {
     })
   },
 
+  /** Rename one card without touching its Session; undefined clears the
+   *  override so the card shows the Session's own title again. */
+  setCardTitle(id: string, title: string | undefined): void {
+    const card = state.cards[id]
+    if (card === undefined) return
+    const trimmed = title?.trim()
+    if ((card.title ?? '') === (trimmed ?? '')) return
+    pushUndo()
+    const next = { ...card }
+    if (trimmed === undefined || trimmed === '') delete next.title
+    else next.title = trimmed
+    setState({ cards: { ...state.cards, [id]: next } })
+    void talkMapApi.upsertCards({ [id]: next }).catch((error) => {
+      console.error('[dsh-talk-map] card title save failed:', error)
+    })
+  },
+
   /** Adopt a card into another workspace's frame (map-level membership). */
   setCardWorkspaceOverride(id: string, wsOverride: string | undefined): void {
     const card = state.cards[id]

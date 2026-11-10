@@ -148,6 +148,8 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			"map.sessions": "个会话",
 			"map.chat": "会话窗口",
 			"map.closeChat": "关闭会话窗口",
+			"map.lockDrawer": "锁定窗口（保持当前对话）",
+			"map.unlockDrawer": "取消锁定",
 			"map.resizeDrawer": "拖动调整会话窗口宽度",
 			"map.resizeDrawerHint": "拖动调宽，双击恢复默认",
 			"map.sameSessionHint": "这个会话已经在主界面打开了。侧栏需要先把主界面临时切到同工作区的另一个会话，才能在这里打开它；当前没有可用的会话。可以点「刷新主页重试」再试一次（会话列表可能刚加载出来），或关闭地图继续在主界面输入。",
@@ -257,6 +259,9 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			"menu.moveGroup": "移动到分组（仅地图）",
 			"menu.noGroup": "移出分组（自由卡片）",
 			"menu.open": "打开对话",
+			"menu.editTitle": "编辑标题…",
+			"menu.saveTitle": "保存标题",
+			"menu.resetTitle": "恢复默认标题",
 			"menu.forkChat": "从此对话分叉…",
 			"menu.removeCard": "从地图移除",
 			"edge.push": "推送最新摘要",
@@ -291,6 +296,8 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			"map.sessions": "sessions",
 			"map.chat": "Conversation panel",
 			"map.closeChat": "Close conversation panel",
+			"map.lockDrawer": "Pin panel to this conversation",
+			"map.unlockDrawer": "Unpin panel",
 			"map.resizeDrawer": "Resize the conversation panel",
 			"map.resizeDrawerHint": "Drag to resize, double-click to reset",
 			"map.sameSessionHint": "This conversation is already open in the main view. The panel parks the main view on another conversation in the same workspace to open it here, and none is available right now. Try 「Refresh main view & retry」 (the session list may still be loading), or close the map to keep typing in the main view.",
@@ -400,6 +407,9 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			"menu.moveGroup": "Move to group (map only)",
 			"menu.noGroup": "Remove from group (free card)",
 			"menu.open": "Open conversation",
+			"menu.editTitle": "Edit title…",
+			"menu.saveTitle": "Save title",
+			"menu.resetTitle": "Use default title",
 			"menu.forkChat": "Fork from this conversation…",
 			"menu.removeCard": "Remove from map",
 			"edge.push": "Push latest digest",
@@ -877,6 +887,25 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				setState({ cards });
 				talkMapApi.upsertCards(payload).catch((error) => {
 					console.error("[dsh-talk-map] card color save failed:", error);
+				});
+			},
+			/** Rename one card without touching its Session; undefined clears the
+			*  override so the card shows the Session's own title again. */
+			setCardTitle(id, title) {
+				const card = state$1.cards[id];
+				if (card === void 0) return;
+				const trimmed = title?.trim();
+				if ((card.title ?? "") === (trimmed ?? "")) return;
+				pushUndo();
+				const next = { ...card };
+				if (trimmed === void 0 || trimmed === "") delete next.title;
+				else next.title = trimmed;
+				setState({ cards: {
+					...state$1.cards,
+					[id]: next
+				} });
+				talkMapApi.upsertCards({ [id]: next }).catch((error) => {
+					console.error("[dsh-talk-map] card title save failed:", error);
 				});
 			},
 			/** Adopt a card into another workspace's frame (map-level membership). */
@@ -1393,7 +1422,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 		};
 		//#endregion
 		//#region \0dsh-css:module:src/client/talk-map.module.css.mjs
-		const css$1 = ".MSQ6kW_toggleButton{width:32px;height:32px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:8px;justify-content:center;align-items:center;gap:6px;padding:0;display:flex}.MSQ6kW_toggleButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.MSQ6kW_toggleButtonActive{background:var(--dsw-alias-interactive-bg-active);color:var(--dsw-alias-brand-primary)}.MSQ6kW_toggleRow{width:100%;color:var(--dsw-alias-label-secondary);cursor:pointer;text-align:left;background:0 0;border:none;border-radius:8px;align-items:center;gap:8px;padding:6px 10px;font-size:13px;display:flex}.MSQ6kW_toggleRow:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.MSQ6kW_toggleLabel{white-space:nowrap}.MSQ6kW_toggleIcon{flex:none;width:18px;height:18px}.MSQ6kW_overlay{background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);pointer-events:auto;flex-direction:column;display:flex;position:absolute;top:0;bottom:0;left:0;right:0}[data-windows-titlebar] .MSQ6kW_overlay{padding-top:var(--dsh-windows-titlebar-height,40px)}html[data-platform=darwin]:not([data-fullscreen]) .MSQ6kW_overlay{padding-top:var(--dsh-frame-top-clearance,48px)}html[data-platform=darwin]:not([data-fullscreen]) .MSQ6kW_overlay:before{content:\"\";height:var(--dsh-frame-top-clearance,48px);-webkit-app-region:drag;position:absolute;top:0;left:0;right:0}.MSQ6kW_header{border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);flex:none;align-items:center;gap:10px;padding:8px 14px;display:flex}.MSQ6kW_headerTitle{color:var(--dsw-alias-label-primary);font-size:14px;font-weight:600}.MSQ6kW_headerBadge{color:var(--dsw-alias-label-tertiary);font-size:12px}.MSQ6kW_headerSpace{flex:1}.MSQ6kW_hotkeyButton{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;background:0 0;border-radius:999px;flex:none;padding:3px 10px;font-size:12px}.MSQ6kW_hotkeyButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.MSQ6kW_langButton{border:1px solid var(--dsw-alias-border-l2);min-width:58px;color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;background:0 0;border-radius:999px;flex:none;padding:3px 10px;font-size:12px}.MSQ6kW_langButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.MSQ6kW_zoomResetLabel{letter-spacing:-.5px;font-size:9px;font-weight:700}.MSQ6kW_closeButton{width:28px;height:28px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:6px;justify-content:center;align-items:center;padding:0;display:flex}.MSQ6kW_closeButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.MSQ6kW_canvas{flex:1;min-height:0;position:relative}.MSQ6kW_canvas .react-flow__nodesselection{pointer-events:none!important;display:none!important}.MSQ6kW_canvas .react-flow__nodesselection-rect{pointer-events:none!important;display:none!important}.MSQ6kW_card{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);width:224px;min-height:104px;color:var(--dsw-alias-label-primary);box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1);border-radius:10px;flex-direction:column;gap:6px;padding:10px 12px;font-size:13px;display:flex}.MSQ6kW_cardSelected{border-color:var(--dsw-alias-brand-primary)}.MSQ6kW_cardGhost{opacity:.55;border-style:dashed}.MSQ6kW_cardTop{align-items:center;gap:6px;min-width:0;display:flex}.MSQ6kW_cardTitle{-webkit-line-clamp:2;word-break:break-word;-webkit-box-orient:vertical;flex:auto;min-width:0;font-size:13px;font-weight:600;line-height:1.3;display:-webkit-box;overflow:hidden}.MSQ6kW_cardPin{width:22px;height:22px;color:var(--dsw-alias-label-tertiary);cursor:pointer;opacity:.55;background:0 0;border:none;border-radius:6px;flex:none;justify-content:center;align-items:center;margin-left:auto;padding:0;transition:opacity .12s,background-color .12s,color .12s;display:flex;transform:translate(6px,-6px)}.MSQ6kW_card:hover .MSQ6kW_cardPin{opacity:1}.MSQ6kW_cardPin:focus-visible{opacity:1}.MSQ6kW_cardPin:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.MSQ6kW_cardPinActive{opacity:1;color:var(--dsw-alias-brand-primary)}.MSQ6kW_cardPinActive:hover{color:var(--dsw-alias-brand-primary)}.MSQ6kW_runningDot{background:var(--dsw-alias-state-success-primary);border-radius:50%;flex:none;width:8px;height:8px;animation:1.6s ease-in-out infinite MSQ6kW_talkmap-pulse}@keyframes MSQ6kW_talkmap-pulse{50%{opacity:.35}}.MSQ6kW_cardDoneDot{width:12px;height:12px;color:var(--dsw-alias-state-success-primary,#22c55e);flex:none;display:inline-block;position:relative}.MSQ6kW_cardDoneDot:after{content:\"\";background:currentColor;border-radius:50%;position:absolute;top:20%;bottom:20%;left:20%;right:20%}.MSQ6kW_cardFooter{color:var(--dsw-alias-label-tertiary);justify-content:space-between;align-items:center;gap:8px;margin-top:auto;font-size:11px;display:flex}.MSQ6kW_cardTime{flex:none}.MSQ6kW_cardForeign{outline-offset:2px;outline:2px dashed #e0a33a}.MSQ6kW_cardFooterLeft{align-items:center;gap:6px;min-width:0;display:flex}.MSQ6kW_cardForeignTouch{animation:1.3s ease-in-out infinite MSQ6kW_cardForeignPulse}@keyframes MSQ6kW_cardForeignPulse{0%,to{box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1), 0 0 0 0 #e0a33a00}50%{box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1), 0 0 0 7px #e0a33a59}}.MSQ6kW_cardForeignChip{text-overflow:ellipsis;white-space:nowrap;min-width:0;max-width:118px;color:color-mix(in oklab, #e0a33a 78%, var(--dsw-alias-label-primary));background:#e0a33a29;background:color(display-p3 .842337 .649058 .309/.16);background:lab(71.621% 16.4145 60.6886/.16);border:1px solid #e0a33a8c;border:1px solid color(display-p3 .842337 .649058 .309/.55);border:1px solid lab(71.621% 16.4145 60.6886/.55);border-radius:999px;padding:1px 7px;font-size:10px;font-weight:600;overflow:hidden}.MSQ6kW_wsFrameForeign{color:color-mix(in oklab, #e0a33a 78%, var(--dsw-alias-label-primary));border:1px dashed #e0a33a8c;border:1px dashed color(display-p3 .842337 .649058 .309/.55);border:1px dashed lab(71.621% 16.4145 60.6886/.55);border-radius:999px;margin-left:6px;padding:1px 7px;font-size:10px;font-weight:600}.MSQ6kW_cardBadgeRunning{color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-state-success-tertiary);border-radius:999px;align-items:center;gap:5px;padding:1px 7px;font-size:10px;display:inline-flex}.MSQ6kW_cardBadgeWaiting{color:var(--dsw-alias-state-warn-label);background:var(--dsw-alias-state-warn-tertiary);border-radius:999px;padding:1px 7px;font-size:10px}.MSQ6kW_cardBadgeDone{color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-state-success-tertiary);border-radius:999px;padding:1px 7px;font-size:10px}.MSQ6kW_cardRemove{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:6px;align-self:flex-start;padding:3px 8px;font-size:12px}.MSQ6kW_cardRemove:hover{background:var(--dsw-alias-interactive-bg-hover-danger);color:var(--dsw-alias-state-error-primary)}.MSQ6kW_card .MSQ6kW_cardHandle{opacity:.55;background:0 0;border:none;width:18px;height:18px}.MSQ6kW_cardHandle:after{content:\"\";background:var(--dsw-alias-label-tertiary);border:2px solid var(--dsw-alias-bg-layer-1);border-radius:50%;position:absolute;top:5px;bottom:5px;left:5px;right:5px}.MSQ6kW_card:hover .MSQ6kW_cardHandle,.MSQ6kW_canvasConnecting .MSQ6kW_cardHandle,.MSQ6kW_cardHandle:hover{opacity:1}.MSQ6kW_cardHandle:hover:after{background:var(--dsw-alias-brand-primary)}.MSQ6kW_spawnFrom{color:var(--dsw-alias-label-secondary);font-size:12px}.MSQ6kW_spawnModes{gap:6px;display:flex}.MSQ6kW_spawnModeBtn{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:8px;flex:1;padding:5px 0;font-size:12px}.MSQ6kW_spawnModeBtn:hover{background:var(--dsw-alias-interactive-bg-hover)}.MSQ6kW_spawnModeActive{border-color:var(--dsw-alias-brand-primary);color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-interactive-bg-active)}.MSQ6kW_spawnHint{color:var(--dsw-alias-label-tertiary);font-size:12px}.MSQ6kW_spawnTextarea{box-sizing:border-box;resize:vertical;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;min-height:140px;color:var(--dsw-alias-label-primary);border-radius:8px;padding:10px;font-family:inherit;font-size:13px;line-height:1.5}.MSQ6kW_spawnError{color:var(--dsw-alias-state-error-primary);word-break:break-all;font-size:12px}.MSQ6kW_spawnActions{justify-content:flex-end;gap:8px;display:flex}.MSQ6kW_spawnBtnPrimary{background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground);cursor:pointer;border:none;border-radius:8px;padding:6px 16px;font-size:13px}.MSQ6kW_spawnBtnPrimary:hover{background:var(--dsw-alias-button-primary-hover)}.MSQ6kW_spawnBtnPrimary:disabled{background:var(--dsw-alias-button-primary-dimmed);cursor:default}.MSQ6kW_spawnBtnGhost{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:8px;padding:6px 16px;font-size:13px}.MSQ6kW_spawnBtnGhost:hover{background:var(--dsw-alias-interactive-bg-hover)}.MSQ6kW_wsFrame{border:2px dashed color-mix(in oklab, var(--dsw-alias-label-primary) 32%, transparent);background:color-mix(in oklab, var(--dsw-alias-bg-layer-1) 55%, transparent);border-radius:16px;position:relative}.MSQ6kW_wsFrameSelected{border-style:solid;border-color:var(--dsw-alias-brand-primary);background:color-mix(in oklab, var(--dsw-alias-brand-primary) 8%, transparent)}.MSQ6kW_wsFrameLabel{border:1px solid color-mix(in oklab, var(--dsw-alias-label-primary) 22%, transparent);background:var(--dsw-alias-bg-layer-1);box-shadow:0 2px 10px color-mix(in oklab, var(--dsw-alias-bg-mask-2) 55%, transparent);color:var(--dsw-alias-label-primary);white-space:nowrap;pointer-events:auto;cursor:grab;border-radius:999px;align-items:center;gap:6px;padding:3px 12px;font-size:12px;font-weight:600;display:flex;position:absolute;top:-12px;left:14px}.MSQ6kW_wsFrameLabel:active{cursor:grabbing}.MSQ6kW_wsFrameEdge{pointer-events:auto;cursor:grab;position:absolute}.MSQ6kW_wsFrameEdge:active{cursor:grabbing}.MSQ6kW_wsFrameResize{pointer-events:auto;cursor:nwse-resize;border-right:3px solid var(--dsw-alias-border-l3);border-bottom:3px solid var(--dsw-alias-border-l3);opacity:.7;border-bottom-right-radius:14px;width:16px;height:16px;position:absolute;bottom:-2px;right:-2px}.MSQ6kW_wsFrameResize:hover{border-color:var(--dsw-alias-brand-primary);opacity:1}.MSQ6kW_wsFrameCount{color:var(--dsw-alias-label-tertiary);font-weight:400}.MSQ6kW_draftCard{box-sizing:border-box;border:1.5px solid var(--dsw-alias-brand-primary);background:var(--dsw-alias-bg-layer-1);width:360px;box-shadow:0 8px 30px var(--dsw-alias-bg-mask-2);border-radius:12px;flex-direction:column;gap:8px;padding:14px;font-size:13px;display:flex}.MSQ6kW_draftHeading{color:var(--dsw-alias-label-primary);font-size:13px;font-weight:600}.MSQ6kW_draftRow{align-items:center;gap:8px;display:flex}.MSQ6kW_draftLabel{width:52px;color:var(--dsw-alias-label-tertiary);flex:none;font-size:12px}.MSQ6kW_draftSelect{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);min-width:0;color:var(--dsw-alias-label-primary);border-radius:7px;flex:1;padding:5px 8px;font-size:12px}.MSQ6kW_draftGrow{flex-direction:column;flex:1;gap:3px;min-width:0;display:flex}.MSQ6kW_draftInput{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;color:var(--dsw-alias-label-primary);border-radius:7px;padding:5px 8px;font-family:inherit;font-size:12px}.MSQ6kW_draftPathPreview{color:var(--dsw-alias-label-tertiary);word-break:break-all;font-size:11px}.MSQ6kW_draftTextarea{box-sizing:border-box;resize:vertical;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;min-height:88px;color:var(--dsw-alias-label-primary);border-radius:8px;padding:9px;font-family:inherit;font-size:13px;line-height:1.5}.MSQ6kW_draftAttachments{scrollbar-width:thin;gap:8px;max-height:72px;padding:2px 2px 4px;display:flex;overflow-x:auto;overflow-y:hidden}.MSQ6kW_draftAttachmentImage{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);border-radius:10px;flex:none;width:64px;height:64px;position:relative;overflow:hidden}.MSQ6kW_draftAttachmentImage img{object-fit:cover;width:100%;height:100%;display:block}.MSQ6kW_draftAttachmentFile{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:190px;height:64px;color:var(--dsw-alias-label-primary);border-radius:10px;flex:none;align-items:center;gap:8px;padding:8px 10px;display:flex;position:relative}.MSQ6kW_draftAttachmentFileIcon{width:24px;height:24px;color:var(--dsw-alias-brand-primary);flex:none}.MSQ6kW_draftAttachmentFileText{flex-direction:column;gap:2px;min-width:0;display:flex}.MSQ6kW_draftAttachmentFileName{text-overflow:ellipsis;white-space:nowrap;font-size:12px;overflow:hidden}.MSQ6kW_draftAttachmentFileMeta{color:var(--dsw-alias-label-tertiary);font-size:11px}.MSQ6kW_draftAttachmentRemove{background:var(--dsw-alias-button-contrast-fill,#0000008c);width:18px;height:18px;color:var(--dsw-alias-label-primary-inverted,#fff);cursor:pointer;opacity:0;border:none;border-radius:50%;place-items:center;padding:0;font-size:12px;line-height:1;transition:opacity .12s ease-in-out;display:grid;position:absolute;top:2px;right:2px}.MSQ6kW_draftAttachmentImage:hover .MSQ6kW_draftAttachmentRemove,.MSQ6kW_draftAttachmentFile:hover .MSQ6kW_draftAttachmentRemove{opacity:1}.MSQ6kW_draftAttachmentRemove:focus-visible{opacity:1}@media (hover:none),(pointer:coarse){.MSQ6kW_draftAttachmentRemove{opacity:1}}.MSQ6kW_draftAttachmentProgress{background:var(--dsw-alias-fill-tertiary,#0000001f);border-radius:1px;height:2px;position:absolute;bottom:4px;left:6px;right:6px;overflow:hidden}.MSQ6kW_draftAttachmentProgressBar{background:var(--dsw-alias-brand-primary);height:100%;transition:width .15s ease-out}.MSQ6kW_draftCardDrop{background:color-mix(in oklab, var(--dsw-alias-brand-primary) 6%, var(--dsw-alias-bg-layer-1))}.MSQ6kW_draftDropHint{color:var(--dsw-alias-brand-primary);font-size:12px}.MSQ6kW_colorToolbar{z-index:7;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);box-shadow:0 2px 10px var(--dsw-alias-bg-mask-1);border-radius:10px;align-items:center;gap:6px;padding:6px 10px;display:flex;position:absolute;top:12px;left:12px}.MSQ6kW_colorToolbarLabel{color:var(--dsw-alias-label-tertiary);margin-right:2px;font-size:12px}.MSQ6kW_colorSwatch{border:1px solid var(--dsw-alias-border-l2);cursor:pointer;width:18px;height:18px;color:var(--dsw-alias-label-secondary);border-radius:50%;justify-content:center;align-items:center;padding:0;font-size:11px;line-height:1;display:flex}.MSQ6kW_colorSwatch:hover{transform:scale(1.15)}.MSQ6kW_colorSwatchClear{background:0 0}.MSQ6kW_menu{z-index:9;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);min-width:200px;max-width:280px;max-height:380px;box-shadow:0 8px 30px var(--dsw-alias-bg-mask-2);border-radius:10px;flex-direction:column;padding:6px;display:flex;position:absolute;overflow-y:auto}.MSQ6kW_menuTitle{color:var(--dsw-alias-label-tertiary);flex:none;padding:4px 10px 6px;font-size:11px}.MSQ6kW_menuSearch{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:calc(100% - 8px);color:var(--dsw-alias-label-primary);border-radius:7px;flex:none;margin:2px 4px 6px;padding:5px 8px;font-family:inherit;font-size:12px}.MSQ6kW_menuHint{color:var(--dsw-alias-label-dimmed);font-size:11px}.MSQ6kW_menuPreview{color:var(--dsw-alias-label-tertiary);word-break:break-all;flex:none;padding:0 10px 4px;font-size:11px}.MSQ6kW_menuError{color:var(--dsw-alias-state-error-primary);word-break:break-all;flex:none;padding:0 10px 4px;font-size:11px}.MSQ6kW_menuEmpty{color:var(--dsw-alias-label-tertiary);padding:8px 10px;font-size:12px}.MSQ6kW_menuItem{text-align:left;width:100%;color:var(--dsw-alias-label-primary);cursor:pointer;white-space:nowrap;text-overflow:ellipsis;background:0 0;border:none;border-radius:7px;flex:none;padding:6px 10px;font-size:13px;display:block;overflow:hidden}.MSQ6kW_menuItem:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.MSQ6kW_menuItem:disabled{color:var(--dsw-alias-label-dimmed);cursor:default}.MSQ6kW_wsFrameHidden{color:var(--dsw-alias-state-warn-primary);font-weight:400}.MSQ6kW_emptyHint{color:var(--dsw-alias-label-tertiary);pointer-events:none;z-index:4;font-size:13px;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}.MSQ6kW_toast{z-index:8;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);max-width:70%;box-shadow:0 4px 16px var(--dsw-alias-bg-mask-2);color:var(--dsw-alias-label-primary);pointer-events:none;white-space:nowrap;text-overflow:ellipsis;border-radius:999px;padding:7px 16px;font-size:12px;position:absolute;bottom:28px;left:50%;overflow:hidden;transform:translate(-50%)}.MSQ6kW_toastActionable{pointer-events:auto;align-items:center;gap:10px;padding-right:8px;display:inline-flex}.MSQ6kW_toastText{text-overflow:ellipsis;min-width:0;overflow:hidden}.MSQ6kW_toastAction{background:var(--dsw-alias-bg-layer-2,#7f7f7f29);color:var(--dsw-alias-label-primary);font:inherit;cursor:pointer;border:0;border-radius:999px;flex:none;padding:2px 8px;font-weight:600}.MSQ6kW_toastAction:hover{background:var(--dsw-alias-bg-layer-3,#7f7f7f3d)}.MSQ6kW_body{flex:1;min-height:0;display:flex;position:relative}.MSQ6kW_chatDrawer{z-index:6;background:var(--dsw-alias-bg-base);border-left:1px solid var(--dsw-alias-border-l1);width:max(360px,min(42%,720px));max-width:calc(100vw - 280px);box-shadow:-12px 0 28px -18px var(--dsw-alias-bg-mask-2);flex-direction:column;display:flex;position:absolute;top:0;bottom:0;right:0;container:MSQ6kW_talk-map-drawer/inline-size}.MSQ6kW_chatDrawerResize{z-index:1;cursor:col-resize;touch-action:none;background:0 0;border:0;width:10px;padding:0;position:absolute;top:0;bottom:0;left:-4px}.MSQ6kW_chatDrawerResize:after{content:\"\";background:0 0;width:2px;transition:background-color .12s;position:absolute;top:0;bottom:0;left:4px}.MSQ6kW_chatDrawerResize:hover:after,.MSQ6kW_chatDrawerResize[data-resizing=true]:after{background:var(--dsw-alias-border-l2)}.MSQ6kW_chatDrawerResize:focus-visible:after{background:var(--dsw-alias-border-l2)}.MSQ6kW_chatDrawerResize:focus-visible{outline:none}.MSQ6kW_chatDrawerHeader{border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);flex:none;align-items:center;gap:8px;padding:6px 10px;display:flex}.MSQ6kW_chatDrawerTitle{text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--dsw-alias-label-primary);font-size:12px;font-weight:600;overflow:hidden}.MSQ6kW_chatDrawerSpace{flex:1}.MSQ6kW_chatDrawerClose{width:26px;height:26px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:6px;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.MSQ6kW_chatDrawerClose:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.MSQ6kW_chatDrawerArchived{color:var(--dsw-alias-label-primary);background:#e0a33a1f;background:color(display-p3 .842337 .649058 .309/.12);background:lab(71.621% 16.4145 60.6886/.12);border-bottom:1px solid #e0a33a59;border-bottom:1px solid color(display-p3 .842337 .649058 .309/.35);border-bottom:1px solid lab(71.621% 16.4145 60.6886/.35);align-items:center;gap:10px;padding:8px 12px;font-size:12px;display:flex}.MSQ6kW_chatDrawerArchivedText{flex:1;min-width:0}.MSQ6kW_chatDrawerArchivedButton{color:inherit;cursor:pointer;background:0 0;border:1px solid #e0a33a8c;border:1px solid color(display-p3 .842337 .649058 .309/.55);border:1px solid lab(71.621% 16.4145 60.6886/.55);border-radius:999px;flex:none;padding:2px 10px;font-size:12px}.MSQ6kW_chatDrawerArchivedButton:hover{background:#e0a33a2e;background:color(display-p3 .842337 .649058 .309/.18);background:lab(71.621% 16.4145 60.6886/.18)}.MSQ6kW_chatDrawerBody{flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}@container MSQ6kW_talk-map-drawer (width>=560px){.MSQ6kW_chatDrawer nav[aria-label]{display:block}}.MSQ6kW_chatDrawerNotice{flex-direction:column;flex:1;align-items:flex-start;gap:14px;padding:22px 20px;display:flex}.MSQ6kW_chatDrawerNoticeText{color:var(--dsw-alias-label-secondary);margin:0;font-size:13px;line-height:1.7}.MSQ6kW_chatDrawerNoticeActions{flex-wrap:wrap;gap:8px;display:flex}.MSQ6kW_chatDrawerNoticeButton{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);cursor:pointer;border-radius:8px;padding:6px 14px;font-size:13px}.MSQ6kW_chatDrawerNoticeButton:hover{background:var(--dsw-alias-interactive-bg-hover)}.MSQ6kW_chatDrawerNoticeButton:disabled{opacity:.55;cursor:default}.MSQ6kW_chatPanel{flex-direction:column;flex:1;min-height:0;display:flex}.MSQ6kW_cardWaitingButton{color:var(--dsw-alias-state-warn-label);background:var(--dsw-alias-state-warn-tertiary);cursor:pointer;border:none;border-radius:999px;padding:1px 7px;font-size:10px}.MSQ6kW_cardWaitingButton:hover{filter:brightness(1.15)}.MSQ6kW_interactMenu{gap:4px;max-height:min(420px,70vh)}.MSQ6kW_interactTitle{color:var(--dsw-alias-label-primary);padding:4px 6px 0;font-size:12px;font-weight:600}.MSQ6kW_interactText{color:var(--dsw-alias-label-secondary);white-space:pre-wrap;word-break:break-word;padding:2px 6px 4px;font-size:12px;line-height:1.45}.MSQ6kW_interactNote{color:var(--dsw-alias-label-tertiary);padding:0 6px 4px;font-size:11px}.MSQ6kW_interactScroll{flex-direction:column;gap:6px;max-height:260px;display:flex;overflow-y:auto}.MSQ6kW_interactGroup{flex-direction:column;gap:4px;display:flex}.MSQ6kW_interactOptions{flex-wrap:wrap;gap:6px;padding:2px 6px 4px;display:flex}.MSQ6kW_interactOption{text-align:left;border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;flex:100%;padding:7px 10px;font-size:12px}.MSQ6kW_interactOption:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.MSQ6kW_interactOptionActive{border-color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-interactive-bg-active)}.MSQ6kW_interactActions{gap:6px;padding:4px 6px 6px;display:flex}.MSQ6kW_interactAllow{background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground);cursor:pointer;border:none;border-radius:8px;flex:1;padding:7px 10px;font-size:12px}.MSQ6kW_interactAllow:hover:not(:disabled){background:var(--dsw-alias-button-primary-hover)}.MSQ6kW_interactDanger{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-state-error-primary);cursor:pointer;background:0 0;border-radius:8px;flex:1;padding:7px 10px;font-size:12px}.MSQ6kW_interactDanger:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover-danger)}.MSQ6kW_interactSubmit,.MSQ6kW_interactOpen{border:1px solid var(--dsw-alias-border-l2);width:100%;color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;margin-top:4px;padding:7px 10px;font-size:12px}.MSQ6kW_interactSubmit:hover:not(:disabled),.MSQ6kW_interactOpen:hover{background:var(--dsw-alias-interactive-bg-hover)}.MSQ6kW_interactSubmit:disabled{color:var(--dsw-alias-label-dimmed);cursor:default}.MSQ6kW_interactError{color:var(--dsw-alias-state-error-primary);word-break:break-word;padding:2px 6px 4px;font-size:11px}.MSQ6kW_mapFallback{background:var(--dsw-alias-bg-base);min-height:0;color:var(--dsw-alias-label-primary);flex-direction:column;flex:1;justify-content:center;align-items:center;gap:10px;padding:24px;display:flex}.MSQ6kW_mapFallbackTitle{font-size:14px;font-weight:600}.MSQ6kW_mapFallbackText{text-align:center;max-width:420px;color:var(--dsw-alias-label-secondary);font-size:12px}.MSQ6kW_mapFallbackButton{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;padding:6px 14px;font-size:12px}.MSQ6kW_mapFallbackButton:hover{background:var(--dsw-alias-interactive-bg-hover)}.MSQ6kW_imageCard{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);width:100%;height:100%;box-shadow:0 10px 26px -18px var(--dsw-alias-bg-mask-2);border-radius:10px;overflow:hidden}.MSQ6kW_imageCardSelected{border-color:var(--dsw-alias-brand-primary);box-shadow:0 0 0 2px var(--dsw-alias-brand-primary)}.MSQ6kW_imageCardImg{object-fit:contain;background:var(--dsw-alias-bg-base);width:100%;height:100%;display:block}";
+		const css$1 = ".AxLS7q_toggleButton{width:32px;height:32px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:8px;justify-content:center;align-items:center;gap:6px;padding:0;display:flex}.AxLS7q_toggleButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_toggleButtonActive{background:var(--dsw-alias-interactive-bg-active);color:var(--dsw-alias-brand-primary)}.AxLS7q_toggleRow{width:100%;color:var(--dsw-alias-label-secondary);cursor:pointer;text-align:left;background:0 0;border:none;border-radius:8px;align-items:center;gap:8px;padding:6px 10px;font-size:13px;display:flex}.AxLS7q_toggleRow:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_toggleLabel{white-space:nowrap}.AxLS7q_toggleIcon{flex:none;width:18px;height:18px}.AxLS7q_overlay{background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);pointer-events:auto;flex-direction:column;display:flex;position:absolute;top:0;bottom:0;left:0;right:0}[data-windows-titlebar] .AxLS7q_overlay{padding-top:var(--dsh-windows-titlebar-height,40px)}html[data-platform=darwin]:not([data-fullscreen]) .AxLS7q_overlay{padding-top:var(--dsh-frame-top-clearance,48px)}html[data-platform=darwin]:not([data-fullscreen]) .AxLS7q_overlay:before{content:\"\";height:var(--dsh-frame-top-clearance,48px);-webkit-app-region:drag;position:absolute;top:0;left:0;right:0}.AxLS7q_header{border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);flex:none;align-items:center;gap:10px;padding:8px 14px;display:flex}.AxLS7q_headerTitle{color:var(--dsw-alias-label-primary);font-size:14px;font-weight:600}.AxLS7q_headerBadge{color:var(--dsw-alias-label-tertiary);font-size:12px}.AxLS7q_headerSpace{flex:1}.AxLS7q_hotkeyButton{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;background:0 0;border-radius:999px;flex:none;padding:3px 10px;font-size:12px}.AxLS7q_hotkeyButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_langButton{border:1px solid var(--dsw-alias-border-l2);min-width:58px;color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;background:0 0;border-radius:999px;flex:none;padding:3px 10px;font-size:12px}.AxLS7q_langButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_zoomResetLabel{letter-spacing:-.5px;font-size:9px;font-weight:700}.AxLS7q_closeButton{width:28px;height:28px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:6px;justify-content:center;align-items:center;padding:0;display:flex}.AxLS7q_closeButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_canvas{flex:1;min-height:0;position:relative}.AxLS7q_canvas .react-flow__nodesselection{pointer-events:none!important;display:none!important}.AxLS7q_canvas .react-flow__nodesselection-rect{pointer-events:none!important;display:none!important}.AxLS7q_card{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);width:224px;min-height:104px;color:var(--dsw-alias-label-primary);box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1);border-radius:10px;flex-direction:column;gap:6px;padding:10px 12px;font-size:13px;display:flex}.AxLS7q_cardSelected{border-color:var(--dsw-alias-brand-primary)}.AxLS7q_cardGhost{opacity:.55;border-style:dashed}.AxLS7q_cardTop{align-items:center;gap:6px;min-width:0;display:flex}.AxLS7q_cardTitle{-webkit-line-clamp:2;word-break:break-word;-webkit-box-orient:vertical;flex:auto;min-width:0;font-size:13px;font-weight:600;line-height:1.3;display:-webkit-box;overflow:hidden}.AxLS7q_cardPin{width:22px;height:22px;color:var(--dsw-alias-label-tertiary);cursor:pointer;opacity:.55;background:0 0;border:none;border-radius:6px;flex:none;justify-content:center;align-items:center;margin-left:auto;padding:0;transition:opacity .12s,background-color .12s,color .12s;display:flex;transform:translate(6px,-6px)}.AxLS7q_card:hover .AxLS7q_cardPin{opacity:1}.AxLS7q_cardPin:focus-visible{opacity:1}.AxLS7q_cardPin:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_cardPinActive{opacity:1;color:var(--dsw-alias-brand-primary)}.AxLS7q_cardPinActive:hover{color:var(--dsw-alias-brand-primary)}.AxLS7q_runningDot{background:var(--dsw-alias-state-success-primary);border-radius:50%;flex:none;width:8px;height:8px;animation:1.6s ease-in-out infinite AxLS7q_talkmap-pulse}@keyframes AxLS7q_talkmap-pulse{50%{opacity:.35}}.AxLS7q_cardDoneDot{width:12px;height:12px;color:var(--dsw-alias-state-success-primary,#22c55e);flex:none;display:inline-block;position:relative}.AxLS7q_cardDoneDot:after{content:\"\";background:currentColor;border-radius:50%;position:absolute;top:20%;bottom:20%;left:20%;right:20%}.AxLS7q_cardFooter{color:var(--dsw-alias-label-tertiary);justify-content:space-between;align-items:center;gap:8px;margin-top:auto;font-size:11px;display:flex}.AxLS7q_cardTime{flex:none}.AxLS7q_cardForeign{outline-offset:2px;outline:2px dashed #e0a33a}.AxLS7q_cardFooterLeft{align-items:center;gap:6px;min-width:0;display:flex}.AxLS7q_cardForeignTouch{animation:1.3s ease-in-out infinite AxLS7q_cardForeignPulse}@keyframes AxLS7q_cardForeignPulse{0%,to{box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1), 0 0 0 0 #e0a33a00}50%{box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1), 0 0 0 7px #e0a33a59}}.AxLS7q_cardForeignChip{text-overflow:ellipsis;white-space:nowrap;min-width:0;max-width:118px;color:color-mix(in oklab, #e0a33a 78%, var(--dsw-alias-label-primary));background:#e0a33a29;background:color(display-p3 .842337 .649058 .309/.16);background:lab(71.621% 16.4145 60.6886/.16);border:1px solid #e0a33a8c;border:1px solid color(display-p3 .842337 .649058 .309/.55);border:1px solid lab(71.621% 16.4145 60.6886/.55);border-radius:999px;padding:1px 7px;font-size:10px;font-weight:600;overflow:hidden}.AxLS7q_wsFrameForeign{color:color-mix(in oklab, #e0a33a 78%, var(--dsw-alias-label-primary));border:1px dashed #e0a33a8c;border:1px dashed color(display-p3 .842337 .649058 .309/.55);border:1px dashed lab(71.621% 16.4145 60.6886/.55);border-radius:999px;margin-left:6px;padding:1px 7px;font-size:10px;font-weight:600}.AxLS7q_cardBadgeRunning{color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-state-success-tertiary);border-radius:999px;align-items:center;gap:5px;padding:1px 7px;font-size:10px;display:inline-flex}.AxLS7q_cardBadgeWaiting{color:var(--dsw-alias-state-warn-label);background:var(--dsw-alias-state-warn-tertiary);border-radius:999px;padding:1px 7px;font-size:10px}.AxLS7q_cardBadgeDone{color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-state-success-tertiary);border-radius:999px;padding:1px 7px;font-size:10px}.AxLS7q_cardRemove{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:6px;align-self:flex-start;padding:3px 8px;font-size:12px}.AxLS7q_cardRemove:hover{background:var(--dsw-alias-interactive-bg-hover-danger);color:var(--dsw-alias-state-error-primary)}.AxLS7q_card .AxLS7q_cardHandle{opacity:.55;background:0 0;border:none;width:18px;height:18px}.AxLS7q_cardHandle:after{content:\"\";background:var(--dsw-alias-label-tertiary);border:2px solid var(--dsw-alias-bg-layer-1);border-radius:50%;position:absolute;top:5px;bottom:5px;left:5px;right:5px}.AxLS7q_card:hover .AxLS7q_cardHandle,.AxLS7q_canvasConnecting .AxLS7q_cardHandle,.AxLS7q_cardHandle:hover{opacity:1}.AxLS7q_cardHandle:hover:after{background:var(--dsw-alias-brand-primary)}.AxLS7q_spawnFrom{color:var(--dsw-alias-label-secondary);font-size:12px}.AxLS7q_spawnModes{gap:6px;display:flex}.AxLS7q_spawnModeBtn{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:8px;flex:1;padding:5px 0;font-size:12px}.AxLS7q_spawnModeBtn:hover{background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_spawnModeActive{border-color:var(--dsw-alias-brand-primary);color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-interactive-bg-active)}.AxLS7q_spawnHint{color:var(--dsw-alias-label-tertiary);font-size:12px}.AxLS7q_spawnTextarea{box-sizing:border-box;resize:vertical;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;min-height:140px;color:var(--dsw-alias-label-primary);border-radius:8px;padding:10px;font-family:inherit;font-size:13px;line-height:1.5}.AxLS7q_spawnError{color:var(--dsw-alias-state-error-primary);word-break:break-all;font-size:12px}.AxLS7q_spawnActions{justify-content:flex-end;gap:8px;display:flex}.AxLS7q_spawnBtnPrimary{background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground);cursor:pointer;border:none;border-radius:8px;padding:6px 16px;font-size:13px}.AxLS7q_spawnBtnPrimary:hover{background:var(--dsw-alias-button-primary-hover)}.AxLS7q_spawnBtnPrimary:disabled{background:var(--dsw-alias-button-primary-dimmed);cursor:default}.AxLS7q_spawnBtnGhost{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:8px;padding:6px 16px;font-size:13px}.AxLS7q_spawnBtnGhost:hover{background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_wsFrame{border:2px dashed color-mix(in oklab, var(--dsw-alias-label-primary) 32%, transparent);background:color-mix(in oklab, var(--dsw-alias-bg-layer-1) 55%, transparent);border-radius:16px;position:relative}.AxLS7q_wsFrameSelected{border-style:solid;border-color:var(--dsw-alias-brand-primary);background:color-mix(in oklab, var(--dsw-alias-brand-primary) 8%, transparent)}.AxLS7q_wsFrameLabel{border:1px solid color-mix(in oklab, var(--dsw-alias-label-primary) 22%, transparent);background:var(--dsw-alias-bg-layer-1);box-shadow:0 2px 10px color-mix(in oklab, var(--dsw-alias-bg-mask-2) 55%, transparent);color:var(--dsw-alias-label-primary);white-space:nowrap;pointer-events:auto;cursor:grab;border-radius:999px;align-items:center;gap:6px;padding:3px 12px;font-size:12px;font-weight:600;display:flex;position:absolute;top:-12px;left:14px}.AxLS7q_wsFrameLabel:active{cursor:grabbing}.AxLS7q_wsFrameEdge{pointer-events:auto;cursor:grab;position:absolute}.AxLS7q_wsFrameEdge:active{cursor:grabbing}.AxLS7q_wsFrameResize{pointer-events:auto;cursor:nwse-resize;border-right:3px solid var(--dsw-alias-border-l3);border-bottom:3px solid var(--dsw-alias-border-l3);opacity:.7;border-bottom-right-radius:14px;width:16px;height:16px;position:absolute;bottom:-2px;right:-2px}.AxLS7q_wsFrameResize:hover{border-color:var(--dsw-alias-brand-primary);opacity:1}.AxLS7q_wsFrameCount{color:var(--dsw-alias-label-tertiary);font-weight:400}.AxLS7q_draftCard{box-sizing:border-box;border:1.5px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);width:360px;box-shadow:0 8px 30px var(--dsw-alias-bg-mask-2);border-radius:12px;flex-direction:column;gap:8px;padding:14px;font-size:13px;display:flex}.AxLS7q_draftHeading{color:var(--dsw-alias-label-primary);font-size:13px;font-weight:600}.AxLS7q_draftRow{align-items:center;gap:8px;display:flex}.AxLS7q_draftLabel{width:52px;color:var(--dsw-alias-label-tertiary);flex:none;font-size:12px}.AxLS7q_draftSelect{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);min-width:0;color:var(--dsw-alias-label-primary);border-radius:7px;flex:1;padding:5px 8px;font-size:12px}.AxLS7q_draftGrow{flex-direction:column;flex:1;gap:3px;min-width:0;display:flex}.AxLS7q_draftInput{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;color:var(--dsw-alias-label-primary);border-radius:7px;padding:5px 8px;font-family:inherit;font-size:12px}.AxLS7q_draftPathPreview{color:var(--dsw-alias-label-tertiary);word-break:break-all;font-size:11px}.AxLS7q_draftTextarea{box-sizing:border-box;resize:vertical;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;min-height:88px;color:var(--dsw-alias-label-primary);border-radius:8px;padding:9px;font-family:inherit;font-size:13px;line-height:1.5}.AxLS7q_draftAttachments{scrollbar-width:thin;gap:8px;max-height:72px;padding:2px 2px 4px;display:flex;overflow-x:auto;overflow-y:hidden}.AxLS7q_draftAttachmentImage{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);border-radius:10px;flex:none;width:64px;height:64px;position:relative;overflow:hidden}.AxLS7q_draftAttachmentImage img{object-fit:cover;width:100%;height:100%;display:block}.AxLS7q_draftAttachmentFile{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:190px;height:64px;color:var(--dsw-alias-label-primary);border-radius:10px;flex:none;align-items:center;gap:8px;padding:8px 10px;display:flex;position:relative}.AxLS7q_draftAttachmentFileIcon{width:24px;height:24px;color:var(--dsw-alias-brand-primary);flex:none}.AxLS7q_draftAttachmentFileText{flex-direction:column;gap:2px;min-width:0;display:flex}.AxLS7q_draftAttachmentFileName{text-overflow:ellipsis;white-space:nowrap;font-size:12px;overflow:hidden}.AxLS7q_draftAttachmentFileMeta{color:var(--dsw-alias-label-tertiary);font-size:11px}.AxLS7q_draftAttachmentRemove{background:var(--dsw-alias-button-contrast-fill,#0000008c);width:18px;height:18px;color:var(--dsw-alias-label-primary-inverted,#fff);cursor:pointer;opacity:0;border:none;border-radius:50%;place-items:center;padding:0;font-size:12px;line-height:1;transition:opacity .12s ease-in-out;display:grid;position:absolute;top:2px;right:2px}.AxLS7q_draftAttachmentImage:hover .AxLS7q_draftAttachmentRemove,.AxLS7q_draftAttachmentFile:hover .AxLS7q_draftAttachmentRemove{opacity:1}.AxLS7q_draftAttachmentRemove:focus-visible{opacity:1}@media (hover:none),(pointer:coarse){.AxLS7q_draftAttachmentRemove{opacity:1}}.AxLS7q_draftAttachmentProgress{background:var(--dsw-alias-fill-tertiary,#0000001f);border-radius:1px;height:2px;position:absolute;bottom:4px;left:6px;right:6px;overflow:hidden}.AxLS7q_draftAttachmentProgressBar{background:var(--dsw-alias-brand-primary);height:100%;transition:width .15s ease-out}.AxLS7q_draftCardDrop{background:color-mix(in oklab, var(--dsw-alias-brand-primary) 6%, var(--dsw-alias-bg-layer-1))}.AxLS7q_draftDropHint{color:var(--dsw-alias-brand-primary);font-size:12px}.AxLS7q_colorToolbar{z-index:7;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);box-shadow:0 2px 10px var(--dsw-alias-bg-mask-1);border-radius:10px;align-items:center;gap:6px;padding:6px 10px;display:flex;position:absolute;top:12px;left:12px}.AxLS7q_colorToolbarLabel{color:var(--dsw-alias-label-tertiary);margin-right:2px;font-size:12px}.AxLS7q_colorSwatch{border:1px solid var(--dsw-alias-border-l2);cursor:pointer;width:18px;height:18px;color:var(--dsw-alias-label-secondary);border-radius:50%;justify-content:center;align-items:center;padding:0;font-size:11px;line-height:1;display:flex}.AxLS7q_colorSwatch:hover{transform:scale(1.15)}.AxLS7q_colorSwatchClear{background:0 0}.AxLS7q_menu{z-index:9;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);min-width:200px;max-width:280px;max-height:380px;box-shadow:0 8px 30px var(--dsw-alias-bg-mask-2);border-radius:10px;flex-direction:column;padding:6px;display:flex;position:absolute;overflow-y:auto}.AxLS7q_menuTitle{color:var(--dsw-alias-label-tertiary);flex:none;padding:4px 10px 6px;font-size:11px}.AxLS7q_menuSearch{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:calc(100% - 8px);color:var(--dsw-alias-label-primary);border-radius:7px;flex:none;margin:2px 4px 6px;padding:5px 8px;font-family:inherit;font-size:12px}.AxLS7q_menuHint{color:var(--dsw-alias-label-dimmed);font-size:11px}.AxLS7q_menuPreview{color:var(--dsw-alias-label-tertiary);word-break:break-all;flex:none;padding:0 10px 4px;font-size:11px}.AxLS7q_menuError{color:var(--dsw-alias-state-error-primary);word-break:break-all;flex:none;padding:0 10px 4px;font-size:11px}.AxLS7q_menuEmpty{color:var(--dsw-alias-label-tertiary);padding:8px 10px;font-size:12px}.AxLS7q_menuItem{text-align:left;width:100%;color:var(--dsw-alias-label-primary);cursor:pointer;white-space:nowrap;text-overflow:ellipsis;background:0 0;border:none;border-radius:7px;flex:none;padding:6px 10px;font-size:13px;display:block;overflow:hidden}.AxLS7q_menuItem:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_menuItem:disabled{color:var(--dsw-alias-label-dimmed);cursor:default}.AxLS7q_wsFrameHidden{color:var(--dsw-alias-state-warn-primary);font-weight:400}.AxLS7q_emptyHint{color:var(--dsw-alias-label-tertiary);pointer-events:none;z-index:4;font-size:13px;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}.AxLS7q_toast{z-index:8;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);max-width:70%;box-shadow:0 4px 16px var(--dsw-alias-bg-mask-2);color:var(--dsw-alias-label-primary);pointer-events:none;white-space:nowrap;text-overflow:ellipsis;border-radius:999px;padding:7px 16px;font-size:12px;position:absolute;bottom:28px;left:50%;overflow:hidden;transform:translate(-50%)}.AxLS7q_toastActionable{pointer-events:auto;align-items:center;gap:10px;padding-right:8px;display:inline-flex}.AxLS7q_toastText{text-overflow:ellipsis;min-width:0;overflow:hidden}.AxLS7q_toastAction{background:var(--dsw-alias-bg-layer-2,#7f7f7f29);color:var(--dsw-alias-label-primary);font:inherit;cursor:pointer;border:0;border-radius:999px;flex:none;padding:2px 8px;font-weight:600}.AxLS7q_toastAction:hover{background:var(--dsw-alias-bg-layer-3,#7f7f7f3d)}.AxLS7q_body{flex:1;min-height:0;display:flex;position:relative}.AxLS7q_chatDrawer{z-index:6;background:var(--dsw-alias-bg-base);border-left:1px solid var(--dsw-alias-border-l1);width:max(360px,min(42%,720px));max-width:calc(100vw - 280px);box-shadow:-12px 0 28px -18px var(--dsw-alias-bg-mask-2);flex-direction:column;display:flex;position:absolute;top:0;bottom:0;right:0;container:AxLS7q_talk-map-drawer/inline-size}.AxLS7q_chatDrawerResize{z-index:1;cursor:col-resize;touch-action:none;background:0 0;border:0;width:10px;padding:0;position:absolute;top:0;bottom:0;left:-4px}.AxLS7q_chatDrawerResize:after{content:\"\";background:0 0;width:2px;transition:background-color .12s;position:absolute;top:0;bottom:0;left:4px}.AxLS7q_chatDrawerResize:hover:after,.AxLS7q_chatDrawerResize[data-resizing=true]:after{background:var(--dsw-alias-border-l2)}.AxLS7q_chatDrawerResize:focus-visible:after{background:var(--dsw-alias-border-l2)}.AxLS7q_chatDrawerResize:focus-visible{outline:none}.AxLS7q_chatDrawerHeader{border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);flex:none;align-items:center;gap:8px;padding:6px 10px;display:flex}.AxLS7q_chatDrawerTitle{text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--dsw-alias-label-primary);font-size:12px;font-weight:600;overflow:hidden}.AxLS7q_chatDrawerSpace{flex:1}.AxLS7q_chatDrawerClose{width:26px;height:26px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:6px;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.AxLS7q_chatDrawerClose:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_chatDrawerLock{width:26px;height:26px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:6px;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.AxLS7q_chatDrawerLock:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_chatDrawerLockActive,.AxLS7q_chatDrawerLockActive:hover{background:var(--dsw-alias-interactive-bg-active);color:var(--dsw-alias-brand-primary)}.AxLS7q_chatDrawerArchived{color:var(--dsw-alias-label-primary);background:#e0a33a1f;background:color(display-p3 .842337 .649058 .309/.12);background:lab(71.621% 16.4145 60.6886/.12);border-bottom:1px solid #e0a33a59;border-bottom:1px solid color(display-p3 .842337 .649058 .309/.35);border-bottom:1px solid lab(71.621% 16.4145 60.6886/.35);align-items:center;gap:10px;padding:8px 12px;font-size:12px;display:flex}.AxLS7q_chatDrawerArchivedText{flex:1;min-width:0}.AxLS7q_chatDrawerArchivedButton{color:inherit;cursor:pointer;background:0 0;border:1px solid #e0a33a8c;border:1px solid color(display-p3 .842337 .649058 .309/.55);border:1px solid lab(71.621% 16.4145 60.6886/.55);border-radius:999px;flex:none;padding:2px 10px;font-size:12px}.AxLS7q_chatDrawerArchivedButton:hover{background:#e0a33a2e;background:color(display-p3 .842337 .649058 .309/.18);background:lab(71.621% 16.4145 60.6886/.18)}.AxLS7q_chatDrawerBody{flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}@container AxLS7q_talk-map-drawer (width>=560px){.AxLS7q_chatDrawer nav[aria-label]{display:block}}.AxLS7q_chatDrawerNotice{flex-direction:column;flex:1;align-items:flex-start;gap:14px;padding:22px 20px;display:flex}.AxLS7q_chatDrawerNoticeText{color:var(--dsw-alias-label-secondary);margin:0;font-size:13px;line-height:1.7}.AxLS7q_chatDrawerNoticeActions{flex-wrap:wrap;gap:8px;display:flex}.AxLS7q_chatDrawerNoticeButton{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);cursor:pointer;border-radius:8px;padding:6px 14px;font-size:13px}.AxLS7q_chatDrawerNoticeButton:hover{background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_chatDrawerNoticeButton:disabled{opacity:.55;cursor:default}.AxLS7q_chatPanel{flex-direction:column;flex:1;min-height:0;display:flex}.AxLS7q_cardWaitingButton{color:var(--dsw-alias-state-warn-label);background:var(--dsw-alias-state-warn-tertiary);cursor:pointer;border:none;border-radius:999px;padding:1px 7px;font-size:10px}.AxLS7q_cardWaitingButton:hover{filter:brightness(1.15)}.AxLS7q_interactMenu{gap:4px;max-height:min(420px,70vh)}.AxLS7q_interactTitle{color:var(--dsw-alias-label-primary);padding:4px 6px 0;font-size:12px;font-weight:600}.AxLS7q_interactText{color:var(--dsw-alias-label-secondary);white-space:pre-wrap;word-break:break-word;padding:2px 6px 4px;font-size:12px;line-height:1.45}.AxLS7q_interactNote{color:var(--dsw-alias-label-tertiary);padding:0 6px 4px;font-size:11px}.AxLS7q_interactScroll{flex-direction:column;gap:6px;max-height:260px;display:flex;overflow-y:auto}.AxLS7q_interactGroup{flex-direction:column;gap:4px;display:flex}.AxLS7q_interactOptions{flex-wrap:wrap;gap:6px;padding:2px 6px 4px;display:flex}.AxLS7q_interactOption{text-align:left;border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;flex:100%;padding:7px 10px;font-size:12px}.AxLS7q_interactOption:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_interactOptionActive{border-color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-interactive-bg-active)}.AxLS7q_interactActions{gap:6px;padding:4px 6px 6px;display:flex}.AxLS7q_interactAllow{background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground);cursor:pointer;border:none;border-radius:8px;flex:1;padding:7px 10px;font-size:12px}.AxLS7q_interactAllow:hover:not(:disabled){background:var(--dsw-alias-button-primary-hover)}.AxLS7q_interactDanger{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-state-error-primary);cursor:pointer;background:0 0;border-radius:8px;flex:1;padding:7px 10px;font-size:12px}.AxLS7q_interactDanger:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover-danger)}.AxLS7q_interactSubmit,.AxLS7q_interactOpen{border:1px solid var(--dsw-alias-border-l2);width:100%;color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;margin-top:4px;padding:7px 10px;font-size:12px}.AxLS7q_interactSubmit:hover:not(:disabled),.AxLS7q_interactOpen:hover{background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_interactSubmit:disabled{color:var(--dsw-alias-label-dimmed);cursor:default}.AxLS7q_interactError{color:var(--dsw-alias-state-error-primary);word-break:break-word;padding:2px 6px 4px;font-size:11px}.AxLS7q_mapFallback{background:var(--dsw-alias-bg-base);min-height:0;color:var(--dsw-alias-label-primary);flex-direction:column;flex:1;justify-content:center;align-items:center;gap:10px;padding:24px;display:flex}.AxLS7q_mapFallbackTitle{font-size:14px;font-weight:600}.AxLS7q_mapFallbackText{text-align:center;max-width:420px;color:var(--dsw-alias-label-secondary);font-size:12px}.AxLS7q_mapFallbackButton{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;padding:6px 14px;font-size:12px}.AxLS7q_mapFallbackButton:hover{background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_imageCard{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);width:100%;height:100%;box-shadow:0 10px 26px -18px var(--dsw-alias-bg-mask-2);border-radius:10px;overflow:hidden}.AxLS7q_imageCardSelected{border-color:var(--dsw-alias-brand-primary);box-shadow:0 0 0 2px var(--dsw-alias-brand-primary)}.AxLS7q_imageCardImg{object-fit:contain;background:var(--dsw-alias-bg-base);width:100%;height:100%;display:block}[data-composer-input]:has([data-lexical-text])+[data-composer-placeholder]{display:none}";
 		const tagId$1 = "dsh-talk-map-local/talk-map.module.css";
 		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$1) + "]") === null) {
 			const tag = document.createElement("style");
@@ -1403,140 +1432,142 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			document.head.appendChild(tag);
 		}
 		var talk_map_module_css_default = {
-			"draftAttachmentFile": "MSQ6kW_draftAttachmentFile",
-			"menu": "MSQ6kW_menu",
-			"cardHandle": "MSQ6kW_cardHandle",
-			"spawnBtnGhost": "MSQ6kW_spawnBtnGhost",
-			"draftAttachmentFileMeta": "MSQ6kW_draftAttachmentFileMeta",
-			"zoomResetLabel": "MSQ6kW_zoomResetLabel",
-			"toastActionable": "MSQ6kW_toastActionable",
-			"draftTextarea": "MSQ6kW_draftTextarea",
-			"interactNote": "MSQ6kW_interactNote",
-			"draftSelect": "MSQ6kW_draftSelect",
-			"interactOpen": "MSQ6kW_interactOpen",
-			"toggleButtonActive": "MSQ6kW_toggleButtonActive",
-			"interactGroup": "MSQ6kW_interactGroup",
-			"cardPin": "MSQ6kW_cardPin",
-			"spawnHint": "MSQ6kW_spawnHint",
-			"draftAttachmentFileName": "MSQ6kW_draftAttachmentFileName",
-			"header": "MSQ6kW_header",
-			"cardFooterLeft": "MSQ6kW_cardFooterLeft",
-			"chatPanel": "MSQ6kW_chatPanel",
-			"colorToolbar": "MSQ6kW_colorToolbar",
-			"colorToolbarLabel": "MSQ6kW_colorToolbarLabel",
-			"toggleLabel": "MSQ6kW_toggleLabel",
-			"cardBadgeRunning": "MSQ6kW_cardBadgeRunning",
-			"draftCardDrop": "MSQ6kW_draftCardDrop",
-			"draftAttachments": "MSQ6kW_draftAttachments",
-			"colorSwatch": "MSQ6kW_colorSwatch",
-			"draftAttachmentRemove": "MSQ6kW_draftAttachmentRemove",
-			"cardSelected": "MSQ6kW_cardSelected",
-			"spawnModeActive": "MSQ6kW_spawnModeActive",
-			"menuItem": "MSQ6kW_menuItem",
-			"cardBadgeDone": "MSQ6kW_cardBadgeDone",
-			"body": "MSQ6kW_body",
-			"draftDropHint": "MSQ6kW_draftDropHint",
-			"draftLabel": "MSQ6kW_draftLabel",
-			"toastText": "MSQ6kW_toastText",
-			"draftCard": "MSQ6kW_draftCard",
-			"chatDrawerSpace": "MSQ6kW_chatDrawerSpace",
-			"toggleButton": "MSQ6kW_toggleButton",
-			"cardForeignPulse": "MSQ6kW_cardForeignPulse",
-			"wsFrame": "MSQ6kW_wsFrame",
-			"wsFrameResize": "MSQ6kW_wsFrameResize",
-			"chatDrawerNoticeText": "MSQ6kW_chatDrawerNoticeText",
-			"talk-map-drawer": "MSQ6kW_talk-map-drawer",
-			"draftInput": "MSQ6kW_draftInput",
-			"cardWaitingButton": "MSQ6kW_cardWaitingButton",
-			"draftGrow": "MSQ6kW_draftGrow",
-			"draftAttachmentProgress": "MSQ6kW_draftAttachmentProgress",
-			"toastAction": "MSQ6kW_toastAction",
-			"emptyHint": "MSQ6kW_emptyHint",
-			"chatDrawerNoticeButton": "MSQ6kW_chatDrawerNoticeButton",
-			"canvasConnecting": "MSQ6kW_canvasConnecting",
-			"cardDoneDot": "MSQ6kW_cardDoneDot",
-			"wsFrameHidden": "MSQ6kW_wsFrameHidden",
-			"menuPreview": "MSQ6kW_menuPreview",
-			"menuError": "MSQ6kW_menuError",
-			"menuTitle": "MSQ6kW_menuTitle",
-			"mapFallback": "MSQ6kW_mapFallback",
-			"hotkeyButton": "MSQ6kW_hotkeyButton",
-			"cardGhost": "MSQ6kW_cardGhost",
-			"headerBadge": "MSQ6kW_headerBadge",
-			"cardRemove": "MSQ6kW_cardRemove",
-			"wsFrameSelected": "MSQ6kW_wsFrameSelected",
-			"spawnFrom": "MSQ6kW_spawnFrom",
-			"toggleIcon": "MSQ6kW_toggleIcon",
-			"interactError": "MSQ6kW_interactError",
-			"draftAttachmentProgressBar": "MSQ6kW_draftAttachmentProgressBar",
-			"interactScroll": "MSQ6kW_interactScroll",
-			"imageCard": "MSQ6kW_imageCard",
-			"interactOption": "MSQ6kW_interactOption",
-			"runningDot": "MSQ6kW_runningDot",
-			"headerTitle": "MSQ6kW_headerTitle",
-			"cardTitle": "MSQ6kW_cardTitle",
-			"closeButton": "MSQ6kW_closeButton",
-			"chatDrawerArchivedText": "MSQ6kW_chatDrawerArchivedText",
-			"interactAllow": "MSQ6kW_interactAllow",
-			"chatDrawerBody": "MSQ6kW_chatDrawerBody",
-			"colorSwatchClear": "MSQ6kW_colorSwatchClear",
-			"toast": "MSQ6kW_toast",
-			"cardForeignTouch": "MSQ6kW_cardForeignTouch",
-			"chatDrawerArchived": "MSQ6kW_chatDrawerArchived",
-			"draftAttachmentImage": "MSQ6kW_draftAttachmentImage",
-			"imageCardSelected": "MSQ6kW_imageCardSelected",
-			"draftPathPreview": "MSQ6kW_draftPathPreview",
-			"chatDrawerHeader": "MSQ6kW_chatDrawerHeader",
-			"chatDrawerTitle": "MSQ6kW_chatDrawerTitle",
-			"wsFrameCount": "MSQ6kW_wsFrameCount",
-			"canvas": "MSQ6kW_canvas",
-			"interactTitle": "MSQ6kW_interactTitle",
-			"interactText": "MSQ6kW_interactText",
-			"imageCardImg": "MSQ6kW_imageCardImg",
-			"chatDrawerNoticeActions": "MSQ6kW_chatDrawerNoticeActions",
-			"interactActions": "MSQ6kW_interactActions",
-			"cardForeign": "MSQ6kW_cardForeign",
-			"interactSubmit": "MSQ6kW_interactSubmit",
-			"menuSearch": "MSQ6kW_menuSearch",
-			"cardFooter": "MSQ6kW_cardFooter",
-			"wsFrameLabel": "MSQ6kW_wsFrameLabel",
-			"interactMenu": "MSQ6kW_interactMenu",
-			"overlay": "MSQ6kW_overlay",
-			"draftAttachmentFileText": "MSQ6kW_draftAttachmentFileText",
-			"cardTime": "MSQ6kW_cardTime",
-			"card": "MSQ6kW_card",
-			"mapFallbackText": "MSQ6kW_mapFallbackText",
-			"headerSpace": "MSQ6kW_headerSpace",
-			"interactOptions": "MSQ6kW_interactOptions",
-			"spawnModeBtn": "MSQ6kW_spawnModeBtn",
-			"mapFallbackButton": "MSQ6kW_mapFallbackButton",
-			"spawnModes": "MSQ6kW_spawnModes",
-			"chatDrawerArchivedButton": "MSQ6kW_chatDrawerArchivedButton",
-			"interactOptionActive": "MSQ6kW_interactOptionActive",
-			"draftRow": "MSQ6kW_draftRow",
-			"chatDrawerClose": "MSQ6kW_chatDrawerClose",
-			"cardBadgeWaiting": "MSQ6kW_cardBadgeWaiting",
-			"draftAttachmentFileIcon": "MSQ6kW_draftAttachmentFileIcon",
-			"chatDrawer": "MSQ6kW_chatDrawer",
-			"menuHint": "MSQ6kW_menuHint",
-			"toggleRow": "MSQ6kW_toggleRow",
-			"chatDrawerResize": "MSQ6kW_chatDrawerResize",
-			"talkmap-pulse": "MSQ6kW_talkmap-pulse",
-			"menuEmpty": "MSQ6kW_menuEmpty",
-			"spawnTextarea": "MSQ6kW_spawnTextarea",
-			"wsFrameEdge": "MSQ6kW_wsFrameEdge",
-			"wsFrameForeign": "MSQ6kW_wsFrameForeign",
-			"spawnError": "MSQ6kW_spawnError",
-			"cardForeignChip": "MSQ6kW_cardForeignChip",
-			"interactDanger": "MSQ6kW_interactDanger",
-			"cardTop": "MSQ6kW_cardTop",
-			"chatDrawerNotice": "MSQ6kW_chatDrawerNotice",
-			"mapFallbackTitle": "MSQ6kW_mapFallbackTitle",
-			"cardPinActive": "MSQ6kW_cardPinActive",
-			"spawnActions": "MSQ6kW_spawnActions",
-			"draftHeading": "MSQ6kW_draftHeading",
-			"spawnBtnPrimary": "MSQ6kW_spawnBtnPrimary",
-			"langButton": "MSQ6kW_langButton"
+			"zoomResetLabel": "AxLS7q_zoomResetLabel",
+			"interactScroll": "AxLS7q_interactScroll",
+			"draftAttachmentRemove": "AxLS7q_draftAttachmentRemove",
+			"draftCard": "AxLS7q_draftCard",
+			"wsFrameCount": "AxLS7q_wsFrameCount",
+			"menuError": "AxLS7q_menuError",
+			"draftDropHint": "AxLS7q_draftDropHint",
+			"headerTitle": "AxLS7q_headerTitle",
+			"hotkeyButton": "AxLS7q_hotkeyButton",
+			"header": "AxLS7q_header",
+			"draftAttachments": "AxLS7q_draftAttachments",
+			"imageCardSelected": "AxLS7q_imageCardSelected",
+			"menuItem": "AxLS7q_menuItem",
+			"wsFrameEdge": "AxLS7q_wsFrameEdge",
+			"spawnActions": "AxLS7q_spawnActions",
+			"menuTitle": "AxLS7q_menuTitle",
+			"spawnModeActive": "AxLS7q_spawnModeActive",
+			"interactOption": "AxLS7q_interactOption",
+			"menuHint": "AxLS7q_menuHint",
+			"menuEmpty": "AxLS7q_menuEmpty",
+			"cardForeign": "AxLS7q_cardForeign",
+			"draftSelect": "AxLS7q_draftSelect",
+			"toggleRow": "AxLS7q_toggleRow",
+			"cardRemove": "AxLS7q_cardRemove",
+			"spawnError": "AxLS7q_spawnError",
+			"colorSwatch": "AxLS7q_colorSwatch",
+			"wsFrameForeign": "AxLS7q_wsFrameForeign",
+			"emptyHint": "AxLS7q_emptyHint",
+			"chatPanel": "AxLS7q_chatPanel",
+			"talkmap-pulse": "AxLS7q_talkmap-pulse",
+			"draftTextarea": "AxLS7q_draftTextarea",
+			"chatDrawerNoticeText": "AxLS7q_chatDrawerNoticeText",
+			"cardTitle": "AxLS7q_cardTitle",
+			"toggleLabel": "AxLS7q_toggleLabel",
+			"canvasConnecting": "AxLS7q_canvasConnecting",
+			"chatDrawerBody": "AxLS7q_chatDrawerBody",
+			"closeButton": "AxLS7q_closeButton",
+			"chatDrawerLockActive": "AxLS7q_chatDrawerLockActive",
+			"wsFrameHidden": "AxLS7q_wsFrameHidden",
+			"toastActionable": "AxLS7q_toastActionable",
+			"interactSubmit": "AxLS7q_interactSubmit",
+			"draftAttachmentFileMeta": "AxLS7q_draftAttachmentFileMeta",
+			"wsFrameLabel": "AxLS7q_wsFrameLabel",
+			"toggleIcon": "AxLS7q_toggleIcon",
+			"draftAttachmentFileName": "AxLS7q_draftAttachmentFileName",
+			"chatDrawerLock": "AxLS7q_chatDrawerLock",
+			"interactOptionActive": "AxLS7q_interactOptionActive",
+			"mapFallback": "AxLS7q_mapFallback",
+			"wsFrameResize": "AxLS7q_wsFrameResize",
+			"interactMenu": "AxLS7q_interactMenu",
+			"chatDrawerTitle": "AxLS7q_chatDrawerTitle",
+			"interactActions": "AxLS7q_interactActions",
+			"menu": "AxLS7q_menu",
+			"spawnFrom": "AxLS7q_spawnFrom",
+			"draftAttachmentFileIcon": "AxLS7q_draftAttachmentFileIcon",
+			"overlay": "AxLS7q_overlay",
+			"draftAttachmentImage": "AxLS7q_draftAttachmentImage",
+			"chatDrawerHeader": "AxLS7q_chatDrawerHeader",
+			"draftHeading": "AxLS7q_draftHeading",
+			"interactAllow": "AxLS7q_interactAllow",
+			"cardFooterLeft": "AxLS7q_cardFooterLeft",
+			"wsFrameSelected": "AxLS7q_wsFrameSelected",
+			"colorToolbarLabel": "AxLS7q_colorToolbarLabel",
+			"chatDrawerResize": "AxLS7q_chatDrawerResize",
+			"imageCard": "AxLS7q_imageCard",
+			"toggleButtonActive": "AxLS7q_toggleButtonActive",
+			"canvas": "AxLS7q_canvas",
+			"draftAttachmentFile": "AxLS7q_draftAttachmentFile",
+			"cardDoneDot": "AxLS7q_cardDoneDot",
+			"interactText": "AxLS7q_interactText",
+			"draftGrow": "AxLS7q_draftGrow",
+			"runningDot": "AxLS7q_runningDot",
+			"spawnHint": "AxLS7q_spawnHint",
+			"spawnModeBtn": "AxLS7q_spawnModeBtn",
+			"toggleButton": "AxLS7q_toggleButton",
+			"chatDrawer": "AxLS7q_chatDrawer",
+			"langButton": "AxLS7q_langButton",
+			"headerBadge": "AxLS7q_headerBadge",
+			"body": "AxLS7q_body",
+			"toastText": "AxLS7q_toastText",
+			"chatDrawerArchivedText": "AxLS7q_chatDrawerArchivedText",
+			"draftInput": "AxLS7q_draftInput",
+			"menuPreview": "AxLS7q_menuPreview",
+			"colorSwatchClear": "AxLS7q_colorSwatchClear",
+			"imageCardImg": "AxLS7q_imageCardImg",
+			"cardFooter": "AxLS7q_cardFooter",
+			"draftPathPreview": "AxLS7q_draftPathPreview",
+			"cardPinActive": "AxLS7q_cardPinActive",
+			"menuSearch": "AxLS7q_menuSearch",
+			"cardForeignChip": "AxLS7q_cardForeignChip",
+			"wsFrame": "AxLS7q_wsFrame",
+			"cardSelected": "AxLS7q_cardSelected",
+			"cardForeignTouch": "AxLS7q_cardForeignTouch",
+			"cardHandle": "AxLS7q_cardHandle",
+			"chatDrawerSpace": "AxLS7q_chatDrawerSpace",
+			"cardTop": "AxLS7q_cardTop",
+			"toast": "AxLS7q_toast",
+			"draftRow": "AxLS7q_draftRow",
+			"draftAttachmentProgressBar": "AxLS7q_draftAttachmentProgressBar",
+			"cardForeignPulse": "AxLS7q_cardForeignPulse",
+			"cardPin": "AxLS7q_cardPin",
+			"chatDrawerNoticeButton": "AxLS7q_chatDrawerNoticeButton",
+			"headerSpace": "AxLS7q_headerSpace",
+			"chatDrawerArchivedButton": "AxLS7q_chatDrawerArchivedButton",
+			"spawnBtnPrimary": "AxLS7q_spawnBtnPrimary",
+			"interactNote": "AxLS7q_interactNote",
+			"interactOpen": "AxLS7q_interactOpen",
+			"mapFallbackText": "AxLS7q_mapFallbackText",
+			"cardWaitingButton": "AxLS7q_cardWaitingButton",
+			"cardTime": "AxLS7q_cardTime",
+			"chatDrawerClose": "AxLS7q_chatDrawerClose",
+			"mapFallbackTitle": "AxLS7q_mapFallbackTitle",
+			"cardBadgeDone": "AxLS7q_cardBadgeDone",
+			"interactDanger": "AxLS7q_interactDanger",
+			"draftAttachmentFileText": "AxLS7q_draftAttachmentFileText",
+			"cardGhost": "AxLS7q_cardGhost",
+			"interactTitle": "AxLS7q_interactTitle",
+			"chatDrawerArchived": "AxLS7q_chatDrawerArchived",
+			"interactGroup": "AxLS7q_interactGroup",
+			"interactError": "AxLS7q_interactError",
+			"chatDrawerNoticeActions": "AxLS7q_chatDrawerNoticeActions",
+			"spawnModes": "AxLS7q_spawnModes",
+			"draftCardDrop": "AxLS7q_draftCardDrop",
+			"colorToolbar": "AxLS7q_colorToolbar",
+			"interactOptions": "AxLS7q_interactOptions",
+			"talk-map-drawer": "AxLS7q_talk-map-drawer",
+			"card": "AxLS7q_card",
+			"toastAction": "AxLS7q_toastAction",
+			"chatDrawerNotice": "AxLS7q_chatDrawerNotice",
+			"draftLabel": "AxLS7q_draftLabel",
+			"spawnTextarea": "AxLS7q_spawnTextarea",
+			"cardBadgeRunning": "AxLS7q_cardBadgeRunning",
+			"spawnBtnGhost": "AxLS7q_spawnBtnGhost",
+			"cardBadgeWaiting": "AxLS7q_cardBadgeWaiting",
+			"mapFallbackButton": "AxLS7q_mapFallbackButton",
+			"draftAttachmentProgress": "AxLS7q_draftAttachmentProgress"
 		};
 		//#endregion
 		//#region src/client/ChatPanel.tsx
@@ -1561,7 +1592,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			});
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/classcat@5.0.5/node_modules/classcat/index.js
+		//#region node_modules/.pnpm/classcat@5.0.5/node_modules/classcat/index.js
 		function cc(names) {
 			if (typeof names === "string" || typeof names === "number") return "" + names;
 			let out = "";
@@ -1571,7 +1602,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return out;
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-dispatch@3.0.1/node_modules/d3-dispatch/src/dispatch.js
+		//#region node_modules/.pnpm/d3-dispatch@3.0.1/node_modules/d3-dispatch/src/dispatch.js
 		var noop = { value: () => {} };
 		function dispatch() {
 			for (var i = 0, n = arguments.length, _ = {}, t; i < n; ++i) {
@@ -1644,7 +1675,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			xmlns: "http://www.w3.org/2000/xmlns/"
 		};
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/namespace.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/namespace.js
 		function namespace_default(name) {
 			var prefix = name += "", i = prefix.indexOf(":");
 			if (i >= 0 && (prefix = name.slice(0, i)) !== "xmlns") name = name.slice(i + 1);
@@ -1654,7 +1685,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			} : name;
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/creator.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/creator.js
 		function creatorInherit(name) {
 			return function() {
 				var document = this.ownerDocument, uri = this.namespaceURI;
@@ -1671,7 +1702,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return (fullname.local ? creatorFixed : creatorInherit)(fullname);
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selector.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selector.js
 		function none() {}
 		function selector_default(selector) {
 			return selector == null ? none : function() {
@@ -1679,7 +1710,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			};
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/select.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/select.js
 		function select_default$2(select) {
 			if (typeof select !== "function") select = selector_default(select);
 			for (var groups = this._groups, m = groups.length, subgroups = new Array(m), j = 0; j < m; ++j) for (var group = groups[j], n = group.length, subgroup = subgroups[j] = new Array(n), node, subnode, i = 0; i < n; ++i) if ((node = group[i]) && (subnode = select.call(node, node.__data__, i, group))) {
@@ -1689,12 +1720,12 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return new Selection$1(subgroups, this._parents);
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/array.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/array.js
 		function array(x) {
 			return x == null ? [] : Array.isArray(x) ? x : Array.from(x);
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selectorAll.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selectorAll.js
 		function empty() {
 			return [];
 		}
@@ -1704,7 +1735,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			};
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/selectAll.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/selectAll.js
 		function arrayAll(select) {
 			return function() {
 				return array(select.apply(this, arguments));
@@ -1720,7 +1751,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return new Selection$1(subgroups, parents);
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/matcher.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/matcher.js
 		function matcher_default(selector) {
 			return function() {
 				return this.matches(selector);
@@ -1732,7 +1763,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			};
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/selectChild.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/selectChild.js
 		var find = Array.prototype.find;
 		function childFind(match) {
 			return function() {
@@ -1746,7 +1777,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.select(match == null ? childFirst : childFind(typeof match === "function" ? match : childMatcher(match)));
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/selectChildren.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/selectChildren.js
 		var filter = Array.prototype.filter;
 		function children() {
 			return Array.from(this.children);
@@ -1760,19 +1791,19 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.selectAll(match == null ? children : childrenFilter(typeof match === "function" ? match : childMatcher(match)));
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/filter.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/filter.js
 		function filter_default$1(match) {
 			if (typeof match !== "function") match = matcher_default(match);
 			for (var groups = this._groups, m = groups.length, subgroups = new Array(m), j = 0; j < m; ++j) for (var group = groups[j], n = group.length, subgroup = subgroups[j] = [], node, i = 0; i < n; ++i) if ((node = group[i]) && match.call(node, node.__data__, i, group)) subgroup.push(node);
 			return new Selection$1(subgroups, this._parents);
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/sparse.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/sparse.js
 		function sparse_default(update) {
 			return new Array(update.length);
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/enter.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/enter.js
 		function enter_default() {
 			return new Selection$1(this._enter || this._groups.map(sparse_default), this._parents);
 		}
@@ -1799,14 +1830,14 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			}
 		};
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/constant.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/constant.js
 		function constant_default$3(x) {
 			return function() {
 				return x;
 			};
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/data.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/data.js
 		function bindIndex(parent, group, enter, update, exit, data) {
 			var i = 0, node, groupLength = group.length, dataLength = data.length;
 			for (; i < dataLength; ++i) if (node = group[i]) {
@@ -1857,12 +1888,12 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return typeof data === "object" && "length" in data ? data : Array.from(data);
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/exit.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/exit.js
 		function exit_default() {
 			return new Selection$1(this._exit || this._groups.map(sparse_default), this._parents);
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/join.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/join.js
 		function join_default(onenter, onupdate, onexit) {
 			var enter = this.enter(), update = this, exit = this.exit();
 			if (typeof onenter === "function") {
@@ -1878,7 +1909,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return enter && update ? enter.merge(update).order() : update;
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/merge.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/merge.js
 		function merge_default$1(context) {
 			var selection = context.selection ? context.selection() : context;
 			for (var groups0 = this._groups, groups1 = selection._groups, m0 = groups0.length, m1 = groups1.length, m = Math.min(m0, m1), merges = new Array(m0), j = 0; j < m; ++j) for (var group0 = groups0[j], group1 = groups1[j], n = group0.length, merge = merges[j] = new Array(n), node, i = 0; i < n; ++i) if (node = group0[i] || group1[i]) merge[i] = node;
@@ -1886,7 +1917,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return new Selection$1(merges, this._parents);
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/order.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/order.js
 		function order_default() {
 			for (var groups = this._groups, j = -1, m = groups.length; ++j < m;) for (var group = groups[j], i = group.length - 1, next = group[i], node; --i >= 0;) if (node = group[i]) {
 				if (next && node.compareDocumentPosition(next) ^ 4) next.parentNode.insertBefore(node, next);
@@ -1895,7 +1926,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this;
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/sort.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/sort.js
 		function sort_default(compare) {
 			if (!compare) compare = ascending;
 			function compareNode(a, b) {
@@ -1911,7 +1942,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return a < b ? -1 : a > b ? 1 : a >= b ? 0 : NaN;
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/call.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/call.js
 		function call_default() {
 			var callback = arguments[0];
 			arguments[0] = this;
@@ -1919,12 +1950,12 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this;
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/nodes.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/nodes.js
 		function nodes_default() {
 			return Array.from(this);
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/node.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/node.js
 		function node_default() {
 			for (var groups = this._groups, j = 0, m = groups.length; j < m; ++j) for (var group = groups[j], i = 0, n = group.length; i < n; ++i) {
 				var node = group[i];
@@ -1933,25 +1964,25 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return null;
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/size.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/size.js
 		function size_default() {
 			let size = 0;
 			for (const node of this) ++size;
 			return size;
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/empty.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/empty.js
 		function empty_default() {
 			return !this.node();
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/each.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/each.js
 		function each_default(callback) {
 			for (var groups = this._groups, j = 0, m = groups.length; j < m; ++j) for (var group = groups[j], i = 0, n = group.length, node; i < n; ++i) if (node = group[i]) callback.call(node, node.__data__, i, group);
 			return this;
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/attr.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/attr.js
 		function attrRemove$1(name) {
 			return function() {
 				this.removeAttribute(name);
@@ -1995,12 +2026,12 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.each((value == null ? fullname.local ? attrRemoveNS$1 : attrRemove$1 : typeof value === "function" ? fullname.local ? attrFunctionNS$1 : attrFunction$1 : fullname.local ? attrConstantNS$1 : attrConstant$1)(fullname, value));
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/window.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/window.js
 		function window_default(node) {
 			return node.ownerDocument && node.ownerDocument.defaultView || node.document && node || node.defaultView;
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/style.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/style.js
 		function styleRemove$1(name) {
 			return function() {
 				this.style.removeProperty(name);
@@ -2025,7 +2056,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return node.style.getPropertyValue(name) || window_default(node).getComputedStyle(node, null).getPropertyValue(name);
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/property.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/property.js
 		function propertyRemove(name) {
 			return function() {
 				delete this[name];
@@ -2047,7 +2078,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return arguments.length > 1 ? this.each((value == null ? propertyRemove : typeof value === "function" ? propertyFunction : propertyConstant)(name, value)) : this.node()[name];
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/classed.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/classed.js
 		function classArray(string) {
 			return string.trim().split(/^|\s+/);
 		}
@@ -2109,7 +2140,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.each((typeof value === "function" ? classedFunction : value ? classedTrue : classedFalse)(names, value));
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/text.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/text.js
 		function textRemove() {
 			this.textContent = "";
 		}
@@ -2128,7 +2159,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return arguments.length ? this.each(value == null ? textRemove : (typeof value === "function" ? textFunction$1 : textConstant$1)(value)) : this.node().textContent;
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/html.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/html.js
 		function htmlRemove() {
 			this.innerHTML = "";
 		}
@@ -2147,7 +2178,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return arguments.length ? this.each(value == null ? htmlRemove : (typeof value === "function" ? htmlFunction : htmlConstant)(value)) : this.node().innerHTML;
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/raise.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/raise.js
 		function raise() {
 			if (this.nextSibling) this.parentNode.appendChild(this);
 		}
@@ -2155,7 +2186,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.each(raise);
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/lower.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/lower.js
 		function lower() {
 			if (this.previousSibling) this.parentNode.insertBefore(this, this.parentNode.firstChild);
 		}
@@ -2163,7 +2194,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.each(lower);
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/append.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/append.js
 		function append_default(name) {
 			var create = typeof name === "function" ? name : creator_default(name);
 			return this.select(function() {
@@ -2171,7 +2202,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			});
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/insert.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/insert.js
 		function constantNull() {
 			return null;
 		}
@@ -2182,7 +2213,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			});
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/remove.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/remove.js
 		function remove() {
 			var parent = this.parentNode;
 			if (parent) parent.removeChild(this);
@@ -2191,7 +2222,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.each(remove);
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/clone.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/clone.js
 		function selection_cloneShallow() {
 			var clone = this.cloneNode(false), parent = this.parentNode;
 			return parent ? parent.insertBefore(clone, this.nextSibling) : clone;
@@ -2204,12 +2235,12 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.select(deep ? selection_cloneDeep : selection_cloneShallow);
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/datum.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/datum.js
 		function datum_default(value) {
 			return arguments.length ? this.property("__data__", value) : this.node().__data__;
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/on.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/on.js
 		function contextListener(listener) {
 			return function(event) {
 				listener.call(this, event, this.__data__);
@@ -2272,7 +2303,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this;
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/dispatch.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/dispatch.js
 		function dispatchEvent(node, type, params) {
 			var window = window_default(node), event = window.CustomEvent;
 			if (typeof event === "function") event = new event(type, params);
@@ -2297,12 +2328,12 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.each((typeof params === "function" ? dispatchFunction : dispatchConstant)(type, params));
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/iterator.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/iterator.js
 		function* iterator_default() {
 			for (var groups = this._groups, j = 0, m = groups.length; j < m; ++j) for (var group = groups[j], i = 0, n = group.length, node; i < n; ++i) if (node = group[i]) yield node;
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/index.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/index.js
 		var root = [null];
 		function Selection$1(groups, parents) {
 			this._groups = groups;
@@ -2353,19 +2384,19 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			[Symbol.iterator]: iterator_default
 		};
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/select.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/select.js
 		function select_default$1(selector) {
 			return typeof selector === "string" ? new Selection$1([[document.querySelector(selector)]], [document.documentElement]) : new Selection$1([[selector]], root);
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/sourceEvent.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/sourceEvent.js
 		function sourceEvent_default(event) {
 			let sourceEvent;
 			while (sourceEvent = event.sourceEvent) event = sourceEvent;
 			return event;
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/pointer.js
+		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/pointer.js
 		function pointer_default(event, node) {
 			event = sourceEvent_default(event);
 			if (node === void 0) node = event.currentTarget;
@@ -2385,7 +2416,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return [event.pageX, event.pageY];
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/noevent.js
+		//#region node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/noevent.js
 		const nonpassive = { passive: false };
 		const nonpassivecapture = {
 			capture: true,
@@ -2399,7 +2430,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			event.stopImmediatePropagation();
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/nodrag.js
+		//#region node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/nodrag.js
 		function nodrag_default(view) {
 			var root = view.document.documentElement, selection = select_default$1(view).on("dragstart.drag", noevent_default$1, nonpassivecapture);
 			if ("onselectstart" in root) selection.on("selectstart.drag", noevent_default$1, nonpassivecapture);
@@ -2423,10 +2454,10 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			}
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/constant.js
+		//#region node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/constant.js
 		var constant_default$2 = (x) => () => x;
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/event.js
+		//#region node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/event.js
 		function DragEvent(type, { sourceEvent, subject, target, identifier, active, x, y, dx, dy, dispatch }) {
 			Object.defineProperties(this, {
 				type: {
@@ -2487,7 +2518,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return value === this._ ? this : value;
 		};
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/drag.js
+		//#region node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/drag.js
 		function defaultFilter$1(event) {
 			return !event.ctrlKey && !event.button;
 		}
@@ -2620,7 +2651,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return drag;
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-color@3.1.0/node_modules/d3-color/src/define.js
+		//#region node_modules/.pnpm/d3-color@3.1.0/node_modules/d3-color/src/define.js
 		function define_default(constructor, factory, prototype) {
 			constructor.prototype = factory.prototype = prototype;
 			prototype.constructor = constructor;
@@ -2631,7 +2662,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return prototype;
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-color@3.1.0/node_modules/d3-color/src/color.js
+		//#region node_modules/.pnpm/d3-color@3.1.0/node_modules/d3-color/src/color.js
 		function Color() {}
 		var darker = .7;
 		var brighter = 1 / darker;
@@ -2958,10 +2989,10 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return (h < 60 ? m1 + (m2 - m1) * h / 60 : h < 180 ? m2 : h < 240 ? m1 + (m2 - m1) * (240 - h) / 60 : m1) * 255;
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/constant.js
+		//#region node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/constant.js
 		var constant_default$1 = (x) => () => x;
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/color.js
+		//#region node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/color.js
 		function linear(a, d) {
 			return function(t) {
 				return a + t * d;
@@ -2982,7 +3013,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return d ? linear(a, d) : constant_default$1(isNaN(a) ? b : a);
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/rgb.js
+		//#region node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/rgb.js
 		var rgb_default = (function rgbGamma(y) {
 			var color = gamma(y);
 			function rgb$1(start, end) {
@@ -2999,7 +3030,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return rgb$1;
 		})(1);
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/numberArray.js
+		//#region node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/numberArray.js
 		function numberArray_default(a, b) {
 			if (!b) b = [];
 			var n = a ? Math.min(b.length, a.length) : 0, c = b.slice(), i;
@@ -3012,7 +3043,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return ArrayBuffer.isView(x) && !(x instanceof DataView);
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/array.js
+		//#region node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/array.js
 		function genericArray(a, b) {
 			var nb = b ? b.length : 0, na = a ? Math.min(nb, a.length) : 0, x = new Array(na), c = new Array(nb), i;
 			for (i = 0; i < na; ++i) x[i] = value_default(a[i], b[i]);
@@ -3023,7 +3054,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			};
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/date.js
+		//#region node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/date.js
 		function date_default(a, b) {
 			var d = /* @__PURE__ */ new Date();
 			return a = +a, b = +b, function(t) {
@@ -3031,14 +3062,14 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			};
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/number.js
+		//#region node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/number.js
 		function number_default(a, b) {
 			return a = +a, b = +b, function(t) {
 				return a * (1 - t) + b * t;
 			};
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/object.js
+		//#region node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/object.js
 		function object_default(a, b) {
 			var i = {}, c = {}, k;
 			if (a === null || typeof a !== "object") a = {};
@@ -3051,7 +3082,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			};
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/string.js
+		//#region node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/string.js
 		var reA = /[-+]?(?:\d+\.?\d*|\.?\d+)(?:[eE][-+]?\d+)?/g;
 		var reB = new RegExp(reA.source, "g");
 		function zero(b) {
@@ -3096,13 +3127,13 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			});
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/value.js
+		//#region node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/value.js
 		function value_default(a, b) {
 			var t = typeof b, c;
 			return b == null || t === "boolean" ? constant_default$1(b) : (t === "number" ? number_default : t === "string" ? (c = color(b)) ? (b = c, rgb_default) : string_default : b instanceof color ? rgb_default : b instanceof Date ? date_default : isNumberArray(b) ? numberArray_default : Array.isArray(b) ? genericArray : typeof b.valueOf !== "function" && typeof b.toString !== "function" || isNaN(b) ? object_default : number_default)(a, b);
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/transform/decompose.js
+		//#region node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/transform/decompose.js
 		var degrees = 180 / Math.PI;
 		var identity$2 = {
 			translateX: 0,
@@ -3128,7 +3159,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			};
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/transform/parse.js
+		//#region node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/transform/parse.js
 		var svgNode;
 		function parseCss(value) {
 			const m = new (typeof DOMMatrix === "function" ? DOMMatrix : WebKitCSSMatrix)(value + "");
@@ -3143,7 +3174,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return decompose_default(value.a, value.b, value.c, value.d, value.e, value.f);
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/transform/index.js
+		//#region node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/transform/index.js
 		function interpolateTransform(parse, pxComma, pxParen, degParen) {
 			function pop(s) {
 				return s.length ? s.pop() + " " : "";
@@ -3207,7 +3238,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 		var interpolateTransformCss = interpolateTransform(parseCss, "px, ", "px)", "deg)");
 		var interpolateTransformSvg = interpolateTransform(parseSvg, ", ", ")", ")");
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/zoom.js
+		//#region node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/zoom.js
 		var epsilon2 = 1e-12;
 		function cosh(x) {
 			return ((x = Math.exp(x)) + 1 / x) / 2;
@@ -3252,7 +3283,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return zoom;
 		})(Math.SQRT2, 2, 4);
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-timer@3.0.1/node_modules/d3-timer/src/timer.js
+		//#region node_modules/.pnpm/d3-timer@3.0.1/node_modules/d3-timer/src/timer.js
 		var frame = 0;
 		var timeout = 0;
 		var interval = 0;
@@ -3351,7 +3382,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			}
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-timer@3.0.1/node_modules/d3-timer/src/timeout.js
+		//#region node_modules/.pnpm/d3-timer@3.0.1/node_modules/d3-timer/src/timeout.js
 		function timeout_default(callback, delay, time) {
 			var t = new Timer();
 			delay = delay == null ? 0 : +delay;
@@ -3362,7 +3393,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return t;
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/schedule.js
+		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/schedule.js
 		var emptyOn = dispatch("start", "end", "cancel", "interrupt");
 		var emptyTween = [];
 		function schedule_default(node, name, id, index, group, timing) {
@@ -3458,7 +3489,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			}
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/interrupt.js
+		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/interrupt.js
 		function interrupt_default$1(node, name) {
 			var schedules = node.__transition, schedule, active, empty = true, i;
 			if (!schedules) return;
@@ -3477,14 +3508,14 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			if (empty) delete node.__transition;
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/selection/interrupt.js
+		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/selection/interrupt.js
 		function interrupt_default(name) {
 			return this.each(function() {
 				interrupt_default$1(this, name);
 			});
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/tween.js
+		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/tween.js
 		function tweenRemove(id, name) {
 			var tween0, tween1;
 			return function() {
@@ -3540,13 +3571,13 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			};
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/interpolate.js
+		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/interpolate.js
 		function interpolate_default(a, b) {
 			var c;
 			return (typeof b === "number" ? number_default : b instanceof color ? rgb_default : (c = color(b)) ? (b = c, rgb_default) : string_default)(a, b);
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/attr.js
+		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/attr.js
 		function attrRemove(name) {
 			return function() {
 				this.removeAttribute(name);
@@ -3596,7 +3627,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.attrTween(name, typeof value === "function" ? (fullname.local ? attrFunctionNS : attrFunction)(fullname, i, tweenValue(this, "attr." + name, value)) : value == null ? (fullname.local ? attrRemoveNS : attrRemove)(fullname) : (fullname.local ? attrConstantNS : attrConstant)(fullname, i, value));
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/attrTween.js
+		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/attrTween.js
 		function attrInterpolate(name, i) {
 			return function(t) {
 				this.setAttribute(name, i.call(this, t));
@@ -3636,7 +3667,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.tween(key, (fullname.local ? attrTweenNS : attrTween)(fullname, value));
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/delay.js
+		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/delay.js
 		function delayFunction(id, value) {
 			return function() {
 				init(this, id).delay = +value.apply(this, arguments);
@@ -3652,7 +3683,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return arguments.length ? this.each((typeof value === "function" ? delayFunction : delayConstant)(id, value)) : get(this.node(), id).delay;
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/duration.js
+		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/duration.js
 		function durationFunction(id, value) {
 			return function() {
 				set(this, id).duration = +value.apply(this, arguments);
@@ -3668,7 +3699,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return arguments.length ? this.each((typeof value === "function" ? durationFunction : durationConstant)(id, value)) : get(this.node(), id).duration;
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/ease.js
+		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/ease.js
 		function easeConstant(id, value) {
 			if (typeof value !== "function") throw new Error();
 			return function() {
@@ -3680,7 +3711,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return arguments.length ? this.each(easeConstant(id, value)) : get(this.node(), id).ease;
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/easeVarying.js
+		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/easeVarying.js
 		function easeVarying(id, value) {
 			return function() {
 				var v = value.apply(this, arguments);
@@ -3693,14 +3724,14 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.each(easeVarying(this._id, value));
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/filter.js
+		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/filter.js
 		function filter_default(match) {
 			if (typeof match !== "function") match = matcher_default(match);
 			for (var groups = this._groups, m = groups.length, subgroups = new Array(m), j = 0; j < m; ++j) for (var group = groups[j], n = group.length, subgroup = subgroups[j] = [], node, i = 0; i < n; ++i) if ((node = group[i]) && match.call(node, node.__data__, i, group)) subgroup.push(node);
 			return new Transition(subgroups, this._parents, this._name, this._id);
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/merge.js
+		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/merge.js
 		function merge_default(transition) {
 			if (transition._id !== this._id) throw new Error();
 			for (var groups0 = this._groups, groups1 = transition._groups, m0 = groups0.length, m1 = groups1.length, m = Math.min(m0, m1), merges = new Array(m0), j = 0; j < m; ++j) for (var group0 = groups0[j], group1 = groups1[j], n = group0.length, merge = merges[j] = new Array(n), node, i = 0; i < n; ++i) if (node = group0[i] || group1[i]) merge[i] = node;
@@ -3708,7 +3739,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return new Transition(merges, this._parents, this._name, this._id);
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/on.js
+		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/on.js
 		function start(name) {
 			return (name + "").trim().split(/^|\s+/).every(function(t) {
 				var i = t.indexOf(".");
@@ -3729,7 +3760,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return arguments.length < 2 ? get(this.node(), id).on.on(name) : this.each(onFunction(id, name, listener));
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/remove.js
+		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/remove.js
 		function removeFunction(id) {
 			return function() {
 				var parent = this.parentNode;
@@ -3741,7 +3772,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.on("end.remove", removeFunction(this._id));
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/select.js
+		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/select.js
 		function select_default(select) {
 			var name = this._name, id = this._id;
 			if (typeof select !== "function") select = selector_default(select);
@@ -3753,7 +3784,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return new Transition(subgroups, this._parents, name, id);
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/selectAll.js
+		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/selectAll.js
 		function selectAll_default(select) {
 			var name = this._name, id = this._id;
 			if (typeof select !== "function") select = selectorAll_default(select);
@@ -3765,13 +3796,13 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return new Transition(subgroups, parents, name, id);
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/selection.js
+		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/selection.js
 		var Selection = selection.prototype.constructor;
 		function selection_default() {
 			return new Selection(this._groups, this._parents);
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/style.js
+		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/style.js
 		function styleNull(name, interpolate) {
 			var string00, string10, interpolate0;
 			return function() {
@@ -3812,7 +3843,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return value == null ? this.styleTween(name, styleNull(name, i)).on("end.style." + name, styleRemove(name)) : typeof value === "function" ? this.styleTween(name, styleFunction(name, i, tweenValue(this, "style." + name, value))).each(styleMaybeRemove(this._id, name)) : this.styleTween(name, styleConstant(name, i, value), priority).on("end.style." + name, null);
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/styleTween.js
+		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/styleTween.js
 		function styleInterpolate(name, i, priority) {
 			return function(t) {
 				this.style.setProperty(name, i.call(this, t), priority);
@@ -3836,7 +3867,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.tween(key, styleTween(name, value, priority == null ? "" : priority));
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/text.js
+		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/text.js
 		function textConstant(value) {
 			return function() {
 				this.textContent = value;
@@ -3852,7 +3883,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.tween("text", typeof value === "function" ? textFunction(tweenValue(this, "text", value)) : textConstant(value == null ? "" : value + ""));
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/textTween.js
+		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/textTween.js
 		function textInterpolate(i) {
 			return function(t) {
 				this.textContent = i.call(this, t);
@@ -3876,7 +3907,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.tween(key, textTween(value));
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/transition.js
+		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/transition.js
 		function transition_default$1() {
 			var name = this._name, id0 = this._id, id1 = newId();
 			for (var groups = this._groups, m = groups.length, j = 0; j < m; ++j) for (var group = groups[j], n = group.length, node, i = 0; i < n; ++i) if (node = group[i]) {
@@ -3891,7 +3922,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return new Transition(groups, this._parents, name, id1);
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/end.js
+		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/end.js
 		function end_default() {
 			var on0, on1, that = this, id = that._id, size = that.size();
 			return new Promise(function(resolve, reject) {
@@ -3912,7 +3943,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			});
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/index.js
+		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/index.js
 		var id = 0;
 		function Transition(groups, parents, name, id) {
 			this._groups = groups;
@@ -3960,12 +3991,12 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			[Symbol.iterator]: selection_prototype[Symbol.iterator]
 		};
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-ease@3.0.1/node_modules/d3-ease/src/cubic.js
+		//#region node_modules/.pnpm/d3-ease@3.0.1/node_modules/d3-ease/src/cubic.js
 		function cubicInOut(t) {
 			return ((t *= 2) <= 1 ? t * t * t : (t -= 2) * t * t + 2) / 2;
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/selection/transition.js
+		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/selection/transition.js
 		var defaultTiming = {
 			time: null,
 			delay: 0,
@@ -3985,14 +4016,14 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return new Transition(groups, this._parents, name, id);
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/selection/index.js
+		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/selection/index.js
 		selection.prototype.interrupt = interrupt_default;
 		selection.prototype.transition = transition_default;
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/constant.js
+		//#region node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/constant.js
 		var constant_default = (x) => () => x;
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/event.js
+		//#region node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/event.js
 		function ZoomEvent(type, { sourceEvent, target, transform, dispatch }) {
 			Object.defineProperties(this, {
 				type: {
@@ -4019,7 +4050,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			});
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/transform.js
+		//#region node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/transform.js
 		function Transform(k, x, y) {
 			this.k = k;
 			this.x = x;
@@ -4068,7 +4099,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return node.__zoom;
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/noevent.js
+		//#region node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/noevent.js
 		function nopropagation(event) {
 			event.stopImmediatePropagation();
 		}
@@ -4077,7 +4108,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			event.stopImmediatePropagation();
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/zoom.js
+		//#region node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/zoom.js
 		function defaultFilter(event) {
 			return (!event.ctrlKey || event.type === "wheel") && !event.button;
 		}
@@ -4376,7 +4407,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return zoom;
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/@xyflow+system@0.0.80/node_modules/@xyflow/system/dist/esm/index.js
+		//#region node_modules/.pnpm/@xyflow+system@0.0.80/node_modules/@xyflow/system/dist/esm/index.js
 		const errorMessages = {
 			error001: (lib = "react") => `Seems like you have not used ${lib === "svelte" ? "SvelteFlowProvider" : "ReactFlowProvider"} as an ancestor. Help: https://${lib}flow.dev/error#001`,
 			error002: () => "It looks like you've created a new nodeTypes or edgeTypes object. If this wasn't on purpose please define the nodeTypes/edgeTypes outside of the component or memoize them.",
@@ -7209,7 +7240,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			};
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/use-sync-external-store@1.6.0_react@18.3.1/node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.production.js
+		//#region node_modules/.pnpm/use-sync-external-store@1.6.0_react@18.3.1/node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.production.js
 		/**
 		* @license React
 		* use-sync-external-store-shim.production.js
@@ -7269,12 +7300,12 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			exports.useSyncExternalStore = void 0 !== React$1.useSyncExternalStore ? React$1.useSyncExternalStore : shim;
 		}));
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/use-sync-external-store@1.6.0_react@18.3.1/node_modules/use-sync-external-store/shim/index.js
+		//#region node_modules/.pnpm/use-sync-external-store@1.6.0_react@18.3.1/node_modules/use-sync-external-store/shim/index.js
 		var require_shim = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			module.exports = require_use_sync_external_store_shim_production();
 		}));
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/use-sync-external-store@1.6.0_react@18.3.1/node_modules/use-sync-external-store/cjs/use-sync-external-store-shim/with-selector.production.js
+		//#region node_modules/.pnpm/use-sync-external-store@1.6.0_react@18.3.1/node_modules/use-sync-external-store/cjs/use-sync-external-store-shim/with-selector.production.js
 		/**
 		* @license React
 		* use-sync-external-store-shim/with-selector.production.js
@@ -7346,7 +7377,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			};
 		}));
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/zustand@4.5.7_@types+react@18.3.31_react@18.3.1/node_modules/zustand/esm/vanilla.mjs
+		//#region node_modules/.pnpm/zustand@4.5.7_@types+react@18.3.31_react@18.3.1/node_modules/zustand/esm/vanilla.mjs
 		var import_with_selector = /* @__PURE__ */ __toESM((/* @__PURE__ */ __commonJSMin(((exports, module) => {
 			module.exports = require_with_selector_production();
 		})))(), 1);
@@ -7382,7 +7413,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 		};
 		const createStore$1 = (createState) => createState ? createStoreImpl(createState) : createStoreImpl;
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/zustand@4.5.7_@types+react@18.3.31_react@18.3.1/node_modules/zustand/esm/traditional.mjs
+		//#region node_modules/.pnpm/zustand@4.5.7_@types+react@18.3.31_react@18.3.1/node_modules/zustand/esm/traditional.mjs
 		const { useDebugValue } = react.default;
 		const { useSyncExternalStoreWithSelector } = import_with_selector.default;
 		const identity = (arg) => arg;
@@ -7399,7 +7430,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 		};
 		const createWithEqualityFn = (createState, defaultEqualityFn) => createState ? createWithEqualityFnImpl(createState, defaultEqualityFn) : createWithEqualityFnImpl;
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/zustand@4.5.7_@types+react@18.3.31_react@18.3.1/node_modules/zustand/esm/shallow.mjs
+		//#region node_modules/.pnpm/zustand@4.5.7_@types+react@18.3.31_react@18.3.1/node_modules/zustand/esm/shallow.mjs
 		function shallow$1(objA, objB) {
 			if (Object.is(objA, objB)) return true;
 			if (typeof objA !== "object" || objA === null || typeof objB !== "object" || objB === null) return false;
@@ -7419,7 +7450,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return true;
 		}
 		//#endregion
-		//#region ../../../dsh-talk-map/node_modules/.pnpm/@xyflow+react@12.11.3_@type_71dfa8247134ab33b4cd4f58b02b90e3/node_modules/@xyflow/react/dist/esm/index.js
+		//#region node_modules/.pnpm/@xyflow+react@12.11.3_@type_71dfa8247134ab33b4cd4f58b02b90e3/node_modules/@xyflow/react/dist/esm/index.js
 		const StoreContext = (0, react.createContext)(null);
 		const Provider$1 = StoreContext.Provider;
 		const zustandErrorMessage = errorMessages["error001"]("react");
@@ -13670,7 +13701,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return `${Math.round(hours / 24)}${t("time.d")}`;
 		}
 		/** Pushpin glyph shared by the card's pin toggle (filled while pinned). */
-		function PinIcon(props) {
+		function PinIcon$1(props) {
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("svg", {
 				width: "14",
 				height: "14",
@@ -13738,7 +13769,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 								onPointerDown: (event) => {
 									event.stopPropagation();
 								},
-								children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PinIcon, { filled: pinned })
+								children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PinIcon$1, { filled: pinned })
 							}) : null
 						]
 					}),
@@ -14592,7 +14623,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					const data = {
 						cardId,
 						sessionId: card.sessionId,
-						title: summary?.displayTitle ?? card.sessionId,
+						title: card.title ?? summary?.displayTitle ?? card.sessionId,
 						running: summary?.running ?? false,
 						ghost: summary === void 0,
 						updatedAt: summary?.updatedAt,
@@ -15027,6 +15058,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					...parent?.workspaceId !== void 0 ? { workspaceId: parent.workspaceId } : isWorkspace ? { workspaceId: groupId } : {},
 					...groupId !== void 0 ? { groupId } : {}
 				});
+				if (parent !== void 0) props.onForkChat?.();
 			};
 			/**
 			* The instant path: a plain double-click on empty canvas — or 新对话 in the
@@ -15219,6 +15251,28 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				};
 				const items = [];
 				let title;
+				if (menu.view === "card-title") {
+					const cardId = menu.targetId;
+					if (cardId === void 0) return null;
+					const card = canvasState.cards[cardId];
+					if (card === void 0) return null;
+					const summary = sessions.byId[card.sessionId];
+					const current = card.title ?? summary?.displayTitle ?? card.sessionId;
+					return {
+						left: menu.left,
+						top: menu.top,
+						title: t("menu.editTitle"),
+						prompt: {
+							placeholder: current,
+							submitLabel: t("menu.saveTitle"),
+							onSubmit: async (value) => {
+								canvas.setCardTitle(cardId, value);
+								close();
+							}
+						},
+						items: []
+					};
+				}
 				if (menu.view === "new-ws") {
 					const parentDir = (() => {
 						const sample = workspaces.items[0]?.path;
@@ -15340,6 +15394,24 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 						onPick: () => {
 							close();
 							if (card !== void 0) openSession(card.sessionId);
+						}
+					});
+					items.push({
+						key: "edit-title",
+						label: t("menu.editTitle"),
+						onPick: () => {
+							setMenu({
+								...menu,
+								view: "card-title"
+							});
+						}
+					});
+					if (card?.title !== void 0) items.push({
+						key: "reset-title",
+						label: t("menu.resetTitle"),
+						onPick: () => {
+							canvas.setCardTitle(cardId, void 0);
+							close();
 						}
 					});
 					if (card !== void 0 && sessions.byId[card.sessionId] !== void 0) {
@@ -15553,6 +15625,13 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 						connectionMode: ConnectionMode.Loose,
 						onSelectionStart,
 						onSelectionEnd,
+						onPaneClick: () => {
+							props.onDeselectChat?.();
+						},
+						onSelectionChange: (params) => {
+							const card = params.nodes.find((node) => node.type === "sessionCard");
+							props.onSelectionChange?.(card ? card.data.sessionId : void 0);
+						},
 						onNodeClick: (event, node) => {
 							if (node.type === "sessionCard" && !node.data.ghost) {
 								cancelChatSoon();
@@ -15797,6 +15876,21 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M6 6l12 12M18 6L6 18" })
 			});
 		}
+		/** Drawer pin glyph (filled while the drawer is locked to its Session). */
+		function PinIcon(props) {
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("svg", {
+				width: "15",
+				height: "15",
+				viewBox: "0 0 24 24",
+				fill: props.filled ? "currentColor" : "none",
+				stroke: "currentColor",
+				strokeWidth: props.filled ? 0 : 1.8,
+				strokeLinecap: "round",
+				strokeLinejoin: "round",
+				"aria-hidden": "true",
+				children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M16 9V4h1a1 1 0 0 0 0-2H7a1 1 0 0 0 0 2h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z" })
+			});
+		}
 		function HotkeyButton() {
 			const hotkey = (0, react.useSyncExternalStore)(canvas.subscribe, () => canvas.get().global?.hotkey ?? "alt+KeyF");
 			const [capturing, setCapturing] = (0, react.useState)(false);
@@ -15903,6 +15997,15 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			*  (the host clears an unread dot only for the Session the main column
 			*  shows); the background re-clear must not fight that visit. */
 			const visitingRef = (0, react.useRef)(false);
+			/**
+			* Drawer pin: while locked the drawer keeps its Session even when the map
+			* selection moves (or is cleared). Unlocking resumes the selected card's
+			* Session, or closes the drawer when nothing is selected.
+			*/
+			const drawerLockedRef = (0, react.useRef)(false);
+			const [drawerLocked, setDrawerLocked] = (0, react.useState)(false);
+			/** The Session card the map currently has selected (undefined: none). */
+			const selectedSessionRef = (0, react.useRef)(void 0);
 			const archivedIds = useArchivedSessionIds();
 			/**
 			* References retained for the drawer, kept until the overlay unmounts.
@@ -16084,6 +16187,10 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			const closeChatNow = () => {
 				chatRef.current = null;
 				chatWantedRef.current = void 0;
+				if (drawerLockedRef.current) {
+					drawerLockedRef.current = false;
+					setDrawerLocked(false);
+				}
 				setChat(null);
 			};
 			/**
@@ -16105,6 +16212,18 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				persistDrawer(void 0);
 				restoreSwap();
 				if (sessionId !== void 0) clearUnreadAfterDrawer(sessionId);
+			};
+			/**
+			* Put the drawer away for a map action that takes over the screen: an
+			* empty-canvas click (the selection is cleared with it) or a fork panel
+			* opening (its box would otherwise sit behind the drawer). A pinned drawer
+			* is an explicit "keep this conversation on screen" and ignores both.
+			*/
+			const putDrawerAway = () => {
+				if (drawerLockedRef.current) return;
+				if (chatRef.current === null && notice === null) return;
+				setNotice(null);
+				closeChat();
 			};
 			/** Retain the card's Session and show it in the drawer (single occurrence). */
 			const retainAndShow = (0, react.useCallback)((sessionId) => {
@@ -16207,6 +16326,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			* parked on another Session of the workspace while the drawer shows it.
 			*/
 			const openChat = (0, react.useCallback)((sessionId) => {
+				if (drawerLockedRef.current && chatRef.current !== null) return;
 				const services = getServices();
 				const retain = services?.sessions.retain;
 				if (services === void 0) return;
@@ -16243,6 +16363,27 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				parkAndShow(sessionId, candidates);
 			}, [parkAndShow, retainAndShow]);
 			/**
+			* Drawer pin toggle. Locking keeps the current Session on screen no matter
+			* which card (or empty canvas) the map selects next. Unlocking follows the
+			* live selection: switch to the selected card's Session, or close the drawer
+			* when nothing is selected.
+			*/
+			const toggleDrawerLock = () => {
+				if (!drawerLockedRef.current) {
+					drawerLockedRef.current = true;
+					setDrawerLocked(true);
+					return;
+				}
+				drawerLockedRef.current = false;
+				setDrawerLocked(false);
+				const selected = selectedSessionRef.current;
+				if (selected === void 0) {
+					closeChat();
+					return;
+				}
+				if (selected !== chatRef.current?.sessionId) openChat(selected);
+			};
+			/**
 			* The notice's manual escape hatch: the parking may have lost a race with
 			* the Session list loading (the "偶现" notice). Re-read the current list and
 			* retry the same switch; if nothing usable appeared we keep the honest
@@ -16265,6 +16406,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			* editable occurrences must never overlap).
 			*/
 			const markReadThenOpen = (0, react.useCallback)((sessionId) => {
+				if (drawerLockedRef.current && chatRef.current !== null) return;
 				if (!completions.getSnapshot().has(sessionId)) {
 					openChat(sessionId);
 					return;
@@ -16511,7 +16653,14 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			const renderedDrawerWidth = drawerWidthRef.current ?? (storedDrawerWidth > 0 ? storedDrawerWidth : void 0);
 			const drawerStyle = renderedDrawerWidth !== void 0 ? { width: `${renderedDrawerWidth}px` } : void 0;
 			const drawerSessionId = chat?.sessionId ?? notice?.sessionId;
-			const chatTitle = props.useSessions((state) => drawerSessionId === void 0 ? void 0 : state.byId[drawerSessionId]?.displayTitle) ?? "";
+			/** The card's own title wins: renaming a card on the map never renames the
+			*  Session (the sidebar and the main column keep the original title). */
+			const drawerCardTitle = (0, react.useSyncExternalStore)(canvas.subscribe, () => {
+				if (drawerSessionId === void 0) return void 0;
+				for (const card of Object.values(canvas.get().cards)) if (card.sessionId === drawerSessionId) return card.title;
+			});
+			const drawerSessionTitle = props.useSessions((state) => drawerSessionId === void 0 ? void 0 : state.byId[drawerSessionId]?.displayTitle);
+			const chatTitle = drawerCardTitle ?? drawerSessionTitle ?? "";
 			const drawer = notice !== null ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("aside", {
 				className: talk_map_module_css_default["chatDrawer"],
 				"aria-label": t("map.chat"),
@@ -16585,6 +16734,15 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { className: talk_map_module_css_default["chatDrawerSpace"] }),
 							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 								type: "button",
+								className: drawerLocked ? `${talk_map_module_css_default["chatDrawerLock"]} ${talk_map_module_css_default["chatDrawerLockActive"]}` : talk_map_module_css_default["chatDrawerLock"],
+								title: drawerLocked ? t("map.unlockDrawer") : t("map.lockDrawer"),
+								"aria-label": drawerLocked ? t("map.unlockDrawer") : t("map.lockDrawer"),
+								"aria-pressed": drawerLocked,
+								onClick: toggleDrawerLock,
+								children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PinIcon, { filled: drawerLocked })
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+								type: "button",
 								className: talk_map_module_css_default["chatDrawerClose"],
 								title: t("map.closeChat"),
 								"aria-label": t("map.closeChat"),
@@ -16656,6 +16814,11 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 						...props,
 						onOpenChat: markReadThenOpen,
 						onOpenSession: handleFullOpen,
+						onDeselectChat: putDrawerAway,
+						onForkChat: putDrawerAway,
+						onSelectionChange: (sessionId) => {
+							selectedSessionRef.current = sessionId;
+						},
 						activeChatSessionId: chat?.sessionId
 					}), drawer] })
 				})]

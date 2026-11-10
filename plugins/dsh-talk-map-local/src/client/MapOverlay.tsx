@@ -186,6 +186,29 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
     }
   }, [])
 
+  /**
+   * The host clears its "finished, unread" dot only for the Session the MAIN
+   * column shows. A conversation read inside the map drawer therefore lights
+   * the dot again as soon as the drawer lets go of it. Visit the main column
+   * for the moment the clear takes (the drawer no longer shows that Session),
+   * then hand the column back to the map. Best-effort: a parking/park-visit in
+   * flight wins, and the dot stays until the next opportunity.
+   */
+  const clearUnreadAfterDrawer = useCallback((sessionId: string): void => {
+    if (!completions.getSnapshot().has(sessionId)) return
+    if (!mountedRef.current || visitingRef.current || swapPendingRef.current !== undefined) return
+    visitingRef.current = true
+    openSessionInMain(sessionId)
+    void (async () => {
+      const started = Date.now()
+      while (mountedRef.current && Date.now() - started < 1500 && completions.getSnapshot().has(sessionId)) {
+        await new Promise((resolve) => window.setTimeout(resolve, 50))
+      }
+      visitingRef.current = false
+      if (mountedRef.current) clearMainNow()
+    })()
+  }, [clearMainNow])
+
   useEffect(() => {
     mountedRef.current = true
     // The map owns the conversation surface while it is open: close whatever
@@ -356,9 +379,11 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
   }
 
   const closeChat = (): void => {
+    const sessionId = chatRef.current?.sessionId
     closeChatNow()
     persistDrawer(undefined)
     restoreSwap()
+    if (sessionId !== undefined) clearUnreadAfterDrawer(sessionId)
   }
 
   /** Retain the card's Session and show it in the drawer (single occurrence). */
@@ -381,9 +406,11 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
         retainedRef.current.set(sessionId, reference)
       }
       chatWantedRef.current = undefined
+      const previous = chatRef.current?.sessionId
       chatRef.current = { sessionId, reference }
       setChat({ sessionId, reference })
       persistDrawer(sessionId)
+      if (previous !== undefined && previous !== sessionId) clearUnreadAfterDrawer(previous)
       return true
     }
 
@@ -407,7 +434,7 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
     }
     stop = services.sessions.list.subscribe(check)
     check()
-  }, [])
+  }, [clearUnreadAfterDrawer])
 
   const handleFullOpen = useCallback((sessionId: string): void => {
     // A full open wins over any parked or pre-map Session: never restore it
@@ -787,7 +814,12 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
       </div>
       <div className={styles['body']}>
         <MapErrorBoundary>
-          <MapCanvas {...props} onOpenChat={markReadThenOpen} onOpenSession={handleFullOpen} />
+          <MapCanvas
+            {...props}
+            onOpenChat={markReadThenOpen}
+            onOpenSession={handleFullOpen}
+            activeChatSessionId={chat?.sessionId}
+          />
           {drawer}
         </MapErrorBoundary>
       </div>

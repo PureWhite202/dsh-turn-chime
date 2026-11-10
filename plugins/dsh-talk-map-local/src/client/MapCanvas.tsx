@@ -184,6 +184,9 @@ interface RightGesture {
 export interface MapCanvasProps extends RootSlotStandardProps {
   /** Single-clicked card: open that Session beside the map (right drawer). */
   onOpenChat?: (sessionId: string) => void
+  /** Session currently shown in the drawer: it is being read, so its card
+   *  never renders the "finished, unread" dot while the drawer holds it. */
+  activeChatSessionId?: string
   /** Double-clicked card: open it full screen; the overlay owns the order. */
   onOpenSession?: (sessionId: string) => void
 }
@@ -866,7 +869,7 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
           ghost: summary === undefined,
           updatedAt: summary?.updatedAt,
           waiting: pendingInteractions.has(card.sessionId) || summary?.pendingInteraction !== undefined,
-          done: completedIds.has(card.sessionId) || summary?.completed === true,
+          done: completedIds.has(card.sessionId) && card.sessionId !== props.activeChatSessionId,
           ...(card.colorTag !== undefined ? { colorTag: card.colorTag } : {}),
           ...(foreign.labels.has(cardId) ? { foreignLabel: foreign.labels.get(cardId) } : {}),
           ...(foreign.touching.has(cardId) ? { foreignTouch: true } : {}),
@@ -914,7 +917,7 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
     }))
     nodeCacheRef.current = nextCache
     return [...frameNodes, ...imageNodes, ...cardNodes, ...draftNodes]
-  }, [frameGeometry, membersByGroup, wsTitles, visibleCards, wsColors, sessions, liveSelectedIds, draft, draftNodeData, workspaces.items, locale, pendingInteractions, completedIds, foreign, archivedIds, nowMinute, isSelecting, props.onOpenChat, canvasState.images, handleImageResize])
+  }, [frameGeometry, membersByGroup, wsTitles, visibleCards, wsColors, sessions, liveSelectedIds, draft, draftNodeData, workspaces.items, locale, pendingInteractions, completedIds, foreign, archivedIds, nowMinute, isSelecting, props.onOpenChat, props.activeChatSessionId, canvasState.images, handleImageResize])
 
   const sessionIdToCardId = useMemo(() => {
     const index = new Map<string, string>()

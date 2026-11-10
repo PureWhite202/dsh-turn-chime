@@ -1369,139 +1369,139 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			document.head.appendChild(tag);
 		}
 		var talk_map_module_css_default = {
-			"cardTime": "O81TBq_cardTime",
-			"imageCardImg": "O81TBq_imageCardImg",
-			"cardFooter": "O81TBq_cardFooter",
-			"cardPinActive": "O81TBq_cardPinActive",
-			"spawnBtnPrimary": "O81TBq_spawnBtnPrimary",
-			"cardTitle": "O81TBq_cardTitle",
-			"menuSearch": "O81TBq_menuSearch",
-			"canvas": "O81TBq_canvas",
-			"spawnModeActive": "O81TBq_spawnModeActive",
-			"menuItem": "O81TBq_menuItem",
-			"wsFrameEdge": "O81TBq_wsFrameEdge",
-			"draftAttachmentFileIcon": "O81TBq_draftAttachmentFileIcon",
-			"canvasConnecting": "O81TBq_canvasConnecting",
-			"chatDrawerClose": "O81TBq_chatDrawerClose",
-			"spawnError": "O81TBq_spawnError",
-			"mapFallbackButton": "O81TBq_mapFallbackButton",
-			"langButton": "O81TBq_langButton",
-			"toastText": "O81TBq_toastText",
-			"toggleRow": "O81TBq_toggleRow",
-			"wsFrame": "O81TBq_wsFrame",
-			"chatDrawerHeader": "O81TBq_chatDrawerHeader",
-			"draftRow": "O81TBq_draftRow",
-			"chatDrawerArchivedText": "O81TBq_chatDrawerArchivedText",
-			"toggleIcon": "O81TBq_toggleIcon",
-			"draftGrow": "O81TBq_draftGrow",
-			"card": "O81TBq_card",
-			"toggleButtonActive": "O81TBq_toggleButtonActive",
-			"chatPanel": "O81TBq_chatPanel",
-			"chatDrawerArchived": "O81TBq_chatDrawerArchived",
-			"closeButton": "O81TBq_closeButton",
-			"chatDrawerNoticeText": "O81TBq_chatDrawerNoticeText",
-			"wsFrameSelected": "O81TBq_wsFrameSelected",
-			"colorToolbarLabel": "O81TBq_colorToolbarLabel",
-			"chatDrawerSpace": "O81TBq_chatDrawerSpace",
-			"draftAttachmentFileName": "O81TBq_draftAttachmentFileName",
-			"colorToolbar": "O81TBq_colorToolbar",
-			"cardTop": "O81TBq_cardTop",
-			"spawnBtnGhost": "O81TBq_spawnBtnGhost",
-			"draftAttachmentFileText": "O81TBq_draftAttachmentFileText",
-			"toastActionable": "O81TBq_toastActionable",
-			"chatDrawerBody": "O81TBq_chatDrawerBody",
-			"colorSwatch": "O81TBq_colorSwatch",
-			"mapFallbackTitle": "O81TBq_mapFallbackTitle",
-			"draftAttachmentProgressBar": "O81TBq_draftAttachmentProgressBar",
-			"draftCardDrop": "O81TBq_draftCardDrop",
-			"menuError": "O81TBq_menuError",
-			"wsFrameForeign": "O81TBq_wsFrameForeign",
-			"cardForeignTouch": "O81TBq_cardForeignTouch",
-			"draftDropHint": "O81TBq_draftDropHint",
-			"draftAttachments": "O81TBq_draftAttachments",
-			"wsFrameCount": "O81TBq_wsFrameCount",
-			"chatDrawerTitle": "O81TBq_chatDrawerTitle",
-			"spawnActions": "O81TBq_spawnActions",
-			"menuPreview": "O81TBq_menuPreview",
-			"cardSelected": "O81TBq_cardSelected",
-			"cardForeign": "O81TBq_cardForeign",
-			"interactDanger": "O81TBq_interactDanger",
-			"toggleButton": "O81TBq_toggleButton",
-			"menuEmpty": "O81TBq_menuEmpty",
-			"mapFallback": "O81TBq_mapFallback",
-			"zoomResetLabel": "O81TBq_zoomResetLabel",
-			"interactTitle": "O81TBq_interactTitle",
-			"cardRemove": "O81TBq_cardRemove",
-			"toggleLabel": "O81TBq_toggleLabel",
-			"chatDrawerArchivedButton": "O81TBq_chatDrawerArchivedButton",
-			"draftAttachmentProgress": "O81TBq_draftAttachmentProgress",
-			"interactSubmit": "O81TBq_interactSubmit",
-			"talkmap-pulse": "O81TBq_talkmap-pulse",
-			"toast": "O81TBq_toast",
-			"cardDoneDot": "O81TBq_cardDoneDot",
-			"draftCard": "O81TBq_draftCard",
-			"body": "O81TBq_body",
-			"header": "O81TBq_header",
-			"cardForeignPulse": "O81TBq_cardForeignPulse",
-			"chatDrawer": "O81TBq_chatDrawer",
-			"draftInput": "O81TBq_draftInput",
-			"talk-map-drawer": "O81TBq_talk-map-drawer",
-			"interactGroup": "O81TBq_interactGroup",
-			"spawnTextarea": "O81TBq_spawnTextarea",
-			"cardPin": "O81TBq_cardPin",
-			"menu": "O81TBq_menu",
-			"interactText": "O81TBq_interactText",
-			"menuTitle": "O81TBq_menuTitle",
-			"draftAttachmentFile": "O81TBq_draftAttachmentFile",
 			"wsFrameResize": "O81TBq_wsFrameResize",
-			"wsFrameLabel": "O81TBq_wsFrameLabel",
-			"draftAttachmentImage": "O81TBq_draftAttachmentImage",
-			"hotkeyButton": "O81TBq_hotkeyButton",
+			"interactDanger": "O81TBq_interactDanger",
+			"menuItem": "O81TBq_menuItem",
+			"spawnError": "O81TBq_spawnError",
+			"cardBadgeWaiting": "O81TBq_cardBadgeWaiting",
 			"cardHandle": "O81TBq_cardHandle",
-			"interactScroll": "O81TBq_interactScroll",
-			"emptyHint": "O81TBq_emptyHint",
-			"spawnModeBtn": "O81TBq_spawnModeBtn",
-			"mapFallbackText": "O81TBq_mapFallbackText",
-			"chatDrawerNoticeButton": "O81TBq_chatDrawerNoticeButton",
-			"cardWaitingButton": "O81TBq_cardWaitingButton",
-			"interactError": "O81TBq_interactError",
-			"draftHeading": "O81TBq_draftHeading",
-			"interactMenu": "O81TBq_interactMenu",
-			"interactOption": "O81TBq_interactOption",
-			"interactOptionActive": "O81TBq_interactOptionActive",
-			"interactOpen": "O81TBq_interactOpen",
-			"draftLabel": "O81TBq_draftLabel",
+			"toggleIcon": "O81TBq_toggleIcon",
+			"talkmap-pulse": "O81TBq_talkmap-pulse",
 			"headerTitle": "O81TBq_headerTitle",
-			"draftAttachmentFileMeta": "O81TBq_draftAttachmentFileMeta",
-			"headerBadge": "O81TBq_headerBadge",
-			"draftAttachmentRemove": "O81TBq_draftAttachmentRemove",
-			"cardFooterLeft": "O81TBq_cardFooterLeft",
-			"cardBadgeDone": "O81TBq_cardBadgeDone",
-			"chatDrawerNotice": "O81TBq_chatDrawerNotice",
-			"headerSpace": "O81TBq_headerSpace",
-			"cardForeignChip": "O81TBq_cardForeignChip",
-			"interactNote": "O81TBq_interactNote",
+			"cardGhost": "O81TBq_cardGhost",
+			"spawnModeActive": "O81TBq_spawnModeActive",
+			"cardSelected": "O81TBq_cardSelected",
+			"draftTextarea": "O81TBq_draftTextarea",
+			"draftAttachmentProgress": "O81TBq_draftAttachmentProgress",
+			"toastActionable": "O81TBq_toastActionable",
+			"chatDrawerArchivedButton": "O81TBq_chatDrawerArchivedButton",
+			"langButton": "O81TBq_langButton",
+			"draftAttachments": "O81TBq_draftAttachments",
+			"chatDrawer": "O81TBq_chatDrawer",
+			"spawnModeBtn": "O81TBq_spawnModeBtn",
 			"spawnModes": "O81TBq_spawnModes",
-			"draftPathPreview": "O81TBq_draftPathPreview",
-			"interactActions": "O81TBq_interactActions",
-			"runningDot": "O81TBq_runningDot",
+			"toggleRow": "O81TBq_toggleRow",
+			"menuEmpty": "O81TBq_menuEmpty",
+			"draftCard": "O81TBq_draftCard",
+			"hotkeyButton": "O81TBq_hotkeyButton",
+			"colorToolbarLabel": "O81TBq_colorToolbarLabel",
+			"interactNote": "O81TBq_interactNote",
+			"wsFrameHidden": "O81TBq_wsFrameHidden",
+			"cardTime": "O81TBq_cardTime",
+			"imageCardSelected": "O81TBq_imageCardSelected",
+			"emptyHint": "O81TBq_emptyHint",
+			"draftAttachmentFileIcon": "O81TBq_draftAttachmentFileIcon",
 			"draftSelect": "O81TBq_draftSelect",
 			"overlay": "O81TBq_overlay",
-			"colorSwatchClear": "O81TBq_colorSwatchClear",
-			"spawnHint": "O81TBq_spawnHint",
-			"cardBadgeRunning": "O81TBq_cardBadgeRunning",
-			"cardBadgeWaiting": "O81TBq_cardBadgeWaiting",
-			"draftTextarea": "O81TBq_draftTextarea",
-			"interactOptions": "O81TBq_interactOptions",
-			"cardGhost": "O81TBq_cardGhost",
-			"menuHint": "O81TBq_menuHint",
-			"imageCardSelected": "O81TBq_imageCardSelected",
-			"spawnFrom": "O81TBq_spawnFrom",
-			"toastAction": "O81TBq_toastAction",
+			"mapFallbackTitle": "O81TBq_mapFallbackTitle",
+			"header": "O81TBq_header",
+			"wsFrameEdge": "O81TBq_wsFrameEdge",
+			"canvas": "O81TBq_canvas",
+			"draftRow": "O81TBq_draftRow",
+			"chatDrawerNotice": "O81TBq_chatDrawerNotice",
+			"draftAttachmentRemove": "O81TBq_draftAttachmentRemove",
+			"cardPin": "O81TBq_cardPin",
+			"draftDropHint": "O81TBq_draftDropHint",
+			"wsFrameLabel": "O81TBq_wsFrameLabel",
+			"imageCardImg": "O81TBq_imageCardImg",
 			"interactAllow": "O81TBq_interactAllow",
+			"cardBadgeDone": "O81TBq_cardBadgeDone",
+			"colorToolbar": "O81TBq_colorToolbar",
+			"cardBadgeRunning": "O81TBq_cardBadgeRunning",
+			"interactMenu": "O81TBq_interactMenu",
+			"interactScroll": "O81TBq_interactScroll",
+			"chatDrawerNoticeButton": "O81TBq_chatDrawerNoticeButton",
+			"wsFrameCount": "O81TBq_wsFrameCount",
+			"cardForeignPulse": "O81TBq_cardForeignPulse",
+			"draftHeading": "O81TBq_draftHeading",
+			"toggleButton": "O81TBq_toggleButton",
+			"spawnTextarea": "O81TBq_spawnTextarea",
+			"draftAttachmentFileName": "O81TBq_draftAttachmentFileName",
+			"body": "O81TBq_body",
+			"spawnBtnPrimary": "O81TBq_spawnBtnPrimary",
+			"zoomResetLabel": "O81TBq_zoomResetLabel",
+			"chatDrawerClose": "O81TBq_chatDrawerClose",
+			"cardForeign": "O81TBq_cardForeign",
+			"menuPreview": "O81TBq_menuPreview",
+			"draftCardDrop": "O81TBq_draftCardDrop",
+			"cardFooter": "O81TBq_cardFooter",
+			"chatDrawerSpace": "O81TBq_chatDrawerSpace",
+			"cardForeignChip": "O81TBq_cardForeignChip",
+			"canvasConnecting": "O81TBq_canvasConnecting",
+			"cardTitle": "O81TBq_cardTitle",
+			"interactError": "O81TBq_interactError",
+			"interactOptions": "O81TBq_interactOptions",
+			"chatDrawerHeader": "O81TBq_chatDrawerHeader",
+			"cardRemove": "O81TBq_cardRemove",
+			"headerSpace": "O81TBq_headerSpace",
+			"chatDrawerArchivedText": "O81TBq_chatDrawerArchivedText",
+			"interactOpen": "O81TBq_interactOpen",
+			"cardForeignTouch": "O81TBq_cardForeignTouch",
+			"spawnFrom": "O81TBq_spawnFrom",
+			"wsFrameSelected": "O81TBq_wsFrameSelected",
+			"talk-map-drawer": "O81TBq_talk-map-drawer",
+			"interactOption": "O81TBq_interactOption",
+			"interactActions": "O81TBq_interactActions",
+			"spawnBtnGhost": "O81TBq_spawnBtnGhost",
+			"draftAttachmentImage": "O81TBq_draftAttachmentImage",
+			"mapFallbackText": "O81TBq_mapFallbackText",
+			"menuHint": "O81TBq_menuHint",
 			"chatDrawerNoticeActions": "O81TBq_chatDrawerNoticeActions",
-			"wsFrameHidden": "O81TBq_wsFrameHidden",
-			"imageCard": "O81TBq_imageCard"
+			"draftLabel": "O81TBq_draftLabel",
+			"interactGroup": "O81TBq_interactGroup",
+			"mapFallbackButton": "O81TBq_mapFallbackButton",
+			"cardFooterLeft": "O81TBq_cardFooterLeft",
+			"draftAttachmentFileMeta": "O81TBq_draftAttachmentFileMeta",
+			"cardWaitingButton": "O81TBq_cardWaitingButton",
+			"mapFallback": "O81TBq_mapFallback",
+			"toggleLabel": "O81TBq_toggleLabel",
+			"draftAttachmentFileText": "O81TBq_draftAttachmentFileText",
+			"chatDrawerTitle": "O81TBq_chatDrawerTitle",
+			"draftInput": "O81TBq_draftInput",
+			"colorSwatchClear": "O81TBq_colorSwatchClear",
+			"wsFrameForeign": "O81TBq_wsFrameForeign",
+			"runningDot": "O81TBq_runningDot",
+			"menuSearch": "O81TBq_menuSearch",
+			"cardPinActive": "O81TBq_cardPinActive",
+			"chatDrawerArchived": "O81TBq_chatDrawerArchived",
+			"imageCard": "O81TBq_imageCard",
+			"card": "O81TBq_card",
+			"spawnHint": "O81TBq_spawnHint",
+			"toggleButtonActive": "O81TBq_toggleButtonActive",
+			"draftPathPreview": "O81TBq_draftPathPreview",
+			"cardDoneDot": "O81TBq_cardDoneDot",
+			"draftGrow": "O81TBq_draftGrow",
+			"toast": "O81TBq_toast",
+			"menuError": "O81TBq_menuError",
+			"toastAction": "O81TBq_toastAction",
+			"chatDrawerNoticeText": "O81TBq_chatDrawerNoticeText",
+			"menuTitle": "O81TBq_menuTitle",
+			"interactText": "O81TBq_interactText",
+			"menu": "O81TBq_menu",
+			"draftAttachmentProgressBar": "O81TBq_draftAttachmentProgressBar",
+			"headerBadge": "O81TBq_headerBadge",
+			"interactSubmit": "O81TBq_interactSubmit",
+			"chatDrawerBody": "O81TBq_chatDrawerBody",
+			"interactOptionActive": "O81TBq_interactOptionActive",
+			"colorSwatch": "O81TBq_colorSwatch",
+			"closeButton": "O81TBq_closeButton",
+			"spawnActions": "O81TBq_spawnActions",
+			"cardTop": "O81TBq_cardTop",
+			"draftAttachmentFile": "O81TBq_draftAttachmentFile",
+			"chatPanel": "O81TBq_chatPanel",
+			"toastText": "O81TBq_toastText",
+			"interactTitle": "O81TBq_interactTitle",
+			"wsFrame": "O81TBq_wsFrame"
 		};
 		//#endregion
 		//#region src/client/ChatPanel.tsx
@@ -14562,7 +14562,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 						ghost: summary === void 0,
 						updatedAt: summary?.updatedAt,
 						waiting: pendingInteractions.has(card.sessionId) || summary?.pendingInteraction !== void 0,
-						done: completedIds.has(card.sessionId) || summary?.completed === true,
+						done: completedIds.has(card.sessionId) && card.sessionId !== props.activeChatSessionId,
 						...card.colorTag !== void 0 ? { colorTag: card.colorTag } : {},
 						...foreign.labels.has(cardId) ? { foreignLabel: foreign.labels.get(cardId) } : {},
 						...foreign.touching.has(cardId) ? { foreignTouch: true } : {},
@@ -14639,6 +14639,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				nowMinute,
 				isSelecting,
 				props.onOpenChat,
+				props.activeChatSessionId,
 				canvasState.images,
 				handleImageResize
 			]);
@@ -15875,6 +15876,26 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					return false;
 				}
 			}, []);
+			/**
+			* The host clears its "finished, unread" dot only for the Session the MAIN
+			* column shows. A conversation read inside the map drawer therefore lights
+			* the dot again as soon as the drawer lets go of it. Visit the main column
+			* for the moment the clear takes (the drawer no longer shows that Session),
+			* then hand the column back to the map. Best-effort: a parking/park-visit in
+			* flight wins, and the dot stays until the next opportunity.
+			*/
+			const clearUnreadAfterDrawer = (0, react.useCallback)((sessionId) => {
+				if (!completions.getSnapshot().has(sessionId)) return;
+				if (!mountedRef.current || visitingRef.current || swapPendingRef.current !== void 0) return;
+				visitingRef.current = true;
+				openSessionInMain(sessionId);
+				(async () => {
+					const started = Date.now();
+					while (mountedRef.current && Date.now() - started < 1500 && completions.getSnapshot().has(sessionId)) await new Promise((resolve) => window.setTimeout(resolve, 50));
+					visitingRef.current = false;
+					if (mountedRef.current) clearMainNow();
+				})();
+			}, [clearMainNow]);
 			(0, react.useEffect)(() => {
 				mountedRef.current = true;
 				const before = mainSessionId();
@@ -16026,9 +16047,11 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				}, 0);
 			};
 			const closeChat = () => {
+				const sessionId = chatRef.current?.sessionId;
 				closeChatNow();
 				persistDrawer(void 0);
 				restoreSwap();
+				if (sessionId !== void 0) clearUnreadAfterDrawer(sessionId);
 			};
 			/** Retain the card's Session and show it in the drawer (single occurrence). */
 			const retainAndShow = (0, react.useCallback)((sessionId) => {
@@ -16049,6 +16072,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 						retainedRef.current.set(sessionId, reference);
 					}
 					chatWantedRef.current = void 0;
+					const previous = chatRef.current?.sessionId;
 					chatRef.current = {
 						sessionId,
 						reference
@@ -16058,6 +16082,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 						reference
 					});
 					persistDrawer(sessionId);
+					if (previous !== void 0 && previous !== sessionId) clearUnreadAfterDrawer(previous);
 					return true;
 				};
 				if (show()) return;
@@ -16077,7 +16102,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				};
 				stop = services.sessions.list.subscribe(check);
 				check();
-			}, []);
+			}, [clearUnreadAfterDrawer]);
 			const handleFullOpen = (0, react.useCallback)((sessionId) => {
 				swapPendingRef.current = void 0;
 				swapRef.current = null;
@@ -16470,7 +16495,8 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(MapErrorBoundary, { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(MapCanvas, {
 						...props,
 						onOpenChat: markReadThenOpen,
-						onOpenSession: handleFullOpen
+						onOpenSession: handleFullOpen,
+						activeChatSessionId: chat?.sessionId
 					}), drawer] })
 				})]
 			});

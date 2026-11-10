@@ -10,7 +10,7 @@
 import type { TalkMapClientContext } from './dsh.ts'
 import { canvas } from './canvas-store.ts'
 import { DEFAULT_HOTKEY, hotkeyMatches } from './hotkey.ts'
-import { attachServices, mapUi, persistedMapOpen } from './map-state.ts'
+import { attachServices, mapUi, persistedMapOpen, showMapNotice } from './map-state.ts'
 import { interactions } from './interactions.ts'
 import { ChatPanel } from './ChatPanel.tsx'
 import { MapOverlay } from './MapOverlay.tsx'
@@ -62,7 +62,13 @@ export function apply(ctx: TalkMapClientContext): void {
     // controller, which refuses every open while the map keeps the main column
     // empty ("sidebarRight: no session surface is mounted") and paints a modal.
     // Open those files through the desktop instead; other failures stay as-is.
-    ctx.effect(() => installSidebarFallbackOnClient(ctx), 'dsh-talk-map: sidebar file fallback')
+    ctx.effect(() => installSidebarFallbackOnClient(ctx, {
+      notify: showMapNotice,
+      messages: {
+        failed: t('toast.openFallbackFailed'),
+        unsupported: t('toast.openFallbackUnsupported'),
+      },
+    }), 'dsh-talk-map: sidebar file fallback')
 
     ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
       name: 'sidebar.footer.action',

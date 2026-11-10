@@ -6,13 +6,28 @@
  * drawer ("sidebarRight: no session surface is mounted"). This module finds
  * that controller, feeds the pure wrapper (`sidebar-fallback.ts`) the host
  * callbacks it needs, and lets the plugin's effect lifetime install and
- * remove it. Missing services degrade to a no-op — the map must never fail to
- * load because a host face is absent.
+ * remove it.
+ *
+ * Everything here is best-effort: a missing service, a throwing lookup, or a
+ * sealed controller must leave the rest of the plugin's apply() running, so
+ * every step is contained. Copy and the toast sink are injected by the caller
+ * (the plugin entry) so this module carries no host-UI imports.
  */
-import { installSidebarFallback, type SidebarFallbackDeps, type SidebarRightLike } from './sidebar-fallback.ts'
-import { showMapNotice } from './map-state.ts'
-import { t } from './i18n.ts'
+import {
+  installSidebarFallback,
+  type SidebarFallbackDeps,
+  type SidebarFallbackMessages,
+  type SidebarRightLike,
+} from './sidebar-fallback.ts'
 import type { TalkMapClientContext } from './dsh.ts'
+
+/** The plugin-facing half of the fallback: copy plus the toast sink. */
+export interface ClientFallbackHooks {
+  /** Localized copy for the two fallback outcomes. */
+  messages: SidebarFallbackMessages
+  /** Where the fallback reports (the map's bottom toast). */
+  notify(message: string): void
+}
 
 /** Structural check: only an object with both navigation methods is wrappable. */
 function isController(value: unknown): value is SidebarRightLike {
@@ -31,8 +46,8 @@ function controllerOf(ctx: TalkMapClientContext): SidebarRightLike | undefined {
   return undefined
 }
 
-/** Host callbacks the fallback uses: workspace roots, the open route, the toast. */
-function fallbackDeps(ctx: TalkMapClientContext): SidebarFallbackDeps {
+/** Host callbacks the fallback uses: workspace roots, the open route, a tab. */
+function fallbackDeps(ctx: TalkMapClientContext, hooks: ClientFallbackHooks): SidebarFallbackDeps {
   return {
     resolveCwd: (sessionId) => ctx.sessions.list.getSnapshot().byId[sessionId]?.cwd,
     openPathExternally: async (path) => {
@@ -46,37 +61,45 @@ function fallbackDeps(ctx: TalkMapClientContext): SidebarFallbackDeps {
         return false
       }
     },
-    openUrl: (url) => { window.open(url, '_blank', 'noopener,noreferrer') },
-    notify: showMapNotice,
+    openUrl: (url) => {
+      const host = (globalThis as { window?: { open?: (url: string, target?: string, features?: string) => unknown } }).window
+      host?.open?.(url, '_blank', 'noopener,noreferrer')
+    },
+    notify: hooks.notify,
   }
 }
 
 /**
- * Install the fallback for this client's lifetime.
+ * Install the fallback for this client's lifetime, never throwing.
  *
  * @param ctx - the plugin context providing the controller and host callbacks.
+ * @param hooks - localized copy and the toast sink.
  * @returns a restore function the plugin effect calls on unload.
  */
-export function installSidebarFallbackOnClient(ctx: TalkMapClientContext): () => void {
-  const messages = {
-    failed: t('toast.openFallbackFailed'),
-    unsupported: t('toast.openFallbackUnsupported'),
-  }
-  const deps = fallbackDeps(ctx)
+export function installSidebarFallbackOnClient(ctx: TalkMapClientContext, hooks: ClientFallbackHooks): () => void {
   const restores: Array<() => void> = []
   const attach = (service: unknown): void => {
     if (!isController(service)) return
-    restores.push(installSidebarFallback(service, deps, messages))
-  }
-
-  const direct = controllerOf(ctx)
-  if (direct !== undefined) attach(direct)
-  else if (typeof ctx.inject === 'function') {
     try {
-      ctx.inject(['sidebarRight'], (scope) => { attach(scope.sidebarRight) })
-    } catch {
-      /* host without dynamic injection: the host dialog stays as it was */
+      restores.push(installSidebarFallback(service, fallbackDeps(ctx, hooks), hooks.messages))
+    } catch (error) {
+      console.warn('[dsh-talk-map] sidebar fallback could not wrap the controller:', error)
     }
   }
+
+  try {
+    const direct = controllerOf(ctx)
+    if (direct !== undefined) attach(direct)
+    else if (typeof ctx.inject === 'function') {
+      try {
+        ctx.inject(['sidebarRight'], (scope) => { attach(scope.sidebarRight) })
+      } catch {
+        /* host without dynamic injection: the host dialog stays as it was */
+      }
+    }
+  } catch (error) {
+    console.warn('[dsh-talk-map] sidebar fallback not installed:', error)
+  }
+
   return () => { for (const restore of restores.splice(0)) restore() }
 }

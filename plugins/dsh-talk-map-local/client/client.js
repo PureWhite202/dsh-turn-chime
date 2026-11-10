@@ -1403,140 +1403,140 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			document.head.appendChild(tag);
 		}
 		var talk_map_module_css_default = {
-			"toastAction": "MSQ6kW_toastAction",
-			"wsFrameLabel": "MSQ6kW_wsFrameLabel",
-			"chatDrawerBody": "MSQ6kW_chatDrawerBody",
-			"spawnBtnPrimary": "MSQ6kW_spawnBtnPrimary",
-			"spawnModeBtn": "MSQ6kW_spawnModeBtn",
-			"spawnFrom": "MSQ6kW_spawnFrom",
-			"menuSearch": "MSQ6kW_menuSearch",
-			"talkmap-pulse": "MSQ6kW_talkmap-pulse",
-			"cardTime": "MSQ6kW_cardTime",
-			"spawnBtnGhost": "MSQ6kW_spawnBtnGhost",
-			"toggleLabel": "MSQ6kW_toggleLabel",
-			"chatDrawerNotice": "MSQ6kW_chatDrawerNotice",
-			"wsFrameForeign": "MSQ6kW_wsFrameForeign",
-			"wsFrameCount": "MSQ6kW_wsFrameCount",
-			"cardForeignPulse": "MSQ6kW_cardForeignPulse",
-			"colorSwatchClear": "MSQ6kW_colorSwatchClear",
-			"zoomResetLabel": "MSQ6kW_zoomResetLabel",
-			"spawnError": "MSQ6kW_spawnError",
-			"chatDrawerSpace": "MSQ6kW_chatDrawerSpace",
-			"imageCardImg": "MSQ6kW_imageCardImg",
-			"cardBadgeDone": "MSQ6kW_cardBadgeDone",
-			"cardRemove": "MSQ6kW_cardRemove",
-			"cardTitle": "MSQ6kW_cardTitle",
-			"interactError": "MSQ6kW_interactError",
-			"cardSelected": "MSQ6kW_cardSelected",
-			"menu": "MSQ6kW_menu",
-			"chatDrawerResize": "MSQ6kW_chatDrawerResize",
-			"chatDrawerHeader": "MSQ6kW_chatDrawerHeader",
-			"draftTextarea": "MSQ6kW_draftTextarea",
-			"draftAttachmentProgressBar": "MSQ6kW_draftAttachmentProgressBar",
-			"body": "MSQ6kW_body",
-			"chatDrawerArchived": "MSQ6kW_chatDrawerArchived",
-			"interactActions": "MSQ6kW_interactActions",
-			"toastActionable": "MSQ6kW_toastActionable",
-			"interactScroll": "MSQ6kW_interactScroll",
-			"spawnModes": "MSQ6kW_spawnModes",
-			"draftAttachmentFileIcon": "MSQ6kW_draftAttachmentFileIcon",
-			"colorSwatch": "MSQ6kW_colorSwatch",
-			"hotkeyButton": "MSQ6kW_hotkeyButton",
-			"chatDrawerArchivedText": "MSQ6kW_chatDrawerArchivedText",
-			"mapFallbackTitle": "MSQ6kW_mapFallbackTitle",
-			"overlay": "MSQ6kW_overlay",
-			"chatDrawer": "MSQ6kW_chatDrawer",
-			"chatDrawerClose": "MSQ6kW_chatDrawerClose",
-			"toggleButtonActive": "MSQ6kW_toggleButtonActive",
-			"chatDrawerNoticeActions": "MSQ6kW_chatDrawerNoticeActions",
-			"cardHandle": "MSQ6kW_cardHandle",
-			"wsFrameHidden": "MSQ6kW_wsFrameHidden",
-			"imageCard": "MSQ6kW_imageCard",
-			"draftAttachmentFileMeta": "MSQ6kW_draftAttachmentFileMeta",
-			"cardFooterLeft": "MSQ6kW_cardFooterLeft",
-			"closeButton": "MSQ6kW_closeButton",
-			"menuPreview": "MSQ6kW_menuPreview",
-			"draftInput": "MSQ6kW_draftInput",
-			"draftLabel": "MSQ6kW_draftLabel",
-			"toast": "MSQ6kW_toast",
-			"interactMenu": "MSQ6kW_interactMenu",
-			"cardPin": "MSQ6kW_cardPin",
-			"toggleIcon": "MSQ6kW_toggleIcon",
-			"spawnModeActive": "MSQ6kW_spawnModeActive",
-			"cardPinActive": "MSQ6kW_cardPinActive",
-			"cardBadgeWaiting": "MSQ6kW_cardBadgeWaiting",
-			"spawnTextarea": "MSQ6kW_spawnTextarea",
-			"draftRow": "MSQ6kW_draftRow",
-			"menuError": "MSQ6kW_menuError",
-			"interactTitle": "MSQ6kW_interactTitle",
-			"interactAllow": "MSQ6kW_interactAllow",
-			"headerBadge": "MSQ6kW_headerBadge",
-			"draftAttachmentProgress": "MSQ6kW_draftAttachmentProgress",
-			"langButton": "MSQ6kW_langButton",
-			"cardDoneDot": "MSQ6kW_cardDoneDot",
 			"draftAttachmentFile": "MSQ6kW_draftAttachmentFile",
-			"cardWaitingButton": "MSQ6kW_cardWaitingButton",
-			"headerTitle": "MSQ6kW_headerTitle",
-			"draftCardDrop": "MSQ6kW_draftCardDrop",
-			"spawnHint": "MSQ6kW_spawnHint",
-			"interactGroup": "MSQ6kW_interactGroup",
-			"interactOpen": "MSQ6kW_interactOpen",
-			"menuItem": "MSQ6kW_menuItem",
-			"toastText": "MSQ6kW_toastText",
-			"headerSpace": "MSQ6kW_headerSpace",
-			"draftCard": "MSQ6kW_draftCard",
-			"toggleRow": "MSQ6kW_toggleRow",
-			"interactText": "MSQ6kW_interactText",
-			"runningDot": "MSQ6kW_runningDot",
-			"cardForeignTouch": "MSQ6kW_cardForeignTouch",
-			"draftAttachmentRemove": "MSQ6kW_draftAttachmentRemove",
-			"emptyHint": "MSQ6kW_emptyHint",
-			"interactOptions": "MSQ6kW_interactOptions",
-			"interactSubmit": "MSQ6kW_interactSubmit",
-			"talk-map-drawer": "MSQ6kW_talk-map-drawer",
-			"colorToolbarLabel": "MSQ6kW_colorToolbarLabel",
-			"header": "MSQ6kW_header",
+			"menu": "MSQ6kW_menu",
+			"cardHandle": "MSQ6kW_cardHandle",
+			"spawnBtnGhost": "MSQ6kW_spawnBtnGhost",
+			"draftAttachmentFileMeta": "MSQ6kW_draftAttachmentFileMeta",
+			"zoomResetLabel": "MSQ6kW_zoomResetLabel",
+			"toastActionable": "MSQ6kW_toastActionable",
+			"draftTextarea": "MSQ6kW_draftTextarea",
 			"interactNote": "MSQ6kW_interactNote",
-			"mapFallback": "MSQ6kW_mapFallback",
-			"draftGrow": "MSQ6kW_draftGrow",
-			"spawnActions": "MSQ6kW_spawnActions",
-			"toggleButton": "MSQ6kW_toggleButton",
-			"draftPathPreview": "MSQ6kW_draftPathPreview",
-			"draftAttachments": "MSQ6kW_draftAttachments",
-			"menuTitle": "MSQ6kW_menuTitle",
-			"mapFallbackText": "MSQ6kW_mapFallbackText",
-			"imageCardSelected": "MSQ6kW_imageCardSelected",
-			"cardForeign": "MSQ6kW_cardForeign",
-			"colorToolbar": "MSQ6kW_colorToolbar",
-			"draftAttachmentFileText": "MSQ6kW_draftAttachmentFileText",
-			"draftAttachmentFileName": "MSQ6kW_draftAttachmentFileName",
-			"cardTop": "MSQ6kW_cardTop",
 			"draftSelect": "MSQ6kW_draftSelect",
-			"menuHint": "MSQ6kW_menuHint",
-			"menuEmpty": "MSQ6kW_menuEmpty",
-			"interactOption": "MSQ6kW_interactOption",
-			"draftDropHint": "MSQ6kW_draftDropHint",
-			"wsFrameEdge": "MSQ6kW_wsFrameEdge",
-			"draftAttachmentImage": "MSQ6kW_draftAttachmentImage",
-			"card": "MSQ6kW_card",
-			"interactOptionActive": "MSQ6kW_interactOptionActive",
-			"cardFooter": "MSQ6kW_cardFooter",
-			"mapFallbackButton": "MSQ6kW_mapFallbackButton",
-			"draftHeading": "MSQ6kW_draftHeading",
-			"cardBadgeRunning": "MSQ6kW_cardBadgeRunning",
-			"wsFrame": "MSQ6kW_wsFrame",
-			"canvas": "MSQ6kW_canvas",
+			"interactOpen": "MSQ6kW_interactOpen",
+			"toggleButtonActive": "MSQ6kW_toggleButtonActive",
+			"interactGroup": "MSQ6kW_interactGroup",
+			"cardPin": "MSQ6kW_cardPin",
+			"spawnHint": "MSQ6kW_spawnHint",
+			"draftAttachmentFileName": "MSQ6kW_draftAttachmentFileName",
+			"header": "MSQ6kW_header",
+			"cardFooterLeft": "MSQ6kW_cardFooterLeft",
 			"chatPanel": "MSQ6kW_chatPanel",
-			"canvasConnecting": "MSQ6kW_canvasConnecting",
-			"wsFrameSelected": "MSQ6kW_wsFrameSelected",
-			"interactDanger": "MSQ6kW_interactDanger",
+			"colorToolbar": "MSQ6kW_colorToolbar",
+			"colorToolbarLabel": "MSQ6kW_colorToolbarLabel",
+			"toggleLabel": "MSQ6kW_toggleLabel",
+			"cardBadgeRunning": "MSQ6kW_cardBadgeRunning",
+			"draftCardDrop": "MSQ6kW_draftCardDrop",
+			"draftAttachments": "MSQ6kW_draftAttachments",
+			"colorSwatch": "MSQ6kW_colorSwatch",
+			"draftAttachmentRemove": "MSQ6kW_draftAttachmentRemove",
+			"cardSelected": "MSQ6kW_cardSelected",
+			"spawnModeActive": "MSQ6kW_spawnModeActive",
+			"menuItem": "MSQ6kW_menuItem",
+			"cardBadgeDone": "MSQ6kW_cardBadgeDone",
+			"body": "MSQ6kW_body",
+			"draftDropHint": "MSQ6kW_draftDropHint",
+			"draftLabel": "MSQ6kW_draftLabel",
+			"toastText": "MSQ6kW_toastText",
+			"draftCard": "MSQ6kW_draftCard",
+			"chatDrawerSpace": "MSQ6kW_chatDrawerSpace",
+			"toggleButton": "MSQ6kW_toggleButton",
+			"cardForeignPulse": "MSQ6kW_cardForeignPulse",
+			"wsFrame": "MSQ6kW_wsFrame",
 			"wsFrameResize": "MSQ6kW_wsFrameResize",
-			"chatDrawerTitle": "MSQ6kW_chatDrawerTitle",
-			"chatDrawerArchivedButton": "MSQ6kW_chatDrawerArchivedButton",
-			"cardForeignChip": "MSQ6kW_cardForeignChip",
 			"chatDrawerNoticeText": "MSQ6kW_chatDrawerNoticeText",
+			"talk-map-drawer": "MSQ6kW_talk-map-drawer",
+			"draftInput": "MSQ6kW_draftInput",
+			"cardWaitingButton": "MSQ6kW_cardWaitingButton",
+			"draftGrow": "MSQ6kW_draftGrow",
+			"draftAttachmentProgress": "MSQ6kW_draftAttachmentProgress",
+			"toastAction": "MSQ6kW_toastAction",
+			"emptyHint": "MSQ6kW_emptyHint",
+			"chatDrawerNoticeButton": "MSQ6kW_chatDrawerNoticeButton",
+			"canvasConnecting": "MSQ6kW_canvasConnecting",
+			"cardDoneDot": "MSQ6kW_cardDoneDot",
+			"wsFrameHidden": "MSQ6kW_wsFrameHidden",
+			"menuPreview": "MSQ6kW_menuPreview",
+			"menuError": "MSQ6kW_menuError",
+			"menuTitle": "MSQ6kW_menuTitle",
+			"mapFallback": "MSQ6kW_mapFallback",
+			"hotkeyButton": "MSQ6kW_hotkeyButton",
 			"cardGhost": "MSQ6kW_cardGhost",
-			"chatDrawerNoticeButton": "MSQ6kW_chatDrawerNoticeButton"
+			"headerBadge": "MSQ6kW_headerBadge",
+			"cardRemove": "MSQ6kW_cardRemove",
+			"wsFrameSelected": "MSQ6kW_wsFrameSelected",
+			"spawnFrom": "MSQ6kW_spawnFrom",
+			"toggleIcon": "MSQ6kW_toggleIcon",
+			"interactError": "MSQ6kW_interactError",
+			"draftAttachmentProgressBar": "MSQ6kW_draftAttachmentProgressBar",
+			"interactScroll": "MSQ6kW_interactScroll",
+			"imageCard": "MSQ6kW_imageCard",
+			"interactOption": "MSQ6kW_interactOption",
+			"runningDot": "MSQ6kW_runningDot",
+			"headerTitle": "MSQ6kW_headerTitle",
+			"cardTitle": "MSQ6kW_cardTitle",
+			"closeButton": "MSQ6kW_closeButton",
+			"chatDrawerArchivedText": "MSQ6kW_chatDrawerArchivedText",
+			"interactAllow": "MSQ6kW_interactAllow",
+			"chatDrawerBody": "MSQ6kW_chatDrawerBody",
+			"colorSwatchClear": "MSQ6kW_colorSwatchClear",
+			"toast": "MSQ6kW_toast",
+			"cardForeignTouch": "MSQ6kW_cardForeignTouch",
+			"chatDrawerArchived": "MSQ6kW_chatDrawerArchived",
+			"draftAttachmentImage": "MSQ6kW_draftAttachmentImage",
+			"imageCardSelected": "MSQ6kW_imageCardSelected",
+			"draftPathPreview": "MSQ6kW_draftPathPreview",
+			"chatDrawerHeader": "MSQ6kW_chatDrawerHeader",
+			"chatDrawerTitle": "MSQ6kW_chatDrawerTitle",
+			"wsFrameCount": "MSQ6kW_wsFrameCount",
+			"canvas": "MSQ6kW_canvas",
+			"interactTitle": "MSQ6kW_interactTitle",
+			"interactText": "MSQ6kW_interactText",
+			"imageCardImg": "MSQ6kW_imageCardImg",
+			"chatDrawerNoticeActions": "MSQ6kW_chatDrawerNoticeActions",
+			"interactActions": "MSQ6kW_interactActions",
+			"cardForeign": "MSQ6kW_cardForeign",
+			"interactSubmit": "MSQ6kW_interactSubmit",
+			"menuSearch": "MSQ6kW_menuSearch",
+			"cardFooter": "MSQ6kW_cardFooter",
+			"wsFrameLabel": "MSQ6kW_wsFrameLabel",
+			"interactMenu": "MSQ6kW_interactMenu",
+			"overlay": "MSQ6kW_overlay",
+			"draftAttachmentFileText": "MSQ6kW_draftAttachmentFileText",
+			"cardTime": "MSQ6kW_cardTime",
+			"card": "MSQ6kW_card",
+			"mapFallbackText": "MSQ6kW_mapFallbackText",
+			"headerSpace": "MSQ6kW_headerSpace",
+			"interactOptions": "MSQ6kW_interactOptions",
+			"spawnModeBtn": "MSQ6kW_spawnModeBtn",
+			"mapFallbackButton": "MSQ6kW_mapFallbackButton",
+			"spawnModes": "MSQ6kW_spawnModes",
+			"chatDrawerArchivedButton": "MSQ6kW_chatDrawerArchivedButton",
+			"interactOptionActive": "MSQ6kW_interactOptionActive",
+			"draftRow": "MSQ6kW_draftRow",
+			"chatDrawerClose": "MSQ6kW_chatDrawerClose",
+			"cardBadgeWaiting": "MSQ6kW_cardBadgeWaiting",
+			"draftAttachmentFileIcon": "MSQ6kW_draftAttachmentFileIcon",
+			"chatDrawer": "MSQ6kW_chatDrawer",
+			"menuHint": "MSQ6kW_menuHint",
+			"toggleRow": "MSQ6kW_toggleRow",
+			"chatDrawerResize": "MSQ6kW_chatDrawerResize",
+			"talkmap-pulse": "MSQ6kW_talkmap-pulse",
+			"menuEmpty": "MSQ6kW_menuEmpty",
+			"spawnTextarea": "MSQ6kW_spawnTextarea",
+			"wsFrameEdge": "MSQ6kW_wsFrameEdge",
+			"wsFrameForeign": "MSQ6kW_wsFrameForeign",
+			"spawnError": "MSQ6kW_spawnError",
+			"cardForeignChip": "MSQ6kW_cardForeignChip",
+			"interactDanger": "MSQ6kW_interactDanger",
+			"cardTop": "MSQ6kW_cardTop",
+			"chatDrawerNotice": "MSQ6kW_chatDrawerNotice",
+			"mapFallbackTitle": "MSQ6kW_mapFallbackTitle",
+			"cardPinActive": "MSQ6kW_cardPinActive",
+			"spawnActions": "MSQ6kW_spawnActions",
+			"draftHeading": "MSQ6kW_draftHeading",
+			"spawnBtnPrimary": "MSQ6kW_spawnBtnPrimary",
+			"langButton": "MSQ6kW_langButton"
 		};
 		//#endregion
 		//#region src/client/ChatPanel.tsx
@@ -16885,8 +16885,12 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 		* drawer ("sidebarRight: no session surface is mounted"). This module finds
 		* that controller, feeds the pure wrapper (`sidebar-fallback.ts`) the host
 		* callbacks it needs, and lets the plugin's effect lifetime install and
-		* remove it. Missing services degrade to a no-op — the map must never fail to
-		* load because a host face is absent.
+		* remove it.
+		*
+		* Everything here is best-effort: a missing service, a throwing lookup, or a
+		* sealed controller must leave the rest of the plugin's apply() running, so
+		* every step is contained. Copy and the toast sink are injected by the caller
+		* (the plugin entry) so this module carries no host-UI imports.
 		*/
 		/** Structural check: only an object with both navigation methods is wrappable. */
 		function isController(value) {
@@ -16902,8 +16906,8 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				if (isController(found)) return found;
 			}
 		}
-		/** Host callbacks the fallback uses: workspace roots, the open route, the toast. */
-		function fallbackDeps(ctx) {
+		/** Host callbacks the fallback uses: workspace roots, the open route, a tab. */
+		function fallbackDeps(ctx, hooks) {
 			return {
 				resolveCwd: (sessionId) => ctx.sessions.list.getSnapshot().byId[sessionId]?.cwd,
 				openPathExternally: async (path) => {
@@ -16918,35 +16922,39 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					}
 				},
 				openUrl: (url) => {
-					window.open(url, "_blank", "noopener,noreferrer");
+					globalThis.window?.open?.(url, "_blank", "noopener,noreferrer");
 				},
-				notify: showMapNotice
+				notify: hooks.notify
 			};
 		}
 		/**
-		* Install the fallback for this client's lifetime.
+		* Install the fallback for this client's lifetime, never throwing.
 		*
 		* @param ctx - the plugin context providing the controller and host callbacks.
+		* @param hooks - localized copy and the toast sink.
 		* @returns a restore function the plugin effect calls on unload.
 		*/
-		function installSidebarFallbackOnClient(ctx) {
-			const messages = {
-				failed: t("toast.openFallbackFailed"),
-				unsupported: t("toast.openFallbackUnsupported")
-			};
-			const deps = fallbackDeps(ctx);
+		function installSidebarFallbackOnClient(ctx, hooks) {
 			const restores = [];
 			const attach = (service) => {
 				if (!isController(service)) return;
-				restores.push(installSidebarFallback(service, deps, messages));
+				try {
+					restores.push(installSidebarFallback(service, fallbackDeps(ctx, hooks), hooks.messages));
+				} catch (error) {
+					console.warn("[dsh-talk-map] sidebar fallback could not wrap the controller:", error);
+				}
 			};
-			const direct = controllerOf(ctx);
-			if (direct !== void 0) attach(direct);
-			else if (typeof ctx.inject === "function") try {
-				ctx.inject(["sidebarRight"], (scope) => {
-					attach(scope.sidebarRight);
-				});
-			} catch {}
+			try {
+				const direct = controllerOf(ctx);
+				if (direct !== void 0) attach(direct);
+				else if (typeof ctx.inject === "function") try {
+					ctx.inject(["sidebarRight"], (scope) => {
+						attach(scope.sidebarRight);
+					});
+				} catch {}
+			} catch (error) {
+				console.warn("[dsh-talk-map] sidebar fallback not installed:", error);
+			}
 			return () => {
 				for (const restore of restores.splice(0)) restore();
 			};
@@ -16990,7 +16998,13 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					attachServices(void 0);
 					interactions.attach(void 0);
 				}, "dsh-talk-map: services");
-				ctx.effect(() => installSidebarFallbackOnClient(ctx), "dsh-talk-map: sidebar file fallback");
+				ctx.effect(() => installSidebarFallbackOnClient(ctx, {
+					notify: showMapNotice,
+					messages: {
+						failed: t("toast.openFallbackFailed"),
+						unsupported: t("toast.openFallbackUnsupported")
+					}
+				}), "dsh-talk-map: sidebar file fallback");
 				ctx.slots.inject("sidebar.footer.action", () => ctx.slots.register({
 					name: "sidebar.footer.action",
 					id: "talk-map",

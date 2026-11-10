@@ -26,7 +26,7 @@ import type { ArchivedCardPlacement, Card, FrameGeometry, MapEdgeData } from '..
 import { canvas, INBOX_BOARD_ID, newCardId, type CanvasState } from './canvas-store.ts'
 import { COLOR_TAGS } from './colors.ts'
 import { buildPushText, digestIsEmpty } from './digest-text.ts'
-import { getServices, mapUi, openSessionInMain, sessionIdOf, unwrapRemote, useArchivedSessionIds } from './map-state.ts'
+import { getServices, mapUi, openSessionInMain, sessionIdOf, unwrapRemote, useArchivedSessionIds, subscribeMapNotice, getMapNotice, clearMapNotice } from './map-state.ts'
 import { addSessionCard, ensureWorkspaceFrame, preferredAgentPreset } from './map-create.ts'
 import { newChatCardPosition, newConversationWorkspace } from './new-chat.ts'
 import { ContextMenu, type MenuItem, type MenuState } from './ContextMenu.tsx'
@@ -1158,6 +1158,15 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
     if (toastTimer.current !== undefined) clearTimeout(toastTimer.current)
     toastTimer.current = setTimeout(() => { setToast(null) }, 4000)
   }
+
+  // Messages raised outside React (the right-Sidebar file fallback) ride the
+  // same bottom toast; the store drops the notice once it is on screen.
+  const mapNotice = useSyncExternalStore(subscribeMapNotice, getMapNotice, () => null)
+  useEffect(() => {
+    if (mapNotice === null) return
+    showToast(mapNotice.message)
+    clearMapNotice(mapNotice.seq)
+  }, [mapNotice])
 
   /** A toast that carries one inline action (「已归档 · 取消」). It lives longer
    *  than the plain one — the undo window is the point. */

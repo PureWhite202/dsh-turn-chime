@@ -277,7 +277,9 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			"toast.unarchived": "已取消归档",
 			"toast.undo": "取消",
 			"toast.archiveFailed": "归档失败：",
-			"toast.unarchiveFailed": "取消归档失败："
+			"toast.unarchiveFailed": "取消归档失败：",
+			"toast.openFallbackFailed": "打开失败：侧栏不可用，系统默认应用也没成功",
+			"toast.openFallbackUnsupported": "只能从对话里打开（地图打开时主界面是空的）"
 		};
 		const en = {
 			"map.title": "Talk Map",
@@ -418,7 +420,9 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			"toast.unarchived": "Archive undone",
 			"toast.undo": "Undo",
 			"toast.archiveFailed": "Archive failed: ",
-			"toast.unarchiveFailed": "Undo failed: "
+			"toast.unarchiveFailed": "Undo failed: ",
+			"toast.openFallbackFailed": "Couldn't open it: the sidebar is unavailable and the system app refused",
+			"toast.openFallbackUnsupported": "Only opens from a conversation — the map keeps the main column empty"
 		};
 		/** The order the header button cycles through. */
 		const LOCALE_CYCLE = [
@@ -1172,6 +1176,32 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				return escGuards.size > 0;
 			}
 		};
+		const noticeListeners = /* @__PURE__ */ new Set();
+		let notice = null;
+		let noticeSeq = 0;
+		/** Publish a message for the map toast; the canvas clears it after showing. */
+		function showMapNotice(message) {
+			noticeSeq += 1;
+			notice = {
+				message,
+				seq: noticeSeq
+			};
+			for (const listener of noticeListeners) listener();
+		}
+		/** Drop one shown notice; a newer notice keeps the floor. */
+		function clearMapNotice(seq) {
+			if (notice === null || notice.seq !== seq) return;
+			notice = null;
+		}
+		function subscribeMapNotice(listener) {
+			noticeListeners.add(listener);
+			return () => {
+				noticeListeners.delete(listener);
+			};
+		}
+		function getMapNotice() {
+			return notice;
+		}
 		let services;
 		function attachServices(next) {
 			services = next;
@@ -1363,7 +1393,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 		};
 		//#endregion
 		//#region \0dsh-css:module:src/client/talk-map.module.css.mjs
-		const css$1 = ".O81TBq_toggleButton{width:32px;height:32px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:8px;justify-content:center;align-items:center;gap:6px;padding:0;display:flex}.O81TBq_toggleButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.O81TBq_toggleButtonActive{background:var(--dsw-alias-interactive-bg-active);color:var(--dsw-alias-brand-primary)}.O81TBq_toggleRow{width:100%;color:var(--dsw-alias-label-secondary);cursor:pointer;text-align:left;background:0 0;border:none;border-radius:8px;align-items:center;gap:8px;padding:6px 10px;font-size:13px;display:flex}.O81TBq_toggleRow:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.O81TBq_toggleLabel{white-space:nowrap}.O81TBq_toggleIcon{flex:none;width:18px;height:18px}.O81TBq_overlay{background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);pointer-events:auto;flex-direction:column;display:flex;position:absolute;top:0;bottom:0;left:0;right:0}[data-windows-titlebar] .O81TBq_overlay{padding-top:var(--dsh-windows-titlebar-height,40px)}html[data-platform=darwin]:not([data-fullscreen]) .O81TBq_overlay{padding-top:var(--dsh-frame-top-clearance,48px)}html[data-platform=darwin]:not([data-fullscreen]) .O81TBq_overlay:before{content:\"\";height:var(--dsh-frame-top-clearance,48px);-webkit-app-region:drag;position:absolute;top:0;left:0;right:0}.O81TBq_header{border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);flex:none;align-items:center;gap:10px;padding:8px 14px;display:flex}.O81TBq_headerTitle{color:var(--dsw-alias-label-primary);font-size:14px;font-weight:600}.O81TBq_headerBadge{color:var(--dsw-alias-label-tertiary);font-size:12px}.O81TBq_headerSpace{flex:1}.O81TBq_hotkeyButton{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;background:0 0;border-radius:999px;flex:none;padding:3px 10px;font-size:12px}.O81TBq_hotkeyButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.O81TBq_langButton{border:1px solid var(--dsw-alias-border-l2);min-width:58px;color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;background:0 0;border-radius:999px;flex:none;padding:3px 10px;font-size:12px}.O81TBq_langButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.O81TBq_zoomResetLabel{letter-spacing:-.5px;font-size:9px;font-weight:700}.O81TBq_closeButton{width:28px;height:28px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:6px;justify-content:center;align-items:center;padding:0;display:flex}.O81TBq_closeButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.O81TBq_canvas{flex:1;min-height:0;position:relative}.O81TBq_canvas .react-flow__nodesselection{pointer-events:none!important;display:none!important}.O81TBq_canvas .react-flow__nodesselection-rect{pointer-events:none!important;display:none!important}.O81TBq_card{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);width:224px;min-height:104px;color:var(--dsw-alias-label-primary);box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1);border-radius:10px;flex-direction:column;gap:6px;padding:10px 12px;font-size:13px;display:flex}.O81TBq_cardSelected{border-color:var(--dsw-alias-brand-primary)}.O81TBq_cardGhost{opacity:.55;border-style:dashed}.O81TBq_cardTop{align-items:center;gap:6px;min-width:0;display:flex}.O81TBq_cardTitle{-webkit-line-clamp:2;word-break:break-word;-webkit-box-orient:vertical;flex:auto;min-width:0;font-size:13px;font-weight:600;line-height:1.3;display:-webkit-box;overflow:hidden}.O81TBq_cardPin{width:22px;height:22px;color:var(--dsw-alias-label-tertiary);cursor:pointer;opacity:.55;background:0 0;border:none;border-radius:6px;flex:none;justify-content:center;align-items:center;margin-left:auto;padding:0;transition:opacity .12s,background-color .12s,color .12s;display:flex;transform:translate(6px,-6px)}.O81TBq_card:hover .O81TBq_cardPin{opacity:1}.O81TBq_cardPin:focus-visible{opacity:1}.O81TBq_cardPin:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.O81TBq_cardPinActive{opacity:1;color:var(--dsw-alias-brand-primary)}.O81TBq_cardPinActive:hover{color:var(--dsw-alias-brand-primary)}.O81TBq_runningDot{background:var(--dsw-alias-state-success-primary);border-radius:50%;flex:none;width:8px;height:8px;animation:1.6s ease-in-out infinite O81TBq_talkmap-pulse}@keyframes O81TBq_talkmap-pulse{50%{opacity:.35}}.O81TBq_cardDoneDot{width:12px;height:12px;color:var(--dsw-alias-state-success-primary,#22c55e);flex:none;display:inline-block;position:relative}.O81TBq_cardDoneDot:after{content:\"\";background:currentColor;border-radius:50%;position:absolute;top:20%;bottom:20%;left:20%;right:20%}.O81TBq_cardFooter{color:var(--dsw-alias-label-tertiary);justify-content:space-between;align-items:center;gap:8px;margin-top:auto;font-size:11px;display:flex}.O81TBq_cardTime{flex:none}.O81TBq_cardForeign{outline-offset:2px;outline:2px dashed #e0a33a}.O81TBq_cardFooterLeft{align-items:center;gap:6px;min-width:0;display:flex}.O81TBq_cardForeignTouch{animation:1.3s ease-in-out infinite O81TBq_cardForeignPulse}@keyframes O81TBq_cardForeignPulse{0%,to{box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1), 0 0 0 0 #e0a33a00}50%{box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1), 0 0 0 7px #e0a33a59}}.O81TBq_cardForeignChip{text-overflow:ellipsis;white-space:nowrap;min-width:0;max-width:118px;color:color-mix(in oklab, #e0a33a 78%, var(--dsw-alias-label-primary));background:#e0a33a29;background:color(display-p3 .842337 .649058 .309/.16);background:lab(71.621% 16.4145 60.6886/.16);border:1px solid #e0a33a8c;border:1px solid color(display-p3 .842337 .649058 .309/.55);border:1px solid lab(71.621% 16.4145 60.6886/.55);border-radius:999px;padding:1px 7px;font-size:10px;font-weight:600;overflow:hidden}.O81TBq_wsFrameForeign{color:color-mix(in oklab, #e0a33a 78%, var(--dsw-alias-label-primary));border:1px dashed #e0a33a8c;border:1px dashed color(display-p3 .842337 .649058 .309/.55);border:1px dashed lab(71.621% 16.4145 60.6886/.55);border-radius:999px;margin-left:6px;padding:1px 7px;font-size:10px;font-weight:600}.O81TBq_cardBadgeRunning{color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-state-success-tertiary);border-radius:999px;align-items:center;gap:5px;padding:1px 7px;font-size:10px;display:inline-flex}.O81TBq_cardBadgeWaiting{color:var(--dsw-alias-state-warn-label);background:var(--dsw-alias-state-warn-tertiary);border-radius:999px;padding:1px 7px;font-size:10px}.O81TBq_cardBadgeDone{color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-state-success-tertiary);border-radius:999px;padding:1px 7px;font-size:10px}.O81TBq_cardRemove{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:6px;align-self:flex-start;padding:3px 8px;font-size:12px}.O81TBq_cardRemove:hover{background:var(--dsw-alias-interactive-bg-hover-danger);color:var(--dsw-alias-state-error-primary)}.O81TBq_card .O81TBq_cardHandle{opacity:.55;background:0 0;border:none;width:18px;height:18px}.O81TBq_cardHandle:after{content:\"\";background:var(--dsw-alias-label-tertiary);border:2px solid var(--dsw-alias-bg-layer-1);border-radius:50%;position:absolute;top:5px;bottom:5px;left:5px;right:5px}.O81TBq_card:hover .O81TBq_cardHandle,.O81TBq_canvasConnecting .O81TBq_cardHandle,.O81TBq_cardHandle:hover{opacity:1}.O81TBq_cardHandle:hover:after{background:var(--dsw-alias-brand-primary)}.O81TBq_spawnFrom{color:var(--dsw-alias-label-secondary);font-size:12px}.O81TBq_spawnModes{gap:6px;display:flex}.O81TBq_spawnModeBtn{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:8px;flex:1;padding:5px 0;font-size:12px}.O81TBq_spawnModeBtn:hover{background:var(--dsw-alias-interactive-bg-hover)}.O81TBq_spawnModeActive{border-color:var(--dsw-alias-brand-primary);color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-interactive-bg-active)}.O81TBq_spawnHint{color:var(--dsw-alias-label-tertiary);font-size:12px}.O81TBq_spawnTextarea{box-sizing:border-box;resize:vertical;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;min-height:140px;color:var(--dsw-alias-label-primary);border-radius:8px;padding:10px;font-family:inherit;font-size:13px;line-height:1.5}.O81TBq_spawnError{color:var(--dsw-alias-state-error-primary);word-break:break-all;font-size:12px}.O81TBq_spawnActions{justify-content:flex-end;gap:8px;display:flex}.O81TBq_spawnBtnPrimary{background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground);cursor:pointer;border:none;border-radius:8px;padding:6px 16px;font-size:13px}.O81TBq_spawnBtnPrimary:hover{background:var(--dsw-alias-button-primary-hover)}.O81TBq_spawnBtnPrimary:disabled{background:var(--dsw-alias-button-primary-dimmed);cursor:default}.O81TBq_spawnBtnGhost{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:8px;padding:6px 16px;font-size:13px}.O81TBq_spawnBtnGhost:hover{background:var(--dsw-alias-interactive-bg-hover)}.O81TBq_wsFrame{border:2px dashed color-mix(in oklab, var(--dsw-alias-label-primary) 32%, transparent);background:color-mix(in oklab, var(--dsw-alias-bg-layer-1) 55%, transparent);border-radius:16px;position:relative}.O81TBq_wsFrameSelected{border-style:solid;border-color:var(--dsw-alias-brand-primary);background:color-mix(in oklab, var(--dsw-alias-brand-primary) 8%, transparent)}.O81TBq_wsFrameLabel{border:1px solid color-mix(in oklab, var(--dsw-alias-label-primary) 22%, transparent);background:var(--dsw-alias-bg-layer-1);box-shadow:0 2px 10px color-mix(in oklab, var(--dsw-alias-bg-mask-2) 55%, transparent);color:var(--dsw-alias-label-primary);white-space:nowrap;pointer-events:auto;cursor:grab;border-radius:999px;align-items:center;gap:6px;padding:3px 12px;font-size:12px;font-weight:600;display:flex;position:absolute;top:-12px;left:14px}.O81TBq_wsFrameLabel:active{cursor:grabbing}.O81TBq_wsFrameEdge{pointer-events:auto;cursor:grab;position:absolute}.O81TBq_wsFrameEdge:active{cursor:grabbing}.O81TBq_wsFrameResize{pointer-events:auto;cursor:nwse-resize;border-right:3px solid var(--dsw-alias-border-l3);border-bottom:3px solid var(--dsw-alias-border-l3);opacity:.7;border-bottom-right-radius:14px;width:16px;height:16px;position:absolute;bottom:-2px;right:-2px}.O81TBq_wsFrameResize:hover{border-color:var(--dsw-alias-brand-primary);opacity:1}.O81TBq_wsFrameCount{color:var(--dsw-alias-label-tertiary);font-weight:400}.O81TBq_draftCard{box-sizing:border-box;border:1.5px solid var(--dsw-alias-brand-primary);background:var(--dsw-alias-bg-layer-1);width:360px;box-shadow:0 8px 30px var(--dsw-alias-bg-mask-2);border-radius:12px;flex-direction:column;gap:8px;padding:14px;font-size:13px;display:flex}.O81TBq_draftHeading{color:var(--dsw-alias-label-primary);font-size:13px;font-weight:600}.O81TBq_draftRow{align-items:center;gap:8px;display:flex}.O81TBq_draftLabel{width:52px;color:var(--dsw-alias-label-tertiary);flex:none;font-size:12px}.O81TBq_draftSelect{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);min-width:0;color:var(--dsw-alias-label-primary);border-radius:7px;flex:1;padding:5px 8px;font-size:12px}.O81TBq_draftGrow{flex-direction:column;flex:1;gap:3px;min-width:0;display:flex}.O81TBq_draftInput{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;color:var(--dsw-alias-label-primary);border-radius:7px;padding:5px 8px;font-family:inherit;font-size:12px}.O81TBq_draftPathPreview{color:var(--dsw-alias-label-tertiary);word-break:break-all;font-size:11px}.O81TBq_draftTextarea{box-sizing:border-box;resize:vertical;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;min-height:88px;color:var(--dsw-alias-label-primary);border-radius:8px;padding:9px;font-family:inherit;font-size:13px;line-height:1.5}.O81TBq_draftAttachments{scrollbar-width:thin;gap:8px;max-height:72px;padding:2px 2px 4px;display:flex;overflow-x:auto;overflow-y:hidden}.O81TBq_draftAttachmentImage{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);border-radius:10px;flex:none;width:64px;height:64px;position:relative;overflow:hidden}.O81TBq_draftAttachmentImage img{object-fit:cover;width:100%;height:100%;display:block}.O81TBq_draftAttachmentFile{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:190px;height:64px;color:var(--dsw-alias-label-primary);border-radius:10px;flex:none;align-items:center;gap:8px;padding:8px 10px;display:flex;position:relative}.O81TBq_draftAttachmentFileIcon{width:24px;height:24px;color:var(--dsw-alias-brand-primary);flex:none}.O81TBq_draftAttachmentFileText{flex-direction:column;gap:2px;min-width:0;display:flex}.O81TBq_draftAttachmentFileName{text-overflow:ellipsis;white-space:nowrap;font-size:12px;overflow:hidden}.O81TBq_draftAttachmentFileMeta{color:var(--dsw-alias-label-tertiary);font-size:11px}.O81TBq_draftAttachmentRemove{background:var(--dsw-alias-button-contrast-fill,#0000008c);width:18px;height:18px;color:var(--dsw-alias-label-primary-inverted,#fff);cursor:pointer;opacity:0;border:none;border-radius:50%;place-items:center;padding:0;font-size:12px;line-height:1;transition:opacity .12s ease-in-out;display:grid;position:absolute;top:2px;right:2px}.O81TBq_draftAttachmentImage:hover .O81TBq_draftAttachmentRemove,.O81TBq_draftAttachmentFile:hover .O81TBq_draftAttachmentRemove{opacity:1}.O81TBq_draftAttachmentRemove:focus-visible{opacity:1}@media (hover:none),(pointer:coarse){.O81TBq_draftAttachmentRemove{opacity:1}}.O81TBq_draftAttachmentProgress{background:var(--dsw-alias-fill-tertiary,#0000001f);border-radius:1px;height:2px;position:absolute;bottom:4px;left:6px;right:6px;overflow:hidden}.O81TBq_draftAttachmentProgressBar{background:var(--dsw-alias-brand-primary);height:100%;transition:width .15s ease-out}.O81TBq_draftCardDrop{background:color-mix(in oklab, var(--dsw-alias-brand-primary) 6%, var(--dsw-alias-bg-layer-1))}.O81TBq_draftDropHint{color:var(--dsw-alias-brand-primary);font-size:12px}.O81TBq_colorToolbar{z-index:7;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);box-shadow:0 2px 10px var(--dsw-alias-bg-mask-1);border-radius:10px;align-items:center;gap:6px;padding:6px 10px;display:flex;position:absolute;top:12px;left:12px}.O81TBq_colorToolbarLabel{color:var(--dsw-alias-label-tertiary);margin-right:2px;font-size:12px}.O81TBq_colorSwatch{border:1px solid var(--dsw-alias-border-l2);cursor:pointer;width:18px;height:18px;color:var(--dsw-alias-label-secondary);border-radius:50%;justify-content:center;align-items:center;padding:0;font-size:11px;line-height:1;display:flex}.O81TBq_colorSwatch:hover{transform:scale(1.15)}.O81TBq_colorSwatchClear{background:0 0}.O81TBq_menu{z-index:9;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);min-width:200px;max-width:280px;max-height:380px;box-shadow:0 8px 30px var(--dsw-alias-bg-mask-2);border-radius:10px;flex-direction:column;padding:6px;display:flex;position:absolute;overflow-y:auto}.O81TBq_menuTitle{color:var(--dsw-alias-label-tertiary);flex:none;padding:4px 10px 6px;font-size:11px}.O81TBq_menuSearch{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:calc(100% - 8px);color:var(--dsw-alias-label-primary);border-radius:7px;flex:none;margin:2px 4px 6px;padding:5px 8px;font-family:inherit;font-size:12px}.O81TBq_menuHint{color:var(--dsw-alias-label-dimmed);font-size:11px}.O81TBq_menuPreview{color:var(--dsw-alias-label-tertiary);word-break:break-all;flex:none;padding:0 10px 4px;font-size:11px}.O81TBq_menuError{color:var(--dsw-alias-state-error-primary);word-break:break-all;flex:none;padding:0 10px 4px;font-size:11px}.O81TBq_menuEmpty{color:var(--dsw-alias-label-tertiary);padding:8px 10px;font-size:12px}.O81TBq_menuItem{text-align:left;width:100%;color:var(--dsw-alias-label-primary);cursor:pointer;white-space:nowrap;text-overflow:ellipsis;background:0 0;border:none;border-radius:7px;flex:none;padding:6px 10px;font-size:13px;display:block;overflow:hidden}.O81TBq_menuItem:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.O81TBq_menuItem:disabled{color:var(--dsw-alias-label-dimmed);cursor:default}.O81TBq_wsFrameHidden{color:var(--dsw-alias-state-warn-primary);font-weight:400}.O81TBq_emptyHint{color:var(--dsw-alias-label-tertiary);pointer-events:none;z-index:4;font-size:13px;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}.O81TBq_toast{z-index:8;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);max-width:70%;box-shadow:0 4px 16px var(--dsw-alias-bg-mask-2);color:var(--dsw-alias-label-primary);pointer-events:none;white-space:nowrap;text-overflow:ellipsis;border-radius:999px;padding:7px 16px;font-size:12px;position:absolute;bottom:28px;left:50%;overflow:hidden;transform:translate(-50%)}.O81TBq_toastActionable{pointer-events:auto;align-items:center;gap:10px;padding-right:8px;display:inline-flex}.O81TBq_toastText{text-overflow:ellipsis;min-width:0;overflow:hidden}.O81TBq_toastAction{background:var(--dsw-alias-bg-layer-2,#7f7f7f29);color:var(--dsw-alias-label-primary);font:inherit;cursor:pointer;border:0;border-radius:999px;flex:none;padding:2px 8px;font-weight:600}.O81TBq_toastAction:hover{background:var(--dsw-alias-bg-layer-3,#7f7f7f3d)}.O81TBq_body{flex:1;min-height:0;display:flex;position:relative}.O81TBq_chatDrawer{z-index:6;background:var(--dsw-alias-bg-base);border-left:1px solid var(--dsw-alias-border-l1);width:max(360px,min(42%,720px));max-width:calc(100vw - 280px);box-shadow:-12px 0 28px -18px var(--dsw-alias-bg-mask-2);flex-direction:column;display:flex;position:absolute;top:0;bottom:0;right:0;container:O81TBq_talk-map-drawer/inline-size}.O81TBq_chatDrawerResize{z-index:1;cursor:col-resize;touch-action:none;background:0 0;border:0;width:10px;padding:0;position:absolute;top:0;bottom:0;left:-4px}.O81TBq_chatDrawerResize:after{content:\"\";background:0 0;width:2px;transition:background-color .12s;position:absolute;top:0;bottom:0;left:4px}.O81TBq_chatDrawerResize:hover:after,.O81TBq_chatDrawerResize[data-resizing=true]:after{background:var(--dsw-alias-border-l2)}.O81TBq_chatDrawerResize:focus-visible:after{background:var(--dsw-alias-border-l2)}.O81TBq_chatDrawerResize:focus-visible{outline:none}.O81TBq_chatDrawerHeader{border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);flex:none;align-items:center;gap:8px;padding:6px 10px;display:flex}.O81TBq_chatDrawerTitle{text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--dsw-alias-label-primary);font-size:12px;font-weight:600;overflow:hidden}.O81TBq_chatDrawerSpace{flex:1}.O81TBq_chatDrawerClose{width:26px;height:26px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:6px;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.O81TBq_chatDrawerClose:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.O81TBq_chatDrawerArchived{color:var(--dsw-alias-label-primary);background:#e0a33a1f;background:color(display-p3 .842337 .649058 .309/.12);background:lab(71.621% 16.4145 60.6886/.12);border-bottom:1px solid #e0a33a59;border-bottom:1px solid color(display-p3 .842337 .649058 .309/.35);border-bottom:1px solid lab(71.621% 16.4145 60.6886/.35);align-items:center;gap:10px;padding:8px 12px;font-size:12px;display:flex}.O81TBq_chatDrawerArchivedText{flex:1;min-width:0}.O81TBq_chatDrawerArchivedButton{color:inherit;cursor:pointer;background:0 0;border:1px solid #e0a33a8c;border:1px solid color(display-p3 .842337 .649058 .309/.55);border:1px solid lab(71.621% 16.4145 60.6886/.55);border-radius:999px;flex:none;padding:2px 10px;font-size:12px}.O81TBq_chatDrawerArchivedButton:hover{background:#e0a33a2e;background:color(display-p3 .842337 .649058 .309/.18);background:lab(71.621% 16.4145 60.6886/.18)}.O81TBq_chatDrawerBody{flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}@container O81TBq_talk-map-drawer (width>=560px){.O81TBq_chatDrawer nav[aria-label]{display:block}}.O81TBq_chatDrawerNotice{flex-direction:column;flex:1;align-items:flex-start;gap:14px;padding:22px 20px;display:flex}.O81TBq_chatDrawerNoticeText{color:var(--dsw-alias-label-secondary);margin:0;font-size:13px;line-height:1.7}.O81TBq_chatDrawerNoticeActions{flex-wrap:wrap;gap:8px;display:flex}.O81TBq_chatDrawerNoticeButton{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);cursor:pointer;border-radius:8px;padding:6px 14px;font-size:13px}.O81TBq_chatDrawerNoticeButton:hover{background:var(--dsw-alias-interactive-bg-hover)}.O81TBq_chatDrawerNoticeButton:disabled{opacity:.55;cursor:default}.O81TBq_chatPanel{flex-direction:column;flex:1;min-height:0;display:flex}.O81TBq_cardWaitingButton{color:var(--dsw-alias-state-warn-label);background:var(--dsw-alias-state-warn-tertiary);cursor:pointer;border:none;border-radius:999px;padding:1px 7px;font-size:10px}.O81TBq_cardWaitingButton:hover{filter:brightness(1.15)}.O81TBq_interactMenu{gap:4px;max-height:min(420px,70vh)}.O81TBq_interactTitle{color:var(--dsw-alias-label-primary);padding:4px 6px 0;font-size:12px;font-weight:600}.O81TBq_interactText{color:var(--dsw-alias-label-secondary);white-space:pre-wrap;word-break:break-word;padding:2px 6px 4px;font-size:12px;line-height:1.45}.O81TBq_interactNote{color:var(--dsw-alias-label-tertiary);padding:0 6px 4px;font-size:11px}.O81TBq_interactScroll{flex-direction:column;gap:6px;max-height:260px;display:flex;overflow-y:auto}.O81TBq_interactGroup{flex-direction:column;gap:4px;display:flex}.O81TBq_interactOptions{flex-wrap:wrap;gap:6px;padding:2px 6px 4px;display:flex}.O81TBq_interactOption{text-align:left;border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;flex:100%;padding:7px 10px;font-size:12px}.O81TBq_interactOption:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.O81TBq_interactOptionActive{border-color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-interactive-bg-active)}.O81TBq_interactActions{gap:6px;padding:4px 6px 6px;display:flex}.O81TBq_interactAllow{background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground);cursor:pointer;border:none;border-radius:8px;flex:1;padding:7px 10px;font-size:12px}.O81TBq_interactAllow:hover:not(:disabled){background:var(--dsw-alias-button-primary-hover)}.O81TBq_interactDanger{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-state-error-primary);cursor:pointer;background:0 0;border-radius:8px;flex:1;padding:7px 10px;font-size:12px}.O81TBq_interactDanger:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover-danger)}.O81TBq_interactSubmit,.O81TBq_interactOpen{border:1px solid var(--dsw-alias-border-l2);width:100%;color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;margin-top:4px;padding:7px 10px;font-size:12px}.O81TBq_interactSubmit:hover:not(:disabled),.O81TBq_interactOpen:hover{background:var(--dsw-alias-interactive-bg-hover)}.O81TBq_interactSubmit:disabled{color:var(--dsw-alias-label-dimmed);cursor:default}.O81TBq_interactError{color:var(--dsw-alias-state-error-primary);word-break:break-word;padding:2px 6px 4px;font-size:11px}.O81TBq_mapFallback{background:var(--dsw-alias-bg-base);min-height:0;color:var(--dsw-alias-label-primary);flex-direction:column;flex:1;justify-content:center;align-items:center;gap:10px;padding:24px;display:flex}.O81TBq_mapFallbackTitle{font-size:14px;font-weight:600}.O81TBq_mapFallbackText{text-align:center;max-width:420px;color:var(--dsw-alias-label-secondary);font-size:12px}.O81TBq_mapFallbackButton{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;padding:6px 14px;font-size:12px}.O81TBq_mapFallbackButton:hover{background:var(--dsw-alias-interactive-bg-hover)}.O81TBq_imageCard{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);width:100%;height:100%;box-shadow:0 10px 26px -18px var(--dsw-alias-bg-mask-2);border-radius:10px;overflow:hidden}.O81TBq_imageCardSelected{border-color:var(--dsw-alias-brand-primary);box-shadow:0 0 0 2px var(--dsw-alias-brand-primary)}.O81TBq_imageCardImg{object-fit:contain;background:var(--dsw-alias-bg-base);width:100%;height:100%;display:block}";
+		const css$1 = ".MSQ6kW_toggleButton{width:32px;height:32px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:8px;justify-content:center;align-items:center;gap:6px;padding:0;display:flex}.MSQ6kW_toggleButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.MSQ6kW_toggleButtonActive{background:var(--dsw-alias-interactive-bg-active);color:var(--dsw-alias-brand-primary)}.MSQ6kW_toggleRow{width:100%;color:var(--dsw-alias-label-secondary);cursor:pointer;text-align:left;background:0 0;border:none;border-radius:8px;align-items:center;gap:8px;padding:6px 10px;font-size:13px;display:flex}.MSQ6kW_toggleRow:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.MSQ6kW_toggleLabel{white-space:nowrap}.MSQ6kW_toggleIcon{flex:none;width:18px;height:18px}.MSQ6kW_overlay{background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);pointer-events:auto;flex-direction:column;display:flex;position:absolute;top:0;bottom:0;left:0;right:0}[data-windows-titlebar] .MSQ6kW_overlay{padding-top:var(--dsh-windows-titlebar-height,40px)}html[data-platform=darwin]:not([data-fullscreen]) .MSQ6kW_overlay{padding-top:var(--dsh-frame-top-clearance,48px)}html[data-platform=darwin]:not([data-fullscreen]) .MSQ6kW_overlay:before{content:\"\";height:var(--dsh-frame-top-clearance,48px);-webkit-app-region:drag;position:absolute;top:0;left:0;right:0}.MSQ6kW_header{border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);flex:none;align-items:center;gap:10px;padding:8px 14px;display:flex}.MSQ6kW_headerTitle{color:var(--dsw-alias-label-primary);font-size:14px;font-weight:600}.MSQ6kW_headerBadge{color:var(--dsw-alias-label-tertiary);font-size:12px}.MSQ6kW_headerSpace{flex:1}.MSQ6kW_hotkeyButton{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;background:0 0;border-radius:999px;flex:none;padding:3px 10px;font-size:12px}.MSQ6kW_hotkeyButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.MSQ6kW_langButton{border:1px solid var(--dsw-alias-border-l2);min-width:58px;color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;background:0 0;border-radius:999px;flex:none;padding:3px 10px;font-size:12px}.MSQ6kW_langButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.MSQ6kW_zoomResetLabel{letter-spacing:-.5px;font-size:9px;font-weight:700}.MSQ6kW_closeButton{width:28px;height:28px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:6px;justify-content:center;align-items:center;padding:0;display:flex}.MSQ6kW_closeButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.MSQ6kW_canvas{flex:1;min-height:0;position:relative}.MSQ6kW_canvas .react-flow__nodesselection{pointer-events:none!important;display:none!important}.MSQ6kW_canvas .react-flow__nodesselection-rect{pointer-events:none!important;display:none!important}.MSQ6kW_card{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);width:224px;min-height:104px;color:var(--dsw-alias-label-primary);box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1);border-radius:10px;flex-direction:column;gap:6px;padding:10px 12px;font-size:13px;display:flex}.MSQ6kW_cardSelected{border-color:var(--dsw-alias-brand-primary)}.MSQ6kW_cardGhost{opacity:.55;border-style:dashed}.MSQ6kW_cardTop{align-items:center;gap:6px;min-width:0;display:flex}.MSQ6kW_cardTitle{-webkit-line-clamp:2;word-break:break-word;-webkit-box-orient:vertical;flex:auto;min-width:0;font-size:13px;font-weight:600;line-height:1.3;display:-webkit-box;overflow:hidden}.MSQ6kW_cardPin{width:22px;height:22px;color:var(--dsw-alias-label-tertiary);cursor:pointer;opacity:.55;background:0 0;border:none;border-radius:6px;flex:none;justify-content:center;align-items:center;margin-left:auto;padding:0;transition:opacity .12s,background-color .12s,color .12s;display:flex;transform:translate(6px,-6px)}.MSQ6kW_card:hover .MSQ6kW_cardPin{opacity:1}.MSQ6kW_cardPin:focus-visible{opacity:1}.MSQ6kW_cardPin:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.MSQ6kW_cardPinActive{opacity:1;color:var(--dsw-alias-brand-primary)}.MSQ6kW_cardPinActive:hover{color:var(--dsw-alias-brand-primary)}.MSQ6kW_runningDot{background:var(--dsw-alias-state-success-primary);border-radius:50%;flex:none;width:8px;height:8px;animation:1.6s ease-in-out infinite MSQ6kW_talkmap-pulse}@keyframes MSQ6kW_talkmap-pulse{50%{opacity:.35}}.MSQ6kW_cardDoneDot{width:12px;height:12px;color:var(--dsw-alias-state-success-primary,#22c55e);flex:none;display:inline-block;position:relative}.MSQ6kW_cardDoneDot:after{content:\"\";background:currentColor;border-radius:50%;position:absolute;top:20%;bottom:20%;left:20%;right:20%}.MSQ6kW_cardFooter{color:var(--dsw-alias-label-tertiary);justify-content:space-between;align-items:center;gap:8px;margin-top:auto;font-size:11px;display:flex}.MSQ6kW_cardTime{flex:none}.MSQ6kW_cardForeign{outline-offset:2px;outline:2px dashed #e0a33a}.MSQ6kW_cardFooterLeft{align-items:center;gap:6px;min-width:0;display:flex}.MSQ6kW_cardForeignTouch{animation:1.3s ease-in-out infinite MSQ6kW_cardForeignPulse}@keyframes MSQ6kW_cardForeignPulse{0%,to{box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1), 0 0 0 0 #e0a33a00}50%{box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1), 0 0 0 7px #e0a33a59}}.MSQ6kW_cardForeignChip{text-overflow:ellipsis;white-space:nowrap;min-width:0;max-width:118px;color:color-mix(in oklab, #e0a33a 78%, var(--dsw-alias-label-primary));background:#e0a33a29;background:color(display-p3 .842337 .649058 .309/.16);background:lab(71.621% 16.4145 60.6886/.16);border:1px solid #e0a33a8c;border:1px solid color(display-p3 .842337 .649058 .309/.55);border:1px solid lab(71.621% 16.4145 60.6886/.55);border-radius:999px;padding:1px 7px;font-size:10px;font-weight:600;overflow:hidden}.MSQ6kW_wsFrameForeign{color:color-mix(in oklab, #e0a33a 78%, var(--dsw-alias-label-primary));border:1px dashed #e0a33a8c;border:1px dashed color(display-p3 .842337 .649058 .309/.55);border:1px dashed lab(71.621% 16.4145 60.6886/.55);border-radius:999px;margin-left:6px;padding:1px 7px;font-size:10px;font-weight:600}.MSQ6kW_cardBadgeRunning{color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-state-success-tertiary);border-radius:999px;align-items:center;gap:5px;padding:1px 7px;font-size:10px;display:inline-flex}.MSQ6kW_cardBadgeWaiting{color:var(--dsw-alias-state-warn-label);background:var(--dsw-alias-state-warn-tertiary);border-radius:999px;padding:1px 7px;font-size:10px}.MSQ6kW_cardBadgeDone{color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-state-success-tertiary);border-radius:999px;padding:1px 7px;font-size:10px}.MSQ6kW_cardRemove{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:6px;align-self:flex-start;padding:3px 8px;font-size:12px}.MSQ6kW_cardRemove:hover{background:var(--dsw-alias-interactive-bg-hover-danger);color:var(--dsw-alias-state-error-primary)}.MSQ6kW_card .MSQ6kW_cardHandle{opacity:.55;background:0 0;border:none;width:18px;height:18px}.MSQ6kW_cardHandle:after{content:\"\";background:var(--dsw-alias-label-tertiary);border:2px solid var(--dsw-alias-bg-layer-1);border-radius:50%;position:absolute;top:5px;bottom:5px;left:5px;right:5px}.MSQ6kW_card:hover .MSQ6kW_cardHandle,.MSQ6kW_canvasConnecting .MSQ6kW_cardHandle,.MSQ6kW_cardHandle:hover{opacity:1}.MSQ6kW_cardHandle:hover:after{background:var(--dsw-alias-brand-primary)}.MSQ6kW_spawnFrom{color:var(--dsw-alias-label-secondary);font-size:12px}.MSQ6kW_spawnModes{gap:6px;display:flex}.MSQ6kW_spawnModeBtn{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:8px;flex:1;padding:5px 0;font-size:12px}.MSQ6kW_spawnModeBtn:hover{background:var(--dsw-alias-interactive-bg-hover)}.MSQ6kW_spawnModeActive{border-color:var(--dsw-alias-brand-primary);color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-interactive-bg-active)}.MSQ6kW_spawnHint{color:var(--dsw-alias-label-tertiary);font-size:12px}.MSQ6kW_spawnTextarea{box-sizing:border-box;resize:vertical;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;min-height:140px;color:var(--dsw-alias-label-primary);border-radius:8px;padding:10px;font-family:inherit;font-size:13px;line-height:1.5}.MSQ6kW_spawnError{color:var(--dsw-alias-state-error-primary);word-break:break-all;font-size:12px}.MSQ6kW_spawnActions{justify-content:flex-end;gap:8px;display:flex}.MSQ6kW_spawnBtnPrimary{background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground);cursor:pointer;border:none;border-radius:8px;padding:6px 16px;font-size:13px}.MSQ6kW_spawnBtnPrimary:hover{background:var(--dsw-alias-button-primary-hover)}.MSQ6kW_spawnBtnPrimary:disabled{background:var(--dsw-alias-button-primary-dimmed);cursor:default}.MSQ6kW_spawnBtnGhost{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:8px;padding:6px 16px;font-size:13px}.MSQ6kW_spawnBtnGhost:hover{background:var(--dsw-alias-interactive-bg-hover)}.MSQ6kW_wsFrame{border:2px dashed color-mix(in oklab, var(--dsw-alias-label-primary) 32%, transparent);background:color-mix(in oklab, var(--dsw-alias-bg-layer-1) 55%, transparent);border-radius:16px;position:relative}.MSQ6kW_wsFrameSelected{border-style:solid;border-color:var(--dsw-alias-brand-primary);background:color-mix(in oklab, var(--dsw-alias-brand-primary) 8%, transparent)}.MSQ6kW_wsFrameLabel{border:1px solid color-mix(in oklab, var(--dsw-alias-label-primary) 22%, transparent);background:var(--dsw-alias-bg-layer-1);box-shadow:0 2px 10px color-mix(in oklab, var(--dsw-alias-bg-mask-2) 55%, transparent);color:var(--dsw-alias-label-primary);white-space:nowrap;pointer-events:auto;cursor:grab;border-radius:999px;align-items:center;gap:6px;padding:3px 12px;font-size:12px;font-weight:600;display:flex;position:absolute;top:-12px;left:14px}.MSQ6kW_wsFrameLabel:active{cursor:grabbing}.MSQ6kW_wsFrameEdge{pointer-events:auto;cursor:grab;position:absolute}.MSQ6kW_wsFrameEdge:active{cursor:grabbing}.MSQ6kW_wsFrameResize{pointer-events:auto;cursor:nwse-resize;border-right:3px solid var(--dsw-alias-border-l3);border-bottom:3px solid var(--dsw-alias-border-l3);opacity:.7;border-bottom-right-radius:14px;width:16px;height:16px;position:absolute;bottom:-2px;right:-2px}.MSQ6kW_wsFrameResize:hover{border-color:var(--dsw-alias-brand-primary);opacity:1}.MSQ6kW_wsFrameCount{color:var(--dsw-alias-label-tertiary);font-weight:400}.MSQ6kW_draftCard{box-sizing:border-box;border:1.5px solid var(--dsw-alias-brand-primary);background:var(--dsw-alias-bg-layer-1);width:360px;box-shadow:0 8px 30px var(--dsw-alias-bg-mask-2);border-radius:12px;flex-direction:column;gap:8px;padding:14px;font-size:13px;display:flex}.MSQ6kW_draftHeading{color:var(--dsw-alias-label-primary);font-size:13px;font-weight:600}.MSQ6kW_draftRow{align-items:center;gap:8px;display:flex}.MSQ6kW_draftLabel{width:52px;color:var(--dsw-alias-label-tertiary);flex:none;font-size:12px}.MSQ6kW_draftSelect{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);min-width:0;color:var(--dsw-alias-label-primary);border-radius:7px;flex:1;padding:5px 8px;font-size:12px}.MSQ6kW_draftGrow{flex-direction:column;flex:1;gap:3px;min-width:0;display:flex}.MSQ6kW_draftInput{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;color:var(--dsw-alias-label-primary);border-radius:7px;padding:5px 8px;font-family:inherit;font-size:12px}.MSQ6kW_draftPathPreview{color:var(--dsw-alias-label-tertiary);word-break:break-all;font-size:11px}.MSQ6kW_draftTextarea{box-sizing:border-box;resize:vertical;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;min-height:88px;color:var(--dsw-alias-label-primary);border-radius:8px;padding:9px;font-family:inherit;font-size:13px;line-height:1.5}.MSQ6kW_draftAttachments{scrollbar-width:thin;gap:8px;max-height:72px;padding:2px 2px 4px;display:flex;overflow-x:auto;overflow-y:hidden}.MSQ6kW_draftAttachmentImage{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);border-radius:10px;flex:none;width:64px;height:64px;position:relative;overflow:hidden}.MSQ6kW_draftAttachmentImage img{object-fit:cover;width:100%;height:100%;display:block}.MSQ6kW_draftAttachmentFile{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:190px;height:64px;color:var(--dsw-alias-label-primary);border-radius:10px;flex:none;align-items:center;gap:8px;padding:8px 10px;display:flex;position:relative}.MSQ6kW_draftAttachmentFileIcon{width:24px;height:24px;color:var(--dsw-alias-brand-primary);flex:none}.MSQ6kW_draftAttachmentFileText{flex-direction:column;gap:2px;min-width:0;display:flex}.MSQ6kW_draftAttachmentFileName{text-overflow:ellipsis;white-space:nowrap;font-size:12px;overflow:hidden}.MSQ6kW_draftAttachmentFileMeta{color:var(--dsw-alias-label-tertiary);font-size:11px}.MSQ6kW_draftAttachmentRemove{background:var(--dsw-alias-button-contrast-fill,#0000008c);width:18px;height:18px;color:var(--dsw-alias-label-primary-inverted,#fff);cursor:pointer;opacity:0;border:none;border-radius:50%;place-items:center;padding:0;font-size:12px;line-height:1;transition:opacity .12s ease-in-out;display:grid;position:absolute;top:2px;right:2px}.MSQ6kW_draftAttachmentImage:hover .MSQ6kW_draftAttachmentRemove,.MSQ6kW_draftAttachmentFile:hover .MSQ6kW_draftAttachmentRemove{opacity:1}.MSQ6kW_draftAttachmentRemove:focus-visible{opacity:1}@media (hover:none),(pointer:coarse){.MSQ6kW_draftAttachmentRemove{opacity:1}}.MSQ6kW_draftAttachmentProgress{background:var(--dsw-alias-fill-tertiary,#0000001f);border-radius:1px;height:2px;position:absolute;bottom:4px;left:6px;right:6px;overflow:hidden}.MSQ6kW_draftAttachmentProgressBar{background:var(--dsw-alias-brand-primary);height:100%;transition:width .15s ease-out}.MSQ6kW_draftCardDrop{background:color-mix(in oklab, var(--dsw-alias-brand-primary) 6%, var(--dsw-alias-bg-layer-1))}.MSQ6kW_draftDropHint{color:var(--dsw-alias-brand-primary);font-size:12px}.MSQ6kW_colorToolbar{z-index:7;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);box-shadow:0 2px 10px var(--dsw-alias-bg-mask-1);border-radius:10px;align-items:center;gap:6px;padding:6px 10px;display:flex;position:absolute;top:12px;left:12px}.MSQ6kW_colorToolbarLabel{color:var(--dsw-alias-label-tertiary);margin-right:2px;font-size:12px}.MSQ6kW_colorSwatch{border:1px solid var(--dsw-alias-border-l2);cursor:pointer;width:18px;height:18px;color:var(--dsw-alias-label-secondary);border-radius:50%;justify-content:center;align-items:center;padding:0;font-size:11px;line-height:1;display:flex}.MSQ6kW_colorSwatch:hover{transform:scale(1.15)}.MSQ6kW_colorSwatchClear{background:0 0}.MSQ6kW_menu{z-index:9;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);min-width:200px;max-width:280px;max-height:380px;box-shadow:0 8px 30px var(--dsw-alias-bg-mask-2);border-radius:10px;flex-direction:column;padding:6px;display:flex;position:absolute;overflow-y:auto}.MSQ6kW_menuTitle{color:var(--dsw-alias-label-tertiary);flex:none;padding:4px 10px 6px;font-size:11px}.MSQ6kW_menuSearch{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:calc(100% - 8px);color:var(--dsw-alias-label-primary);border-radius:7px;flex:none;margin:2px 4px 6px;padding:5px 8px;font-family:inherit;font-size:12px}.MSQ6kW_menuHint{color:var(--dsw-alias-label-dimmed);font-size:11px}.MSQ6kW_menuPreview{color:var(--dsw-alias-label-tertiary);word-break:break-all;flex:none;padding:0 10px 4px;font-size:11px}.MSQ6kW_menuError{color:var(--dsw-alias-state-error-primary);word-break:break-all;flex:none;padding:0 10px 4px;font-size:11px}.MSQ6kW_menuEmpty{color:var(--dsw-alias-label-tertiary);padding:8px 10px;font-size:12px}.MSQ6kW_menuItem{text-align:left;width:100%;color:var(--dsw-alias-label-primary);cursor:pointer;white-space:nowrap;text-overflow:ellipsis;background:0 0;border:none;border-radius:7px;flex:none;padding:6px 10px;font-size:13px;display:block;overflow:hidden}.MSQ6kW_menuItem:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.MSQ6kW_menuItem:disabled{color:var(--dsw-alias-label-dimmed);cursor:default}.MSQ6kW_wsFrameHidden{color:var(--dsw-alias-state-warn-primary);font-weight:400}.MSQ6kW_emptyHint{color:var(--dsw-alias-label-tertiary);pointer-events:none;z-index:4;font-size:13px;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}.MSQ6kW_toast{z-index:8;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);max-width:70%;box-shadow:0 4px 16px var(--dsw-alias-bg-mask-2);color:var(--dsw-alias-label-primary);pointer-events:none;white-space:nowrap;text-overflow:ellipsis;border-radius:999px;padding:7px 16px;font-size:12px;position:absolute;bottom:28px;left:50%;overflow:hidden;transform:translate(-50%)}.MSQ6kW_toastActionable{pointer-events:auto;align-items:center;gap:10px;padding-right:8px;display:inline-flex}.MSQ6kW_toastText{text-overflow:ellipsis;min-width:0;overflow:hidden}.MSQ6kW_toastAction{background:var(--dsw-alias-bg-layer-2,#7f7f7f29);color:var(--dsw-alias-label-primary);font:inherit;cursor:pointer;border:0;border-radius:999px;flex:none;padding:2px 8px;font-weight:600}.MSQ6kW_toastAction:hover{background:var(--dsw-alias-bg-layer-3,#7f7f7f3d)}.MSQ6kW_body{flex:1;min-height:0;display:flex;position:relative}.MSQ6kW_chatDrawer{z-index:6;background:var(--dsw-alias-bg-base);border-left:1px solid var(--dsw-alias-border-l1);width:max(360px,min(42%,720px));max-width:calc(100vw - 280px);box-shadow:-12px 0 28px -18px var(--dsw-alias-bg-mask-2);flex-direction:column;display:flex;position:absolute;top:0;bottom:0;right:0;container:MSQ6kW_talk-map-drawer/inline-size}.MSQ6kW_chatDrawerResize{z-index:1;cursor:col-resize;touch-action:none;background:0 0;border:0;width:10px;padding:0;position:absolute;top:0;bottom:0;left:-4px}.MSQ6kW_chatDrawerResize:after{content:\"\";background:0 0;width:2px;transition:background-color .12s;position:absolute;top:0;bottom:0;left:4px}.MSQ6kW_chatDrawerResize:hover:after,.MSQ6kW_chatDrawerResize[data-resizing=true]:after{background:var(--dsw-alias-border-l2)}.MSQ6kW_chatDrawerResize:focus-visible:after{background:var(--dsw-alias-border-l2)}.MSQ6kW_chatDrawerResize:focus-visible{outline:none}.MSQ6kW_chatDrawerHeader{border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);flex:none;align-items:center;gap:8px;padding:6px 10px;display:flex}.MSQ6kW_chatDrawerTitle{text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--dsw-alias-label-primary);font-size:12px;font-weight:600;overflow:hidden}.MSQ6kW_chatDrawerSpace{flex:1}.MSQ6kW_chatDrawerClose{width:26px;height:26px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:6px;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.MSQ6kW_chatDrawerClose:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.MSQ6kW_chatDrawerArchived{color:var(--dsw-alias-label-primary);background:#e0a33a1f;background:color(display-p3 .842337 .649058 .309/.12);background:lab(71.621% 16.4145 60.6886/.12);border-bottom:1px solid #e0a33a59;border-bottom:1px solid color(display-p3 .842337 .649058 .309/.35);border-bottom:1px solid lab(71.621% 16.4145 60.6886/.35);align-items:center;gap:10px;padding:8px 12px;font-size:12px;display:flex}.MSQ6kW_chatDrawerArchivedText{flex:1;min-width:0}.MSQ6kW_chatDrawerArchivedButton{color:inherit;cursor:pointer;background:0 0;border:1px solid #e0a33a8c;border:1px solid color(display-p3 .842337 .649058 .309/.55);border:1px solid lab(71.621% 16.4145 60.6886/.55);border-radius:999px;flex:none;padding:2px 10px;font-size:12px}.MSQ6kW_chatDrawerArchivedButton:hover{background:#e0a33a2e;background:color(display-p3 .842337 .649058 .309/.18);background:lab(71.621% 16.4145 60.6886/.18)}.MSQ6kW_chatDrawerBody{flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}@container MSQ6kW_talk-map-drawer (width>=560px){.MSQ6kW_chatDrawer nav[aria-label]{display:block}}.MSQ6kW_chatDrawerNotice{flex-direction:column;flex:1;align-items:flex-start;gap:14px;padding:22px 20px;display:flex}.MSQ6kW_chatDrawerNoticeText{color:var(--dsw-alias-label-secondary);margin:0;font-size:13px;line-height:1.7}.MSQ6kW_chatDrawerNoticeActions{flex-wrap:wrap;gap:8px;display:flex}.MSQ6kW_chatDrawerNoticeButton{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);cursor:pointer;border-radius:8px;padding:6px 14px;font-size:13px}.MSQ6kW_chatDrawerNoticeButton:hover{background:var(--dsw-alias-interactive-bg-hover)}.MSQ6kW_chatDrawerNoticeButton:disabled{opacity:.55;cursor:default}.MSQ6kW_chatPanel{flex-direction:column;flex:1;min-height:0;display:flex}.MSQ6kW_cardWaitingButton{color:var(--dsw-alias-state-warn-label);background:var(--dsw-alias-state-warn-tertiary);cursor:pointer;border:none;border-radius:999px;padding:1px 7px;font-size:10px}.MSQ6kW_cardWaitingButton:hover{filter:brightness(1.15)}.MSQ6kW_interactMenu{gap:4px;max-height:min(420px,70vh)}.MSQ6kW_interactTitle{color:var(--dsw-alias-label-primary);padding:4px 6px 0;font-size:12px;font-weight:600}.MSQ6kW_interactText{color:var(--dsw-alias-label-secondary);white-space:pre-wrap;word-break:break-word;padding:2px 6px 4px;font-size:12px;line-height:1.45}.MSQ6kW_interactNote{color:var(--dsw-alias-label-tertiary);padding:0 6px 4px;font-size:11px}.MSQ6kW_interactScroll{flex-direction:column;gap:6px;max-height:260px;display:flex;overflow-y:auto}.MSQ6kW_interactGroup{flex-direction:column;gap:4px;display:flex}.MSQ6kW_interactOptions{flex-wrap:wrap;gap:6px;padding:2px 6px 4px;display:flex}.MSQ6kW_interactOption{text-align:left;border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;flex:100%;padding:7px 10px;font-size:12px}.MSQ6kW_interactOption:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.MSQ6kW_interactOptionActive{border-color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-interactive-bg-active)}.MSQ6kW_interactActions{gap:6px;padding:4px 6px 6px;display:flex}.MSQ6kW_interactAllow{background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground);cursor:pointer;border:none;border-radius:8px;flex:1;padding:7px 10px;font-size:12px}.MSQ6kW_interactAllow:hover:not(:disabled){background:var(--dsw-alias-button-primary-hover)}.MSQ6kW_interactDanger{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-state-error-primary);cursor:pointer;background:0 0;border-radius:8px;flex:1;padding:7px 10px;font-size:12px}.MSQ6kW_interactDanger:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover-danger)}.MSQ6kW_interactSubmit,.MSQ6kW_interactOpen{border:1px solid var(--dsw-alias-border-l2);width:100%;color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;margin-top:4px;padding:7px 10px;font-size:12px}.MSQ6kW_interactSubmit:hover:not(:disabled),.MSQ6kW_interactOpen:hover{background:var(--dsw-alias-interactive-bg-hover)}.MSQ6kW_interactSubmit:disabled{color:var(--dsw-alias-label-dimmed);cursor:default}.MSQ6kW_interactError{color:var(--dsw-alias-state-error-primary);word-break:break-word;padding:2px 6px 4px;font-size:11px}.MSQ6kW_mapFallback{background:var(--dsw-alias-bg-base);min-height:0;color:var(--dsw-alias-label-primary);flex-direction:column;flex:1;justify-content:center;align-items:center;gap:10px;padding:24px;display:flex}.MSQ6kW_mapFallbackTitle{font-size:14px;font-weight:600}.MSQ6kW_mapFallbackText{text-align:center;max-width:420px;color:var(--dsw-alias-label-secondary);font-size:12px}.MSQ6kW_mapFallbackButton{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;padding:6px 14px;font-size:12px}.MSQ6kW_mapFallbackButton:hover{background:var(--dsw-alias-interactive-bg-hover)}.MSQ6kW_imageCard{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);width:100%;height:100%;box-shadow:0 10px 26px -18px var(--dsw-alias-bg-mask-2);border-radius:10px;overflow:hidden}.MSQ6kW_imageCardSelected{border-color:var(--dsw-alias-brand-primary);box-shadow:0 0 0 2px var(--dsw-alias-brand-primary)}.MSQ6kW_imageCardImg{object-fit:contain;background:var(--dsw-alias-bg-base);width:100%;height:100%;display:block}";
 		const tagId$1 = "dsh-talk-map-local/talk-map.module.css";
 		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$1) + "]") === null) {
 			const tag = document.createElement("style");
@@ -1373,140 +1403,140 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			document.head.appendChild(tag);
 		}
 		var talk_map_module_css_default = {
-			"cardForeignChip": "O81TBq_cardForeignChip",
-			"toggleButton": "O81TBq_toggleButton",
-			"cardWaitingButton": "O81TBq_cardWaitingButton",
-			"wsFrameLabel": "O81TBq_wsFrameLabel",
-			"chatDrawerClose": "O81TBq_chatDrawerClose",
-			"headerBadge": "O81TBq_headerBadge",
-			"cardFooterLeft": "O81TBq_cardFooterLeft",
-			"cardTop": "O81TBq_cardTop",
-			"draftAttachmentFile": "O81TBq_draftAttachmentFile",
-			"draftDropHint": "O81TBq_draftDropHint",
-			"menuPreview": "O81TBq_menuPreview",
-			"chatDrawerNoticeButton": "O81TBq_chatDrawerNoticeButton",
-			"chatDrawerNotice": "O81TBq_chatDrawerNotice",
-			"mapFallbackTitle": "O81TBq_mapFallbackTitle",
-			"interactOpen": "O81TBq_interactOpen",
-			"emptyHint": "O81TBq_emptyHint",
-			"menu": "O81TBq_menu",
-			"cardPinActive": "O81TBq_cardPinActive",
-			"closeButton": "O81TBq_closeButton",
-			"interactOption": "O81TBq_interactOption",
-			"spawnModeBtn": "O81TBq_spawnModeBtn",
-			"mapFallbackText": "O81TBq_mapFallbackText",
-			"draftAttachmentFileMeta": "O81TBq_draftAttachmentFileMeta",
-			"cardTitle": "O81TBq_cardTitle",
-			"spawnTextarea": "O81TBq_spawnTextarea",
-			"spawnError": "O81TBq_spawnError",
-			"spawnBtnPrimary": "O81TBq_spawnBtnPrimary",
-			"interactNote": "O81TBq_interactNote",
-			"spawnFrom": "O81TBq_spawnFrom",
-			"toast": "O81TBq_toast",
-			"menuTitle": "O81TBq_menuTitle",
-			"chatDrawer": "O81TBq_chatDrawer",
-			"colorSwatchClear": "O81TBq_colorSwatchClear",
-			"draftAttachments": "O81TBq_draftAttachments",
-			"spawnModes": "O81TBq_spawnModes",
-			"wsFrameEdge": "O81TBq_wsFrameEdge",
-			"chatDrawerNoticeActions": "O81TBq_chatDrawerNoticeActions",
-			"runningDot": "O81TBq_runningDot",
-			"talk-map-drawer": "O81TBq_talk-map-drawer",
-			"spawnModeActive": "O81TBq_spawnModeActive",
-			"wsFrame": "O81TBq_wsFrame",
-			"chatDrawerHeader": "O81TBq_chatDrawerHeader",
-			"langButton": "O81TBq_langButton",
-			"cardBadgeDone": "O81TBq_cardBadgeDone",
-			"cardHandle": "O81TBq_cardHandle",
-			"colorToolbar": "O81TBq_colorToolbar",
-			"mapFallbackButton": "O81TBq_mapFallbackButton",
-			"draftInput": "O81TBq_draftInput",
-			"draftAttachmentFileText": "O81TBq_draftAttachmentFileText",
-			"cardForeignPulse": "O81TBq_cardForeignPulse",
-			"toggleIcon": "O81TBq_toggleIcon",
-			"card": "O81TBq_card",
-			"cardDoneDot": "O81TBq_cardDoneDot",
-			"menuSearch": "O81TBq_menuSearch",
-			"colorToolbarLabel": "O81TBq_colorToolbarLabel",
-			"menuEmpty": "O81TBq_menuEmpty",
-			"headerTitle": "O81TBq_headerTitle",
-			"spawnActions": "O81TBq_spawnActions",
-			"spawnBtnGhost": "O81TBq_spawnBtnGhost",
-			"draftPathPreview": "O81TBq_draftPathPreview",
-			"interactTitle": "O81TBq_interactTitle",
-			"interactOptionActive": "O81TBq_interactOptionActive",
-			"imageCardSelected": "O81TBq_imageCardSelected",
-			"chatDrawerBody": "O81TBq_chatDrawerBody",
-			"cardFooter": "O81TBq_cardFooter",
-			"cardSelected": "O81TBq_cardSelected",
-			"colorSwatch": "O81TBq_colorSwatch",
-			"chatDrawerArchivedButton": "O81TBq_chatDrawerArchivedButton",
-			"interactGroup": "O81TBq_interactGroup",
-			"toastAction": "O81TBq_toastAction",
-			"draftAttachmentProgress": "O81TBq_draftAttachmentProgress",
-			"menuItem": "O81TBq_menuItem",
-			"wsFrameHidden": "O81TBq_wsFrameHidden",
-			"interactSubmit": "O81TBq_interactSubmit",
-			"wsFrameCount": "O81TBq_wsFrameCount",
-			"draftCard": "O81TBq_draftCard",
-			"toggleButtonActive": "O81TBq_toggleButtonActive",
-			"draftTextarea": "O81TBq_draftTextarea",
-			"canvas": "O81TBq_canvas",
-			"mapFallback": "O81TBq_mapFallback",
-			"draftAttachmentFileName": "O81TBq_draftAttachmentFileName",
-			"zoomResetLabel": "O81TBq_zoomResetLabel",
-			"draftHeading": "O81TBq_draftHeading",
-			"draftAttachmentFileIcon": "O81TBq_draftAttachmentFileIcon",
-			"menuError": "O81TBq_menuError",
-			"interactScroll": "O81TBq_interactScroll",
-			"cardTime": "O81TBq_cardTime",
-			"draftAttachmentProgressBar": "O81TBq_draftAttachmentProgressBar",
-			"spawnHint": "O81TBq_spawnHint",
-			"wsFrameResize": "O81TBq_wsFrameResize",
-			"chatDrawerTitle": "O81TBq_chatDrawerTitle",
-			"hotkeyButton": "O81TBq_hotkeyButton",
-			"imageCardImg": "O81TBq_imageCardImg",
-			"toggleLabel": "O81TBq_toggleLabel",
-			"toggleRow": "O81TBq_toggleRow",
-			"interactMenu": "O81TBq_interactMenu",
-			"interactText": "O81TBq_interactText",
-			"chatDrawerArchived": "O81TBq_chatDrawerArchived",
-			"draftAttachmentImage": "O81TBq_draftAttachmentImage",
-			"cardGhost": "O81TBq_cardGhost",
-			"draftGrow": "O81TBq_draftGrow",
-			"draftAttachmentRemove": "O81TBq_draftAttachmentRemove",
-			"toastText": "O81TBq_toastText",
-			"toastActionable": "O81TBq_toastActionable",
-			"cardBadgeWaiting": "O81TBq_cardBadgeWaiting",
-			"imageCard": "O81TBq_imageCard",
-			"wsFrameForeign": "O81TBq_wsFrameForeign",
-			"chatDrawerResize": "O81TBq_chatDrawerResize",
-			"cardForeignTouch": "O81TBq_cardForeignTouch",
-			"chatPanel": "O81TBq_chatPanel",
-			"interactAllow": "O81TBq_interactAllow",
-			"headerSpace": "O81TBq_headerSpace",
-			"interactActions": "O81TBq_interactActions",
-			"canvasConnecting": "O81TBq_canvasConnecting",
-			"wsFrameSelected": "O81TBq_wsFrameSelected",
-			"cardRemove": "O81TBq_cardRemove",
-			"chatDrawerNoticeText": "O81TBq_chatDrawerNoticeText",
-			"menuHint": "O81TBq_menuHint",
-			"interactDanger": "O81TBq_interactDanger",
-			"chatDrawerArchivedText": "O81TBq_chatDrawerArchivedText",
-			"header": "O81TBq_header",
-			"cardPin": "O81TBq_cardPin",
-			"talkmap-pulse": "O81TBq_talkmap-pulse",
-			"draftRow": "O81TBq_draftRow",
-			"chatDrawerSpace": "O81TBq_chatDrawerSpace",
-			"cardForeign": "O81TBq_cardForeign",
-			"cardBadgeRunning": "O81TBq_cardBadgeRunning",
-			"draftCardDrop": "O81TBq_draftCardDrop",
-			"body": "O81TBq_body",
-			"interactOptions": "O81TBq_interactOptions",
-			"interactError": "O81TBq_interactError",
-			"overlay": "O81TBq_overlay",
-			"draftLabel": "O81TBq_draftLabel",
-			"draftSelect": "O81TBq_draftSelect"
+			"toastAction": "MSQ6kW_toastAction",
+			"wsFrameLabel": "MSQ6kW_wsFrameLabel",
+			"chatDrawerBody": "MSQ6kW_chatDrawerBody",
+			"spawnBtnPrimary": "MSQ6kW_spawnBtnPrimary",
+			"spawnModeBtn": "MSQ6kW_spawnModeBtn",
+			"spawnFrom": "MSQ6kW_spawnFrom",
+			"menuSearch": "MSQ6kW_menuSearch",
+			"talkmap-pulse": "MSQ6kW_talkmap-pulse",
+			"cardTime": "MSQ6kW_cardTime",
+			"spawnBtnGhost": "MSQ6kW_spawnBtnGhost",
+			"toggleLabel": "MSQ6kW_toggleLabel",
+			"chatDrawerNotice": "MSQ6kW_chatDrawerNotice",
+			"wsFrameForeign": "MSQ6kW_wsFrameForeign",
+			"wsFrameCount": "MSQ6kW_wsFrameCount",
+			"cardForeignPulse": "MSQ6kW_cardForeignPulse",
+			"colorSwatchClear": "MSQ6kW_colorSwatchClear",
+			"zoomResetLabel": "MSQ6kW_zoomResetLabel",
+			"spawnError": "MSQ6kW_spawnError",
+			"chatDrawerSpace": "MSQ6kW_chatDrawerSpace",
+			"imageCardImg": "MSQ6kW_imageCardImg",
+			"cardBadgeDone": "MSQ6kW_cardBadgeDone",
+			"cardRemove": "MSQ6kW_cardRemove",
+			"cardTitle": "MSQ6kW_cardTitle",
+			"interactError": "MSQ6kW_interactError",
+			"cardSelected": "MSQ6kW_cardSelected",
+			"menu": "MSQ6kW_menu",
+			"chatDrawerResize": "MSQ6kW_chatDrawerResize",
+			"chatDrawerHeader": "MSQ6kW_chatDrawerHeader",
+			"draftTextarea": "MSQ6kW_draftTextarea",
+			"draftAttachmentProgressBar": "MSQ6kW_draftAttachmentProgressBar",
+			"body": "MSQ6kW_body",
+			"chatDrawerArchived": "MSQ6kW_chatDrawerArchived",
+			"interactActions": "MSQ6kW_interactActions",
+			"toastActionable": "MSQ6kW_toastActionable",
+			"interactScroll": "MSQ6kW_interactScroll",
+			"spawnModes": "MSQ6kW_spawnModes",
+			"draftAttachmentFileIcon": "MSQ6kW_draftAttachmentFileIcon",
+			"colorSwatch": "MSQ6kW_colorSwatch",
+			"hotkeyButton": "MSQ6kW_hotkeyButton",
+			"chatDrawerArchivedText": "MSQ6kW_chatDrawerArchivedText",
+			"mapFallbackTitle": "MSQ6kW_mapFallbackTitle",
+			"overlay": "MSQ6kW_overlay",
+			"chatDrawer": "MSQ6kW_chatDrawer",
+			"chatDrawerClose": "MSQ6kW_chatDrawerClose",
+			"toggleButtonActive": "MSQ6kW_toggleButtonActive",
+			"chatDrawerNoticeActions": "MSQ6kW_chatDrawerNoticeActions",
+			"cardHandle": "MSQ6kW_cardHandle",
+			"wsFrameHidden": "MSQ6kW_wsFrameHidden",
+			"imageCard": "MSQ6kW_imageCard",
+			"draftAttachmentFileMeta": "MSQ6kW_draftAttachmentFileMeta",
+			"cardFooterLeft": "MSQ6kW_cardFooterLeft",
+			"closeButton": "MSQ6kW_closeButton",
+			"menuPreview": "MSQ6kW_menuPreview",
+			"draftInput": "MSQ6kW_draftInput",
+			"draftLabel": "MSQ6kW_draftLabel",
+			"toast": "MSQ6kW_toast",
+			"interactMenu": "MSQ6kW_interactMenu",
+			"cardPin": "MSQ6kW_cardPin",
+			"toggleIcon": "MSQ6kW_toggleIcon",
+			"spawnModeActive": "MSQ6kW_spawnModeActive",
+			"cardPinActive": "MSQ6kW_cardPinActive",
+			"cardBadgeWaiting": "MSQ6kW_cardBadgeWaiting",
+			"spawnTextarea": "MSQ6kW_spawnTextarea",
+			"draftRow": "MSQ6kW_draftRow",
+			"menuError": "MSQ6kW_menuError",
+			"interactTitle": "MSQ6kW_interactTitle",
+			"interactAllow": "MSQ6kW_interactAllow",
+			"headerBadge": "MSQ6kW_headerBadge",
+			"draftAttachmentProgress": "MSQ6kW_draftAttachmentProgress",
+			"langButton": "MSQ6kW_langButton",
+			"cardDoneDot": "MSQ6kW_cardDoneDot",
+			"draftAttachmentFile": "MSQ6kW_draftAttachmentFile",
+			"cardWaitingButton": "MSQ6kW_cardWaitingButton",
+			"headerTitle": "MSQ6kW_headerTitle",
+			"draftCardDrop": "MSQ6kW_draftCardDrop",
+			"spawnHint": "MSQ6kW_spawnHint",
+			"interactGroup": "MSQ6kW_interactGroup",
+			"interactOpen": "MSQ6kW_interactOpen",
+			"menuItem": "MSQ6kW_menuItem",
+			"toastText": "MSQ6kW_toastText",
+			"headerSpace": "MSQ6kW_headerSpace",
+			"draftCard": "MSQ6kW_draftCard",
+			"toggleRow": "MSQ6kW_toggleRow",
+			"interactText": "MSQ6kW_interactText",
+			"runningDot": "MSQ6kW_runningDot",
+			"cardForeignTouch": "MSQ6kW_cardForeignTouch",
+			"draftAttachmentRemove": "MSQ6kW_draftAttachmentRemove",
+			"emptyHint": "MSQ6kW_emptyHint",
+			"interactOptions": "MSQ6kW_interactOptions",
+			"interactSubmit": "MSQ6kW_interactSubmit",
+			"talk-map-drawer": "MSQ6kW_talk-map-drawer",
+			"colorToolbarLabel": "MSQ6kW_colorToolbarLabel",
+			"header": "MSQ6kW_header",
+			"interactNote": "MSQ6kW_interactNote",
+			"mapFallback": "MSQ6kW_mapFallback",
+			"draftGrow": "MSQ6kW_draftGrow",
+			"spawnActions": "MSQ6kW_spawnActions",
+			"toggleButton": "MSQ6kW_toggleButton",
+			"draftPathPreview": "MSQ6kW_draftPathPreview",
+			"draftAttachments": "MSQ6kW_draftAttachments",
+			"menuTitle": "MSQ6kW_menuTitle",
+			"mapFallbackText": "MSQ6kW_mapFallbackText",
+			"imageCardSelected": "MSQ6kW_imageCardSelected",
+			"cardForeign": "MSQ6kW_cardForeign",
+			"colorToolbar": "MSQ6kW_colorToolbar",
+			"draftAttachmentFileText": "MSQ6kW_draftAttachmentFileText",
+			"draftAttachmentFileName": "MSQ6kW_draftAttachmentFileName",
+			"cardTop": "MSQ6kW_cardTop",
+			"draftSelect": "MSQ6kW_draftSelect",
+			"menuHint": "MSQ6kW_menuHint",
+			"menuEmpty": "MSQ6kW_menuEmpty",
+			"interactOption": "MSQ6kW_interactOption",
+			"draftDropHint": "MSQ6kW_draftDropHint",
+			"wsFrameEdge": "MSQ6kW_wsFrameEdge",
+			"draftAttachmentImage": "MSQ6kW_draftAttachmentImage",
+			"card": "MSQ6kW_card",
+			"interactOptionActive": "MSQ6kW_interactOptionActive",
+			"cardFooter": "MSQ6kW_cardFooter",
+			"mapFallbackButton": "MSQ6kW_mapFallbackButton",
+			"draftHeading": "MSQ6kW_draftHeading",
+			"cardBadgeRunning": "MSQ6kW_cardBadgeRunning",
+			"wsFrame": "MSQ6kW_wsFrame",
+			"canvas": "MSQ6kW_canvas",
+			"chatPanel": "MSQ6kW_chatPanel",
+			"canvasConnecting": "MSQ6kW_canvasConnecting",
+			"wsFrameSelected": "MSQ6kW_wsFrameSelected",
+			"interactDanger": "MSQ6kW_interactDanger",
+			"wsFrameResize": "MSQ6kW_wsFrameResize",
+			"chatDrawerTitle": "MSQ6kW_chatDrawerTitle",
+			"chatDrawerArchivedButton": "MSQ6kW_chatDrawerArchivedButton",
+			"cardForeignChip": "MSQ6kW_cardForeignChip",
+			"chatDrawerNoticeText": "MSQ6kW_chatDrawerNoticeText",
+			"cardGhost": "MSQ6kW_cardGhost",
+			"chatDrawerNoticeButton": "MSQ6kW_chatDrawerNoticeButton"
 		};
 		//#endregion
 		//#region src/client/ChatPanel.tsx
@@ -1531,7 +1561,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			});
 		}
 		//#endregion
-		//#region node_modules/.pnpm/classcat@5.0.5/node_modules/classcat/index.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/classcat@5.0.5/node_modules/classcat/index.js
 		function cc(names) {
 			if (typeof names === "string" || typeof names === "number") return "" + names;
 			let out = "";
@@ -1541,7 +1571,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return out;
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-dispatch@3.0.1/node_modules/d3-dispatch/src/dispatch.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-dispatch@3.0.1/node_modules/d3-dispatch/src/dispatch.js
 		var noop = { value: () => {} };
 		function dispatch() {
 			for (var i = 0, n = arguments.length, _ = {}, t; i < n; ++i) {
@@ -1614,7 +1644,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			xmlns: "http://www.w3.org/2000/xmlns/"
 		};
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/namespace.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/namespace.js
 		function namespace_default(name) {
 			var prefix = name += "", i = prefix.indexOf(":");
 			if (i >= 0 && (prefix = name.slice(0, i)) !== "xmlns") name = name.slice(i + 1);
@@ -1624,7 +1654,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			} : name;
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/creator.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/creator.js
 		function creatorInherit(name) {
 			return function() {
 				var document = this.ownerDocument, uri = this.namespaceURI;
@@ -1641,7 +1671,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return (fullname.local ? creatorFixed : creatorInherit)(fullname);
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selector.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selector.js
 		function none() {}
 		function selector_default(selector) {
 			return selector == null ? none : function() {
@@ -1649,7 +1679,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			};
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/select.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/select.js
 		function select_default$2(select) {
 			if (typeof select !== "function") select = selector_default(select);
 			for (var groups = this._groups, m = groups.length, subgroups = new Array(m), j = 0; j < m; ++j) for (var group = groups[j], n = group.length, subgroup = subgroups[j] = new Array(n), node, subnode, i = 0; i < n; ++i) if ((node = group[i]) && (subnode = select.call(node, node.__data__, i, group))) {
@@ -1659,12 +1689,12 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return new Selection$1(subgroups, this._parents);
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/array.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/array.js
 		function array(x) {
 			return x == null ? [] : Array.isArray(x) ? x : Array.from(x);
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selectorAll.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selectorAll.js
 		function empty() {
 			return [];
 		}
@@ -1674,7 +1704,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			};
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/selectAll.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/selectAll.js
 		function arrayAll(select) {
 			return function() {
 				return array(select.apply(this, arguments));
@@ -1690,7 +1720,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return new Selection$1(subgroups, parents);
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/matcher.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/matcher.js
 		function matcher_default(selector) {
 			return function() {
 				return this.matches(selector);
@@ -1702,7 +1732,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			};
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/selectChild.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/selectChild.js
 		var find = Array.prototype.find;
 		function childFind(match) {
 			return function() {
@@ -1716,7 +1746,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.select(match == null ? childFirst : childFind(typeof match === "function" ? match : childMatcher(match)));
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/selectChildren.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/selectChildren.js
 		var filter = Array.prototype.filter;
 		function children() {
 			return Array.from(this.children);
@@ -1730,19 +1760,19 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.selectAll(match == null ? children : childrenFilter(typeof match === "function" ? match : childMatcher(match)));
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/filter.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/filter.js
 		function filter_default$1(match) {
 			if (typeof match !== "function") match = matcher_default(match);
 			for (var groups = this._groups, m = groups.length, subgroups = new Array(m), j = 0; j < m; ++j) for (var group = groups[j], n = group.length, subgroup = subgroups[j] = [], node, i = 0; i < n; ++i) if ((node = group[i]) && match.call(node, node.__data__, i, group)) subgroup.push(node);
 			return new Selection$1(subgroups, this._parents);
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/sparse.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/sparse.js
 		function sparse_default(update) {
 			return new Array(update.length);
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/enter.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/enter.js
 		function enter_default() {
 			return new Selection$1(this._enter || this._groups.map(sparse_default), this._parents);
 		}
@@ -1769,14 +1799,14 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			}
 		};
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/constant.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/constant.js
 		function constant_default$3(x) {
 			return function() {
 				return x;
 			};
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/data.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/data.js
 		function bindIndex(parent, group, enter, update, exit, data) {
 			var i = 0, node, groupLength = group.length, dataLength = data.length;
 			for (; i < dataLength; ++i) if (node = group[i]) {
@@ -1827,12 +1857,12 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return typeof data === "object" && "length" in data ? data : Array.from(data);
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/exit.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/exit.js
 		function exit_default() {
 			return new Selection$1(this._exit || this._groups.map(sparse_default), this._parents);
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/join.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/join.js
 		function join_default(onenter, onupdate, onexit) {
 			var enter = this.enter(), update = this, exit = this.exit();
 			if (typeof onenter === "function") {
@@ -1848,7 +1878,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return enter && update ? enter.merge(update).order() : update;
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/merge.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/merge.js
 		function merge_default$1(context) {
 			var selection = context.selection ? context.selection() : context;
 			for (var groups0 = this._groups, groups1 = selection._groups, m0 = groups0.length, m1 = groups1.length, m = Math.min(m0, m1), merges = new Array(m0), j = 0; j < m; ++j) for (var group0 = groups0[j], group1 = groups1[j], n = group0.length, merge = merges[j] = new Array(n), node, i = 0; i < n; ++i) if (node = group0[i] || group1[i]) merge[i] = node;
@@ -1856,7 +1886,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return new Selection$1(merges, this._parents);
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/order.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/order.js
 		function order_default() {
 			for (var groups = this._groups, j = -1, m = groups.length; ++j < m;) for (var group = groups[j], i = group.length - 1, next = group[i], node; --i >= 0;) if (node = group[i]) {
 				if (next && node.compareDocumentPosition(next) ^ 4) next.parentNode.insertBefore(node, next);
@@ -1865,7 +1895,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this;
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/sort.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/sort.js
 		function sort_default(compare) {
 			if (!compare) compare = ascending;
 			function compareNode(a, b) {
@@ -1881,7 +1911,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return a < b ? -1 : a > b ? 1 : a >= b ? 0 : NaN;
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/call.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/call.js
 		function call_default() {
 			var callback = arguments[0];
 			arguments[0] = this;
@@ -1889,12 +1919,12 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this;
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/nodes.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/nodes.js
 		function nodes_default() {
 			return Array.from(this);
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/node.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/node.js
 		function node_default() {
 			for (var groups = this._groups, j = 0, m = groups.length; j < m; ++j) for (var group = groups[j], i = 0, n = group.length; i < n; ++i) {
 				var node = group[i];
@@ -1903,25 +1933,25 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return null;
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/size.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/size.js
 		function size_default() {
 			let size = 0;
 			for (const node of this) ++size;
 			return size;
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/empty.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/empty.js
 		function empty_default() {
 			return !this.node();
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/each.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/each.js
 		function each_default(callback) {
 			for (var groups = this._groups, j = 0, m = groups.length; j < m; ++j) for (var group = groups[j], i = 0, n = group.length, node; i < n; ++i) if (node = group[i]) callback.call(node, node.__data__, i, group);
 			return this;
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/attr.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/attr.js
 		function attrRemove$1(name) {
 			return function() {
 				this.removeAttribute(name);
@@ -1965,12 +1995,12 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.each((value == null ? fullname.local ? attrRemoveNS$1 : attrRemove$1 : typeof value === "function" ? fullname.local ? attrFunctionNS$1 : attrFunction$1 : fullname.local ? attrConstantNS$1 : attrConstant$1)(fullname, value));
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/window.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/window.js
 		function window_default(node) {
 			return node.ownerDocument && node.ownerDocument.defaultView || node.document && node || node.defaultView;
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/style.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/style.js
 		function styleRemove$1(name) {
 			return function() {
 				this.style.removeProperty(name);
@@ -1995,7 +2025,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return node.style.getPropertyValue(name) || window_default(node).getComputedStyle(node, null).getPropertyValue(name);
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/property.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/property.js
 		function propertyRemove(name) {
 			return function() {
 				delete this[name];
@@ -2017,7 +2047,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return arguments.length > 1 ? this.each((value == null ? propertyRemove : typeof value === "function" ? propertyFunction : propertyConstant)(name, value)) : this.node()[name];
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/classed.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/classed.js
 		function classArray(string) {
 			return string.trim().split(/^|\s+/);
 		}
@@ -2079,7 +2109,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.each((typeof value === "function" ? classedFunction : value ? classedTrue : classedFalse)(names, value));
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/text.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/text.js
 		function textRemove() {
 			this.textContent = "";
 		}
@@ -2098,7 +2128,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return arguments.length ? this.each(value == null ? textRemove : (typeof value === "function" ? textFunction$1 : textConstant$1)(value)) : this.node().textContent;
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/html.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/html.js
 		function htmlRemove() {
 			this.innerHTML = "";
 		}
@@ -2117,7 +2147,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return arguments.length ? this.each(value == null ? htmlRemove : (typeof value === "function" ? htmlFunction : htmlConstant)(value)) : this.node().innerHTML;
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/raise.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/raise.js
 		function raise() {
 			if (this.nextSibling) this.parentNode.appendChild(this);
 		}
@@ -2125,7 +2155,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.each(raise);
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/lower.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/lower.js
 		function lower() {
 			if (this.previousSibling) this.parentNode.insertBefore(this, this.parentNode.firstChild);
 		}
@@ -2133,7 +2163,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.each(lower);
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/append.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/append.js
 		function append_default(name) {
 			var create = typeof name === "function" ? name : creator_default(name);
 			return this.select(function() {
@@ -2141,7 +2171,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			});
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/insert.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/insert.js
 		function constantNull() {
 			return null;
 		}
@@ -2152,7 +2182,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			});
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/remove.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/remove.js
 		function remove() {
 			var parent = this.parentNode;
 			if (parent) parent.removeChild(this);
@@ -2161,7 +2191,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.each(remove);
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/clone.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/clone.js
 		function selection_cloneShallow() {
 			var clone = this.cloneNode(false), parent = this.parentNode;
 			return parent ? parent.insertBefore(clone, this.nextSibling) : clone;
@@ -2174,12 +2204,12 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.select(deep ? selection_cloneDeep : selection_cloneShallow);
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/datum.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/datum.js
 		function datum_default(value) {
 			return arguments.length ? this.property("__data__", value) : this.node().__data__;
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/on.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/on.js
 		function contextListener(listener) {
 			return function(event) {
 				listener.call(this, event, this.__data__);
@@ -2242,7 +2272,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this;
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/dispatch.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/dispatch.js
 		function dispatchEvent(node, type, params) {
 			var window = window_default(node), event = window.CustomEvent;
 			if (typeof event === "function") event = new event(type, params);
@@ -2267,12 +2297,12 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.each((typeof params === "function" ? dispatchFunction : dispatchConstant)(type, params));
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/iterator.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/iterator.js
 		function* iterator_default() {
 			for (var groups = this._groups, j = 0, m = groups.length; j < m; ++j) for (var group = groups[j], i = 0, n = group.length, node; i < n; ++i) if (node = group[i]) yield node;
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/index.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/index.js
 		var root = [null];
 		function Selection$1(groups, parents) {
 			this._groups = groups;
@@ -2323,19 +2353,19 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			[Symbol.iterator]: iterator_default
 		};
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/select.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/select.js
 		function select_default$1(selector) {
 			return typeof selector === "string" ? new Selection$1([[document.querySelector(selector)]], [document.documentElement]) : new Selection$1([[selector]], root);
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/sourceEvent.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/sourceEvent.js
 		function sourceEvent_default(event) {
 			let sourceEvent;
 			while (sourceEvent = event.sourceEvent) event = sourceEvent;
 			return event;
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/pointer.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/pointer.js
 		function pointer_default(event, node) {
 			event = sourceEvent_default(event);
 			if (node === void 0) node = event.currentTarget;
@@ -2355,7 +2385,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return [event.pageX, event.pageY];
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/noevent.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/noevent.js
 		const nonpassive = { passive: false };
 		const nonpassivecapture = {
 			capture: true,
@@ -2369,7 +2399,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			event.stopImmediatePropagation();
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/nodrag.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/nodrag.js
 		function nodrag_default(view) {
 			var root = view.document.documentElement, selection = select_default$1(view).on("dragstart.drag", noevent_default$1, nonpassivecapture);
 			if ("onselectstart" in root) selection.on("selectstart.drag", noevent_default$1, nonpassivecapture);
@@ -2393,10 +2423,10 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			}
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/constant.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/constant.js
 		var constant_default$2 = (x) => () => x;
 		//#endregion
-		//#region node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/event.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/event.js
 		function DragEvent(type, { sourceEvent, subject, target, identifier, active, x, y, dx, dy, dispatch }) {
 			Object.defineProperties(this, {
 				type: {
@@ -2457,7 +2487,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return value === this._ ? this : value;
 		};
 		//#endregion
-		//#region node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/drag.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/drag.js
 		function defaultFilter$1(event) {
 			return !event.ctrlKey && !event.button;
 		}
@@ -2590,7 +2620,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return drag;
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-color@3.1.0/node_modules/d3-color/src/define.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-color@3.1.0/node_modules/d3-color/src/define.js
 		function define_default(constructor, factory, prototype) {
 			constructor.prototype = factory.prototype = prototype;
 			prototype.constructor = constructor;
@@ -2601,7 +2631,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return prototype;
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-color@3.1.0/node_modules/d3-color/src/color.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-color@3.1.0/node_modules/d3-color/src/color.js
 		function Color() {}
 		var darker = .7;
 		var brighter = 1 / darker;
@@ -2928,10 +2958,10 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return (h < 60 ? m1 + (m2 - m1) * h / 60 : h < 180 ? m2 : h < 240 ? m1 + (m2 - m1) * (240 - h) / 60 : m1) * 255;
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/constant.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/constant.js
 		var constant_default$1 = (x) => () => x;
 		//#endregion
-		//#region node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/color.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/color.js
 		function linear(a, d) {
 			return function(t) {
 				return a + t * d;
@@ -2952,7 +2982,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return d ? linear(a, d) : constant_default$1(isNaN(a) ? b : a);
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/rgb.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/rgb.js
 		var rgb_default = (function rgbGamma(y) {
 			var color = gamma(y);
 			function rgb$1(start, end) {
@@ -2969,7 +2999,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return rgb$1;
 		})(1);
 		//#endregion
-		//#region node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/numberArray.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/numberArray.js
 		function numberArray_default(a, b) {
 			if (!b) b = [];
 			var n = a ? Math.min(b.length, a.length) : 0, c = b.slice(), i;
@@ -2982,7 +3012,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return ArrayBuffer.isView(x) && !(x instanceof DataView);
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/array.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/array.js
 		function genericArray(a, b) {
 			var nb = b ? b.length : 0, na = a ? Math.min(nb, a.length) : 0, x = new Array(na), c = new Array(nb), i;
 			for (i = 0; i < na; ++i) x[i] = value_default(a[i], b[i]);
@@ -2993,7 +3023,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			};
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/date.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/date.js
 		function date_default(a, b) {
 			var d = /* @__PURE__ */ new Date();
 			return a = +a, b = +b, function(t) {
@@ -3001,14 +3031,14 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			};
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/number.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/number.js
 		function number_default(a, b) {
 			return a = +a, b = +b, function(t) {
 				return a * (1 - t) + b * t;
 			};
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/object.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/object.js
 		function object_default(a, b) {
 			var i = {}, c = {}, k;
 			if (a === null || typeof a !== "object") a = {};
@@ -3021,7 +3051,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			};
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/string.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/string.js
 		var reA = /[-+]?(?:\d+\.?\d*|\.?\d+)(?:[eE][-+]?\d+)?/g;
 		var reB = new RegExp(reA.source, "g");
 		function zero(b) {
@@ -3066,13 +3096,13 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			});
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/value.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/value.js
 		function value_default(a, b) {
 			var t = typeof b, c;
 			return b == null || t === "boolean" ? constant_default$1(b) : (t === "number" ? number_default : t === "string" ? (c = color(b)) ? (b = c, rgb_default) : string_default : b instanceof color ? rgb_default : b instanceof Date ? date_default : isNumberArray(b) ? numberArray_default : Array.isArray(b) ? genericArray : typeof b.valueOf !== "function" && typeof b.toString !== "function" || isNaN(b) ? object_default : number_default)(a, b);
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/transform/decompose.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/transform/decompose.js
 		var degrees = 180 / Math.PI;
 		var identity$2 = {
 			translateX: 0,
@@ -3098,7 +3128,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			};
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/transform/parse.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/transform/parse.js
 		var svgNode;
 		function parseCss(value) {
 			const m = new (typeof DOMMatrix === "function" ? DOMMatrix : WebKitCSSMatrix)(value + "");
@@ -3113,7 +3143,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return decompose_default(value.a, value.b, value.c, value.d, value.e, value.f);
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/transform/index.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/transform/index.js
 		function interpolateTransform(parse, pxComma, pxParen, degParen) {
 			function pop(s) {
 				return s.length ? s.pop() + " " : "";
@@ -3177,7 +3207,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 		var interpolateTransformCss = interpolateTransform(parseCss, "px, ", "px)", "deg)");
 		var interpolateTransformSvg = interpolateTransform(parseSvg, ", ", ")", ")");
 		//#endregion
-		//#region node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/zoom.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/zoom.js
 		var epsilon2 = 1e-12;
 		function cosh(x) {
 			return ((x = Math.exp(x)) + 1 / x) / 2;
@@ -3222,7 +3252,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return zoom;
 		})(Math.SQRT2, 2, 4);
 		//#endregion
-		//#region node_modules/.pnpm/d3-timer@3.0.1/node_modules/d3-timer/src/timer.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-timer@3.0.1/node_modules/d3-timer/src/timer.js
 		var frame = 0;
 		var timeout = 0;
 		var interval = 0;
@@ -3321,7 +3351,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			}
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-timer@3.0.1/node_modules/d3-timer/src/timeout.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-timer@3.0.1/node_modules/d3-timer/src/timeout.js
 		function timeout_default(callback, delay, time) {
 			var t = new Timer();
 			delay = delay == null ? 0 : +delay;
@@ -3332,7 +3362,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return t;
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/schedule.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/schedule.js
 		var emptyOn = dispatch("start", "end", "cancel", "interrupt");
 		var emptyTween = [];
 		function schedule_default(node, name, id, index, group, timing) {
@@ -3428,7 +3458,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			}
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/interrupt.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/interrupt.js
 		function interrupt_default$1(node, name) {
 			var schedules = node.__transition, schedule, active, empty = true, i;
 			if (!schedules) return;
@@ -3447,14 +3477,14 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			if (empty) delete node.__transition;
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/selection/interrupt.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/selection/interrupt.js
 		function interrupt_default(name) {
 			return this.each(function() {
 				interrupt_default$1(this, name);
 			});
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/tween.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/tween.js
 		function tweenRemove(id, name) {
 			var tween0, tween1;
 			return function() {
@@ -3510,13 +3540,13 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			};
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/interpolate.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/interpolate.js
 		function interpolate_default(a, b) {
 			var c;
 			return (typeof b === "number" ? number_default : b instanceof color ? rgb_default : (c = color(b)) ? (b = c, rgb_default) : string_default)(a, b);
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/attr.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/attr.js
 		function attrRemove(name) {
 			return function() {
 				this.removeAttribute(name);
@@ -3566,7 +3596,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.attrTween(name, typeof value === "function" ? (fullname.local ? attrFunctionNS : attrFunction)(fullname, i, tweenValue(this, "attr." + name, value)) : value == null ? (fullname.local ? attrRemoveNS : attrRemove)(fullname) : (fullname.local ? attrConstantNS : attrConstant)(fullname, i, value));
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/attrTween.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/attrTween.js
 		function attrInterpolate(name, i) {
 			return function(t) {
 				this.setAttribute(name, i.call(this, t));
@@ -3606,7 +3636,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.tween(key, (fullname.local ? attrTweenNS : attrTween)(fullname, value));
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/delay.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/delay.js
 		function delayFunction(id, value) {
 			return function() {
 				init(this, id).delay = +value.apply(this, arguments);
@@ -3622,7 +3652,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return arguments.length ? this.each((typeof value === "function" ? delayFunction : delayConstant)(id, value)) : get(this.node(), id).delay;
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/duration.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/duration.js
 		function durationFunction(id, value) {
 			return function() {
 				set(this, id).duration = +value.apply(this, arguments);
@@ -3638,7 +3668,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return arguments.length ? this.each((typeof value === "function" ? durationFunction : durationConstant)(id, value)) : get(this.node(), id).duration;
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/ease.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/ease.js
 		function easeConstant(id, value) {
 			if (typeof value !== "function") throw new Error();
 			return function() {
@@ -3650,7 +3680,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return arguments.length ? this.each(easeConstant(id, value)) : get(this.node(), id).ease;
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/easeVarying.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/easeVarying.js
 		function easeVarying(id, value) {
 			return function() {
 				var v = value.apply(this, arguments);
@@ -3663,14 +3693,14 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.each(easeVarying(this._id, value));
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/filter.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/filter.js
 		function filter_default(match) {
 			if (typeof match !== "function") match = matcher_default(match);
 			for (var groups = this._groups, m = groups.length, subgroups = new Array(m), j = 0; j < m; ++j) for (var group = groups[j], n = group.length, subgroup = subgroups[j] = [], node, i = 0; i < n; ++i) if ((node = group[i]) && match.call(node, node.__data__, i, group)) subgroup.push(node);
 			return new Transition(subgroups, this._parents, this._name, this._id);
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/merge.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/merge.js
 		function merge_default(transition) {
 			if (transition._id !== this._id) throw new Error();
 			for (var groups0 = this._groups, groups1 = transition._groups, m0 = groups0.length, m1 = groups1.length, m = Math.min(m0, m1), merges = new Array(m0), j = 0; j < m; ++j) for (var group0 = groups0[j], group1 = groups1[j], n = group0.length, merge = merges[j] = new Array(n), node, i = 0; i < n; ++i) if (node = group0[i] || group1[i]) merge[i] = node;
@@ -3678,7 +3708,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return new Transition(merges, this._parents, this._name, this._id);
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/on.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/on.js
 		function start(name) {
 			return (name + "").trim().split(/^|\s+/).every(function(t) {
 				var i = t.indexOf(".");
@@ -3699,7 +3729,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return arguments.length < 2 ? get(this.node(), id).on.on(name) : this.each(onFunction(id, name, listener));
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/remove.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/remove.js
 		function removeFunction(id) {
 			return function() {
 				var parent = this.parentNode;
@@ -3711,7 +3741,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.on("end.remove", removeFunction(this._id));
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/select.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/select.js
 		function select_default(select) {
 			var name = this._name, id = this._id;
 			if (typeof select !== "function") select = selector_default(select);
@@ -3723,7 +3753,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return new Transition(subgroups, this._parents, name, id);
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/selectAll.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/selectAll.js
 		function selectAll_default(select) {
 			var name = this._name, id = this._id;
 			if (typeof select !== "function") select = selectorAll_default(select);
@@ -3735,13 +3765,13 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return new Transition(subgroups, parents, name, id);
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/selection.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/selection.js
 		var Selection = selection.prototype.constructor;
 		function selection_default() {
 			return new Selection(this._groups, this._parents);
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/style.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/style.js
 		function styleNull(name, interpolate) {
 			var string00, string10, interpolate0;
 			return function() {
@@ -3782,7 +3812,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return value == null ? this.styleTween(name, styleNull(name, i)).on("end.style." + name, styleRemove(name)) : typeof value === "function" ? this.styleTween(name, styleFunction(name, i, tweenValue(this, "style." + name, value))).each(styleMaybeRemove(this._id, name)) : this.styleTween(name, styleConstant(name, i, value), priority).on("end.style." + name, null);
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/styleTween.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/styleTween.js
 		function styleInterpolate(name, i, priority) {
 			return function(t) {
 				this.style.setProperty(name, i.call(this, t), priority);
@@ -3806,7 +3836,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.tween(key, styleTween(name, value, priority == null ? "" : priority));
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/text.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/text.js
 		function textConstant(value) {
 			return function() {
 				this.textContent = value;
@@ -3822,7 +3852,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.tween("text", typeof value === "function" ? textFunction(tweenValue(this, "text", value)) : textConstant(value == null ? "" : value + ""));
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/textTween.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/textTween.js
 		function textInterpolate(i) {
 			return function(t) {
 				this.textContent = i.call(this, t);
@@ -3846,7 +3876,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return this.tween(key, textTween(value));
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/transition.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/transition.js
 		function transition_default$1() {
 			var name = this._name, id0 = this._id, id1 = newId();
 			for (var groups = this._groups, m = groups.length, j = 0; j < m; ++j) for (var group = groups[j], n = group.length, node, i = 0; i < n; ++i) if (node = group[i]) {
@@ -3861,7 +3891,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return new Transition(groups, this._parents, name, id1);
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/end.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/end.js
 		function end_default() {
 			var on0, on1, that = this, id = that._id, size = that.size();
 			return new Promise(function(resolve, reject) {
@@ -3882,7 +3912,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			});
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/index.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/index.js
 		var id = 0;
 		function Transition(groups, parents, name, id) {
 			this._groups = groups;
@@ -3930,12 +3960,12 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			[Symbol.iterator]: selection_prototype[Symbol.iterator]
 		};
 		//#endregion
-		//#region node_modules/.pnpm/d3-ease@3.0.1/node_modules/d3-ease/src/cubic.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-ease@3.0.1/node_modules/d3-ease/src/cubic.js
 		function cubicInOut(t) {
 			return ((t *= 2) <= 1 ? t * t * t : (t -= 2) * t * t + 2) / 2;
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/selection/transition.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/selection/transition.js
 		var defaultTiming = {
 			time: null,
 			delay: 0,
@@ -3955,14 +3985,14 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return new Transition(groups, this._parents, name, id);
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/selection/index.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/selection/index.js
 		selection.prototype.interrupt = interrupt_default;
 		selection.prototype.transition = transition_default;
 		//#endregion
-		//#region node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/constant.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/constant.js
 		var constant_default = (x) => () => x;
 		//#endregion
-		//#region node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/event.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/event.js
 		function ZoomEvent(type, { sourceEvent, target, transform, dispatch }) {
 			Object.defineProperties(this, {
 				type: {
@@ -3989,7 +4019,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			});
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/transform.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/transform.js
 		function Transform(k, x, y) {
 			this.k = k;
 			this.x = x;
@@ -4038,7 +4068,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return node.__zoom;
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/noevent.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/noevent.js
 		function nopropagation(event) {
 			event.stopImmediatePropagation();
 		}
@@ -4047,7 +4077,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			event.stopImmediatePropagation();
 		}
 		//#endregion
-		//#region node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/zoom.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/zoom.js
 		function defaultFilter(event) {
 			return (!event.ctrlKey || event.type === "wheel") && !event.button;
 		}
@@ -4346,7 +4376,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return zoom;
 		}
 		//#endregion
-		//#region node_modules/.pnpm/@xyflow+system@0.0.80/node_modules/@xyflow/system/dist/esm/index.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/@xyflow+system@0.0.80/node_modules/@xyflow/system/dist/esm/index.js
 		const errorMessages = {
 			error001: (lib = "react") => `Seems like you have not used ${lib === "svelte" ? "SvelteFlowProvider" : "ReactFlowProvider"} as an ancestor. Help: https://${lib}flow.dev/error#001`,
 			error002: () => "It looks like you've created a new nodeTypes or edgeTypes object. If this wasn't on purpose please define the nodeTypes/edgeTypes outside of the component or memoize them.",
@@ -7179,7 +7209,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			};
 		}
 		//#endregion
-		//#region node_modules/.pnpm/use-sync-external-store@1.6.0_react@18.3.1/node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.production.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/use-sync-external-store@1.6.0_react@18.3.1/node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.production.js
 		/**
 		* @license React
 		* use-sync-external-store-shim.production.js
@@ -7239,12 +7269,12 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			exports.useSyncExternalStore = void 0 !== React$1.useSyncExternalStore ? React$1.useSyncExternalStore : shim;
 		}));
 		//#endregion
-		//#region node_modules/.pnpm/use-sync-external-store@1.6.0_react@18.3.1/node_modules/use-sync-external-store/shim/index.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/use-sync-external-store@1.6.0_react@18.3.1/node_modules/use-sync-external-store/shim/index.js
 		var require_shim = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			module.exports = require_use_sync_external_store_shim_production();
 		}));
 		//#endregion
-		//#region node_modules/.pnpm/use-sync-external-store@1.6.0_react@18.3.1/node_modules/use-sync-external-store/cjs/use-sync-external-store-shim/with-selector.production.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/use-sync-external-store@1.6.0_react@18.3.1/node_modules/use-sync-external-store/cjs/use-sync-external-store-shim/with-selector.production.js
 		/**
 		* @license React
 		* use-sync-external-store-shim/with-selector.production.js
@@ -7316,7 +7346,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			};
 		}));
 		//#endregion
-		//#region node_modules/.pnpm/zustand@4.5.7_@types+react@18.3.31_react@18.3.1/node_modules/zustand/esm/vanilla.mjs
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/zustand@4.5.7_@types+react@18.3.31_react@18.3.1/node_modules/zustand/esm/vanilla.mjs
 		var import_with_selector = /* @__PURE__ */ __toESM((/* @__PURE__ */ __commonJSMin(((exports, module) => {
 			module.exports = require_with_selector_production();
 		})))(), 1);
@@ -7352,7 +7382,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 		};
 		const createStore$1 = (createState) => createState ? createStoreImpl(createState) : createStoreImpl;
 		//#endregion
-		//#region node_modules/.pnpm/zustand@4.5.7_@types+react@18.3.31_react@18.3.1/node_modules/zustand/esm/traditional.mjs
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/zustand@4.5.7_@types+react@18.3.31_react@18.3.1/node_modules/zustand/esm/traditional.mjs
 		const { useDebugValue } = react.default;
 		const { useSyncExternalStoreWithSelector } = import_with_selector.default;
 		const identity = (arg) => arg;
@@ -7369,7 +7399,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 		};
 		const createWithEqualityFn = (createState, defaultEqualityFn) => createState ? createWithEqualityFnImpl(createState, defaultEqualityFn) : createWithEqualityFnImpl;
 		//#endregion
-		//#region node_modules/.pnpm/zustand@4.5.7_@types+react@18.3.31_react@18.3.1/node_modules/zustand/esm/shallow.mjs
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/zustand@4.5.7_@types+react@18.3.31_react@18.3.1/node_modules/zustand/esm/shallow.mjs
 		function shallow$1(objA, objB) {
 			if (Object.is(objA, objB)) return true;
 			if (typeof objA !== "object" || objA === null || typeof objB !== "object" || objB === null) return false;
@@ -7389,7 +7419,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return true;
 		}
 		//#endregion
-		//#region node_modules/.pnpm/@xyflow+react@12.11.3_@types+react-dom@18.3.7_@types+react@18.3.31__@types+react@18.3.3_71dfa8247134ab33b4cd4f58b02b90e3/node_modules/@xyflow/react/dist/esm/index.js
+		//#region ../../../dsh-talk-map/node_modules/.pnpm/@xyflow+react@12.11.3_@type_71dfa8247134ab33b4cd4f58b02b90e3/node_modules/@xyflow/react/dist/esm/index.js
 		const StoreContext = (0, react.createContext)(null);
 		const Provider$1 = StoreContext.Provider;
 		const zustandErrorMessage = errorMessages["error001"]("react");
@@ -14850,6 +14880,12 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					setToast(null);
 				}, 4e3);
 			};
+			const mapNotice = (0, react.useSyncExternalStore)(subscribeMapNotice, getMapNotice, () => null);
+			(0, react.useEffect)(() => {
+				if (mapNotice === null) return;
+				showToast(mapNotice.message);
+				clearMapNotice(mapNotice.seq);
+			}, [mapNotice]);
 			/** A toast that carries one inline action (「已归档 · 取消」). It lives longer
 			*  than the plain one — the undo window is the point. */
 			const showActionToast = (message, actionLabel, onAction, durationMs = 8e3) => {
@@ -16678,6 +16714,244 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			});
 		}
 		//#endregion
+		//#region src/client/sidebar-fallback.ts
+		/**
+		* The host opens a file reference through the *global* right-sidebar
+		* controller (`ctx.sidebarRight.openResource`), which only works while a
+		* Session is on screen (`SidebarRightController.require()`). The map keeps the
+		* main column empty on purpose — one editable composer root per Session — so
+		* every file link inside a card's drawer throws
+		* "sidebarRight: no session surface is mounted" and the host paints its
+		* "无法打开文件" dialog.
+		*
+		* This module wraps the controller's navigation methods for exactly that
+		* failure: a file address opens through the host's own "open path" route
+		* (system default application), a browser page opens in a new window, and
+		* anything else is reported through the map's toast instead of a dead dialog.
+		* Every other error is rethrown untouched.
+		*
+		* Pure by design (no imports, no DOM): the caller supplies the controller and
+		* the host callbacks, so `node --test` can exercise the behaviour directly.
+		*/
+		/** Fragment of the host error thrown when no Session surface is mounted. */
+		const NO_SURFACE_FRAGMENT = "no session surface is mounted";
+		/** The address scheme prefix every file resource carries. */
+		const FILE_PREFIX = "dsh-resource://file/session/";
+		/** Wrappers already installed, so a second apply() cannot nest them. */
+		const installed = /* @__PURE__ */ new WeakSet();
+		/** Whether `error` is the host's "no Session surface" refusal (and nothing else). */
+		function isNoSessionSurfaceError(error) {
+			const message = error instanceof Error ? error.message : typeof error === "string" ? error : void 0;
+			return message !== void 0 && message.includes(NO_SURFACE_FRAGMENT);
+		}
+		/**
+		* Read a `dsh-resource://file/session/<session>/<path>` address.
+		*
+		* The host encodes one segment at a time, so decoding works segment by
+		* segment; an absolute target keeps its leading separator (the address then
+		* carries two slashes after the Session id). Other resource types and empty
+		* paths are not file targets.
+		*
+		* @param address - the resource address the host controller was given.
+		* @returns the owning Session and the decoded path, or `null`.
+		*/
+		function parseFileAddress(address) {
+			if (typeof address !== "string" || !address.startsWith(FILE_PREFIX)) return null;
+			const rest = address.slice(28);
+			const slash = rest.indexOf("/");
+			if (slash <= 0) return null;
+			let sessionId;
+			let path;
+			try {
+				sessionId = decodeURIComponent(rest.slice(0, slash));
+				path = (rest.slice(slash + 1).split("?")[0] ?? "").split("/").map((segment) => decodeURIComponent(segment)).join("/");
+			} catch {
+				return null;
+			}
+			if (path === "") return null;
+			return {
+				sessionId,
+				path
+			};
+		}
+		/** Path spellings the host accepts as absolute (POSIX, Windows drive, UNC). */
+		function isAbsoluteTarget(path) {
+			return path.startsWith("/") || /^[A-Za-z]:\//.test(path) || path.startsWith("//");
+		}
+		/**
+		* Resolve a decoded address path against its Session workspace, the same way
+		* the host does before it reads a file.
+		*
+		* @param cwd - the Session's workspace root, when known.
+		* @param path - absolute or workspace-relative path in either separator spelling.
+		* @returns the absolute path, or `undefined` when a relative path has no root.
+		*/
+		function resolveTargetPath(cwd, path) {
+			const normalized = path.replace(/\\/g, "/");
+			if (isAbsoluteTarget(normalized)) return normalized;
+			if (cwd === void 0 || cwd === "") return void 0;
+			const root = cwd.replace(/[/\\]+$/, "");
+			const windows = /\\/.test(cwd);
+			const trimmed = normalized.replace(/^(?:\.?\/)+/, "");
+			const relative = windows ? trimmed.replace(/\//g, "\\") : trimmed;
+			return `${root}${windows ? "\\" : "/"}${relative}`;
+		}
+		/** Read `options.params.url` off a browser-tab open (the host's own shape). */
+		function tabUrl(options) {
+			if (typeof options !== "object" || options === null) return void 0;
+			const params = options.params;
+			if (typeof params !== "object" || params === null) return void 0;
+			const url = params.url;
+			return typeof url === "string" && url !== "" ? url : void 0;
+		}
+		/**
+		* Wrap the host controller's navigation methods with the fallbacks above.
+		*
+		* The wrapper only intervenes when the host refuses for lack of a Session
+		* surface; everything else keeps the host's behaviour.
+		*
+		* @param sidebarRight - the shared `ctx.sidebarRight` controller instance.
+		* @param deps - host callbacks the fallback uses.
+		* @param messages - localized failure copy.
+		* @returns a restore function putting the original methods back.
+		*/
+		function installSidebarFallback(sidebarRight, deps, messages) {
+			const holder = sidebarRight;
+			const currentResource = holder.openResource;
+			if (typeof currentResource !== "function" || installed.has(currentResource)) return () => {};
+			const originalResource = currentResource;
+			const originalTab = holder.openTab;
+			const ownResource = Object.prototype.hasOwnProperty.call(sidebarRight, "openResource");
+			const ownTab = Object.prototype.hasOwnProperty.call(sidebarRight, "openTab");
+			const fallbackResource = (address) => {
+				const target = parseFileAddress(address);
+				if (target === null) {
+					deps.notify(messages.unsupported);
+					return;
+				}
+				const absolute = resolveTargetPath(deps.resolveCwd(target.sessionId), target.path);
+				if (absolute === void 0) {
+					deps.notify(messages.failed);
+					return;
+				}
+				deps.openPathExternally(absolute).then((opened) => {
+					if (!opened) deps.notify(messages.failed);
+				}, () => {
+					deps.notify(messages.failed);
+				});
+			};
+			const wrappedResource = function(address, options) {
+				try {
+					originalResource.call(sidebarRight, address, options);
+				} catch (error) {
+					if (!isNoSessionSurfaceError(error)) throw error;
+					fallbackResource(address);
+				}
+			};
+			const wrappedTab = function(kind, options) {
+				try {
+					originalTab.call(sidebarRight, kind, options);
+				} catch (error) {
+					if (!isNoSessionSurfaceError(error)) throw error;
+					const url = tabUrl(options);
+					if (kind === "browser" && url !== void 0) {
+						deps.openUrl(url);
+						return;
+					}
+					deps.notify(messages.unsupported);
+				}
+			};
+			installed.add(wrappedResource);
+			holder.openResource = wrappedResource;
+			holder.openTab = wrappedTab;
+			return () => {
+				if (holder.openResource === wrappedResource) {
+					if (ownResource) holder.openResource = originalResource;
+					else delete holder.openResource;
+				}
+				if (holder.openTab === wrappedTab) {
+					if (ownTab) holder.openTab = originalTab;
+					else delete holder.openTab;
+				}
+			};
+		}
+		//#endregion
+		//#region src/client/sidebar-fallback-wire.ts
+		/**
+		* Apply-time wiring for the right-Sidebar fallback.
+		*
+		* The map deliberately keeps the main column empty, so the host's
+		* `ctx.sidebarRight.openResource` refuses every file link inside a card's
+		* drawer ("sidebarRight: no session surface is mounted"). This module finds
+		* that controller, feeds the pure wrapper (`sidebar-fallback.ts`) the host
+		* callbacks it needs, and lets the plugin's effect lifetime install and
+		* remove it. Missing services degrade to a no-op — the map must never fail to
+		* load because a host face is absent.
+		*/
+		/** Structural check: only an object with both navigation methods is wrappable. */
+		function isController(value) {
+			if (typeof value !== "object" || value === null) return false;
+			const holder = value;
+			return typeof holder.openResource === "function" && typeof holder.openTab === "function";
+		}
+		/** The controller as a declared service or through the host's service lookup. */
+		function controllerOf(ctx) {
+			if (isController(ctx.sidebarRight)) return ctx.sidebarRight;
+			if (typeof ctx.get === "function") {
+				const found = ctx.get("sidebarRight");
+				if (isController(found)) return found;
+			}
+		}
+		/** Host callbacks the fallback uses: workspace roots, the open route, the toast. */
+		function fallbackDeps(ctx) {
+			return {
+				resolveCwd: (sessionId) => ctx.sessions.list.getSnapshot().byId[sessionId]?.cwd,
+				openPathExternally: async (path) => {
+					const remote = ctx.remote;
+					const open = remote?.session.openWorkspacePath;
+					if (remote === void 0 || typeof open !== "function") return false;
+					try {
+						const result = await open.call(remote.session, { path });
+						return result !== null && typeof result === "object" && result.ok === true;
+					} catch {
+						return false;
+					}
+				},
+				openUrl: (url) => {
+					window.open(url, "_blank", "noopener,noreferrer");
+				},
+				notify: showMapNotice
+			};
+		}
+		/**
+		* Install the fallback for this client's lifetime.
+		*
+		* @param ctx - the plugin context providing the controller and host callbacks.
+		* @returns a restore function the plugin effect calls on unload.
+		*/
+		function installSidebarFallbackOnClient(ctx) {
+			const messages = {
+				failed: t("toast.openFallbackFailed"),
+				unsupported: t("toast.openFallbackUnsupported")
+			};
+			const deps = fallbackDeps(ctx);
+			const restores = [];
+			const attach = (service) => {
+				if (!isController(service)) return;
+				restores.push(installSidebarFallback(service, deps, messages));
+			};
+			const direct = controllerOf(ctx);
+			if (direct !== void 0) attach(direct);
+			else if (typeof ctx.inject === "function") try {
+				ctx.inject(["sidebarRight"], (scope) => {
+					attach(scope.sidebarRight);
+				});
+			} catch {}
+			return () => {
+				for (const restore of restores.splice(0)) restore();
+			};
+		}
+		//#endregion
 		//#region src/client/index.ts
 		const name = "dsh-talk-map-local";
 		const inject = [
@@ -16716,6 +16990,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					attachServices(void 0);
 					interactions.attach(void 0);
 				}, "dsh-talk-map: services");
+				ctx.effect(() => installSidebarFallbackOnClient(ctx), "dsh-talk-map: sidebar file fallback");
 				ctx.slots.inject("sidebar.footer.action", () => ctx.slots.register({
 					name: "sidebar.footer.action",
 					id: "talk-map",

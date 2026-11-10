@@ -15,6 +15,7 @@ import { interactions } from './interactions.ts'
 import { ChatPanel } from './ChatPanel.tsx'
 import { MapOverlay } from './MapOverlay.tsx'
 import { MapToggleButton } from './MapToggleButton.tsx'
+import { installSidebarFallbackOnClient } from './sidebar-fallback-wire.ts'
 import { t } from './i18n.ts'
 
 export const name = 'dsh-talk-map-local'
@@ -56,6 +57,12 @@ export function apply(ctx: TalkMapClientContext): void {
     // without ui-session (older host) the map simply shows the old badge.
     interactions.attach(ctx.uiSession?.sessionStatus)
     ctx.effect(() => () => { attachServices(undefined); interactions.attach(undefined) }, 'dsh-talk-map: services')
+
+    // File links inside a card's drawer go through the host's right-Sidebar
+    // controller, which refuses every open while the map keeps the main column
+    // empty ("sidebarRight: no session surface is mounted") and paints a modal.
+    // Open those files through the desktop instead; other failures stay as-is.
+    ctx.effect(() => installSidebarFallbackOnClient(ctx), 'dsh-talk-map: sidebar file fallback')
 
     ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
       name: 'sidebar.footer.action',

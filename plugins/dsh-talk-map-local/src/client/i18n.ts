@@ -151,6 +151,8 @@ const zh: Record<string, string> = {
   'toast.undo': '取消',
   'toast.archiveFailed': '归档失败：',
   'toast.unarchiveFailed': '取消归档失败：',
+  'toast.openFallbackFailed': '打开失败：侧栏不可用，系统默认应用也没成功',
+  'toast.openFallbackUnsupported': '只能从对话里打开（地图打开时主界面是空的）',
 }
 
 const en: Record<string, string> = {
@@ -293,6 +295,8 @@ const en: Record<string, string> = {
   'toast.undo': 'Undo',
   'toast.archiveFailed': 'Archive failed: ',
   'toast.unarchiveFailed': 'Undo failed: ',
+  'toast.openFallbackFailed': "Couldn't open it: the sidebar is unavailable and the system app refused",
+  'toast.openFallbackUnsupported': 'Only opens from a conversation — the map keeps the main column empty',
 }
 
 /** The order the header button cycles through. */

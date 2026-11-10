@@ -95,6 +95,41 @@ export const mapUi = {
 }
 
 /**
+ * One transient message raised outside React — the file-open fallback reports
+ * through the map's own toast instead of the host's modal.
+ */
+export interface MapNotice {
+  readonly message: string
+  readonly seq: number
+}
+
+const noticeListeners = new Set<Listener>()
+let notice: MapNotice | null = null
+let noticeSeq = 0
+
+/** Publish a message for the map toast; the canvas clears it after showing. */
+export function showMapNotice(message: string): void {
+  noticeSeq += 1
+  notice = { message, seq: noticeSeq }
+  for (const listener of noticeListeners) listener()
+}
+
+/** Drop one shown notice; a newer notice keeps the floor. */
+export function clearMapNotice(seq: number): void {
+  if (notice === null || notice.seq !== seq) return
+  notice = null
+}
+
+export function subscribeMapNotice(listener: Listener): () => void {
+  noticeListeners.add(listener)
+  return () => { noticeListeners.delete(listener) }
+}
+
+export function getMapNotice(): MapNotice | null {
+  return notice
+}
+
+/**
  * Service handles captured at apply() time so components can navigate
  * (open/create sessions) without threading ctx through props.
  */

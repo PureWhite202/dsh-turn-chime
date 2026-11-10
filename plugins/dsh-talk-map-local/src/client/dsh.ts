@@ -248,6 +248,10 @@ export interface RemoteService {
     selectModel(payload: { sessionId: string; provider: string; model: string; reasoningEffort?: string }):
       Promise<RemoteResult<unknown>>
     modelCatalog(): Promise<RemoteResult<{ groups?: ModelProviderGroup[] }>>
+    /** Host route (dsh-host-open-in-app): open one absolute path with the
+     *  desktop's default application, or reveal it in the file manager.
+     *  Optional — absent on hosts without the desktop bridge. */
+    openWorkspacePath?(payload: { path: string; action?: 'reveal' }): Promise<RemoteResult<unknown>>
   }
   agentPresets: {
     list(): Promise<RemoteResult<{ presets: AgentPresetEntry[] }>>
@@ -355,6 +359,16 @@ export interface ConnectionService {
   }
 }
 
+/**
+ * ctx.sidebarRight (subset): the host's right-Sidebar navigation controller.
+ * Its `require()` refuses every open while no Session is on the main column —
+ * exactly the map's own state, so the map wraps these two methods.
+ */
+export interface SidebarRightService {
+  openResource(address: string, options?: unknown): void
+  openTab(kind: string, options?: unknown): void
+}
+
 /** The client cordis context surface this plugin relies on (structural). */
 export interface TalkMapClientContext {
   slots: SlotsService
@@ -372,5 +386,12 @@ export interface TalkMapClientContext {
   fileUpload: FileUploadService
   /** Official application-internal file drag service (dsh-client-ui-file-drag). */
   fileDrag: FileDragService
+  /** Cross-plugin right-Sidebar face; provided by the ui-sidebar-right bundle. */
+  sidebarRight?: SidebarRightService
+  /** Service lookup by name (cordis `ctx.get`), for services provided later. */
+  get?: (name: string) => unknown
+  /** Dynamic injection (cordis `ctx.inject`): runs when the named service
+   *  appears, so the wrapper also installs without a hard dependency. */
+  inject?: (names: string[], callback: (scope: { sidebarRight?: unknown }) => unknown) => unknown
   effect(callback: () => unknown, label?: string): void
 }

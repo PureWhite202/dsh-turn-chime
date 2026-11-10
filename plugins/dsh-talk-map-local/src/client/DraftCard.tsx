@@ -25,7 +25,7 @@ import {
   collectClipboardFiles,
   collectDropIntake,
   draftImageMediaType,
-  draftSendable,
+  draftSendDisabled,
   formatAttachmentBytes,
   hasAttachmentDrag,
   type DraftAttachment,
@@ -182,7 +182,7 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
 
   /** Add browser files in source order; images get an object-URL preview. */
   const addFiles = (files: readonly File[]): void => {
-    if (files.length === 0) return
+    if (files.length === 0 || busy) return
     const created = files.map((file): DraftAttachment => {
       const kind = classifyDraftFile(file)
       const mediaType = kind === 'image' ? draftImageMediaType(file.type) : undefined
@@ -199,6 +199,7 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
   }
 
   const removeAttachment = (id: string): void => {
+    if (busy) return
     const target = attachments.find(attachment => attachment.id === id)
     if (target?.previewUrl !== undefined) URL.revokeObjectURL(target.previewUrl)
     setAttachments(previous => previous.filter(attachment => attachment.id !== id))
@@ -221,6 +222,7 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
   }
 
   const onPaste = (event: React.ClipboardEvent<HTMLTextAreaElement>): void => {
+    if (busy) return
     const files = collectClipboardFiles(event.clipboardData)
     if (files.length === 0) return
     // Text + files: let the textarea paste the text natively; files only:
@@ -230,13 +232,17 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
   }
 
   const onAttachmentDragEnter = (event: React.DragEvent<HTMLDivElement>): void => {
-    if (!hasAttachmentDrag(event.dataTransfer)) return
+    if (busy || !hasAttachmentDrag(event.dataTransfer)) return
     event.preventDefault()
     setDragActive(true)
   }
 
   const onAttachmentDragOver = (event: React.DragEvent<HTMLDivElement>): void => {
     if (!hasAttachmentDrag(event.dataTransfer)) return
+    if (busy) {
+      event.dataTransfer.dropEffect = 'none'
+      return
+    }
     event.preventDefault()
     event.dataTransfer.dropEffect = 'copy'
     setDragActive(true)
@@ -254,6 +260,7 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
     event.preventDefault()
     event.stopPropagation()
     setDragActive(false)
+    if (busy) return
     const services = getServices()
     const readAppFile = services !== undefined && services.fileDrag !== undefined
       ? (transfer: DataTransfer): File | undefined => services.fileDrag.read(transfer)
@@ -315,10 +322,16 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
   const newWsPath = `${wsParent}/${newWsName.trim()}`
   const isFork = parent !== undefined
   const needsNewWorkspaceName = (!isFork || mode !== 'full') && creatingWorkspace && newWsName.trim() === ''
-  const sendDisabled = busy
-    || needsNewWorkspaceName
-    || (isFork && mode === 'digest' && (generatingSummary || summary.trim() === ''))
-    || !draftSendable(text, attachments.length)
+  const sendDisabled = draftSendDisabled({
+    busy,
+    needsNewWorkspaceName,
+    isFork,
+    mode,
+    generatingSummary,
+    summaryEmpty: summary.trim() === '',
+    text,
+    attachmentCount: attachments.length,
+  })
 
   /** Resolve the destination workspace, creating the folder/workspace on demand. */
   const resolveTargetWorkspace = async (remote: RemoteService): Promise<string> => {
@@ -471,6 +484,12 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
     const controller = new AbortController()
     abortRef.current = controller
     const signal = controller.signal
+    /** True once the draft was closed; callers must not add more side effects. */
+    const stopped = (): boolean => {
+      if (!controller.signal.aborted) return false
+      setBusy(false)
+      return true
+    }
     setBusy(true)
     setError(undefined)
     try {
@@ -490,10 +509,13 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
           const childId = sessionIdOf(forked)
           if (childId === undefined) throw new Error('session.fork returned no session id')
           const receiptIds = await uploadAttachments(remote, childId, signal)
+          if (stopped()) return
           const forkCardId = addDraftCard(childId, parent.workspaceId)
           addForkEdge(parent.cardId, forkCardId, 'full', undefined)
           if (parent.workspaceId !== undefined) ensureFrame(parent.workspaceId, cardX, cardY)
+          if (stopped()) return
           await sendPrompt(remote, childId, text, receiptIds)
+          if (stopped()) return
           finish(childId)
           return
         }
@@ -507,9 +529,11 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
         // Upload before anything visible lands: a refused attachment leaves
         // the draft (and its previews) intact instead of a half-made card.
         const receiptIds = await uploadAttachments(remote, sessionId, signal)
+        if (stopped()) return
         if (mode === 'digest') {
           // Background first, then the user's opening message.
           await talkMapApi.injectContext(sessionId, [{ sessionId: parent.sessionId, text: summary }])
+          if (stopped()) return
         }
         const cardId = addDraftCard(sessionId, targetWorkspaceId)
         addForkEdge(parent.cardId, cardId, mode === 'digest' ? 'digest' : 'none', mode === 'digest' ? summary : undefined)
@@ -518,7 +542,9 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
           const [provider, model] = modelKey.split('::') as [string, string]
           unwrapRemote<void>(await remote.session.selectModel({ sessionId, provider, model }), 'session.selectModel')
         }
+        if (stopped()) return
         await sendPrompt(remote, sessionId, text, receiptIds)
+        if (stopped()) return
         finish(sessionId)
         return
       }
@@ -532,6 +558,7 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
       const sessionId = sessionIdOf(unwrapRemote(createResult, 'session.create'))
       if (sessionId === undefined) throw new Error('session.create returned no session id')
       const receiptIds = await uploadAttachments(remote, sessionId, signal)
+      if (stopped()) return
       const cardX = snap(props.positionAbsoluteX)
       const cardY = snap(props.positionAbsoluteY)
       addDraftCard(sessionId, targetWorkspaceId)
@@ -540,10 +567,15 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
         const [provider, model] = modelKey.split('::') as [string, string]
         unwrapRemote<void>(await remote.session.selectModel({ sessionId, provider, model }), 'session.selectModel')
       }
+      if (stopped()) return
       await sendPrompt(remote, sessionId, text, receiptIds)
+      if (stopped()) return
       finish(sessionId)
     } catch (sendError) {
-      if (controller.signal.aborted) return
+      if (controller.signal.aborted) {
+        setBusy(false)
+        return
+      }
       setError(String(sendError))
       setBusy(false)
     } finally {
@@ -751,6 +783,7 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
                         className={`${styles['draftAttachmentRemove']} nodrag`}
                         title={t('draft.removeAttachment')}
                         aria-label={t('draft.removeAttachment')}
+                        disabled={busy}
                         onClick={() => { removeAttachment(attachment.id) }}
                       >
                         ×
@@ -799,6 +832,7 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
                         className={`${styles['draftAttachmentRemove']} nodrag`}
                         title={t('draft.removeAttachment')}
                         aria-label={t('draft.removeAttachment')}
+                        disabled={busy}
                         onClick={() => { removeAttachment(attachment.id) }}
                       >
                         ×

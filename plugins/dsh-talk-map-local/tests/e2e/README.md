@@ -27,11 +27,12 @@ node tests/e2e/draft-attachments.e2e.mjs
 6. send an image-only draft → the draft is replaced by a session card, the drawer opens, and the sent image appears in the conversation.
 7. send a file-only draft (empty textarea) → Send is enabled, a second session card appears, and the drawer shows the file name.
 8. host refusal (a file declared `image/png` whose bytes are not an image) → the error row appears, the draft survives, and no session card is added.
-9. Escape while a 20 MB upload is starting → the draft closes, no page error escapes, and the host is torn down cleanly.
+9. Escape while a 200 MB upload is starting → a second paste during the busy state is ignored, the draft closes, no page error escapes, and no session card is added for the aborted send.
+10. send still works after an aborted draft → a fresh draft's first message creates a session card normally.
 
 The macOS scenario only proves the CSS clearance in Chromium (it toggles the same `data-platform` attribute the desktop shell sets); the native traffic lights themselves only exist in the Electron window.
 
-The success scenarios really call the configured model (the prompt is accepted before the model replies); only the throwaway host is affected.
+The success scenarios really call the configured model (the prompt is accepted before the model replies); only the throwaway host is affected. The Escape scenario uses 200 MB so the send is still in flight when the test pastes and closes the draft — a 20 MB upload can finish before the assertions.
 
 Failures write a screenshot to `tests/e2e/artifacts/` (git-ignored) and exit non-zero.
 

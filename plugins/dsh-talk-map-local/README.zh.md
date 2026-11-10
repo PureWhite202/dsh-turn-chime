@@ -45,7 +45,7 @@ npm 包（`dsh plugin --profile web add dsh-talk-map`）待发布。
 
 ## 兼容性
 
-针对 deepseek-harness `0.1.0-rc.6` 开发（rc 阶段 API 可能漂移）。结构化契约集中在 `src/client/dsh.ts` 与 `src/host/dsh-host.ts`，升级排查从这两个文件开始。
+针对 deepseek-harness `0.2.2-rc.1` 开发（rc 阶段 API 可能漂移）。草稿卡附件额外依赖 `dsh-client-file-upload` 与 `dsh-client-ui-file-drag` 两个客户端条目，0.2.x 的 `dsh-web-app` bundle 自带。结构化契约集中在 `src/client/dsh.ts` 与 `src/host/dsh-host.ts`，升级排查从这两个文件开始。
 
 ## Roadmap（第三刀）
 

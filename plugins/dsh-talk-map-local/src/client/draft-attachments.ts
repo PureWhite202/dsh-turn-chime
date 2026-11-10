@@ -140,6 +140,34 @@ export function draftSendable(text: string, attachmentCount: number): boolean {
   return text.trim() !== '' || attachmentCount > 0
 }
 
+/** The three inheritance modes of a fork draft (plain drafts behave as full). */
+export type DraftSendMode = 'digest' | 'full' | 'none'
+
+/** Everything the draft's primary-action gate reads. */
+export interface DraftSendState {
+  readonly busy: boolean
+  readonly needsNewWorkspaceName: boolean
+  readonly isFork: boolean
+  readonly mode: DraftSendMode
+  readonly generatingSummary: boolean
+  /** The digest-injection text is empty (only meaningful for fork + digest). */
+  readonly summaryEmpty: boolean
+  readonly text: string
+  readonly attachmentCount: number
+}
+
+/**
+ * Whether 发送 / 开新对话 is disabled. Fork drafts in 完整对话 mode may send an
+ * empty first message: the source history is already carried, and the prompt
+ * is skipped when there is neither text nor an attachment.
+ */
+export function draftSendDisabled(state: DraftSendState): boolean {
+  if (state.busy || state.needsNewWorkspaceName) return true
+  if (state.isFork && state.mode === 'digest' && (state.generatingSummary || state.summaryEmpty)) return true
+  if (state.isFork && state.mode === 'full') return false
+  return !draftSendable(state.text, state.attachmentCount)
+}
+
 /** Compact byte size for the generic-file card. */
 export function formatAttachmentBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`

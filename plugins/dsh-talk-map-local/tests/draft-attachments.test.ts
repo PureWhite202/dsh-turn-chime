@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { buildPromptContent, classifyDraftFile, collectClipboardFiles, collectDropIntake, draftImageMediaType, draftSendable, formatAttachmentBytes, hasAttachmentDrag } from '../src/client/draft-attachments.ts'
+import { buildPromptContent, classifyDraftFile, collectClipboardFiles, collectDropIntake, draftImageMediaType, draftSendDisabled, draftSendable, formatAttachmentBytes, hasAttachmentDrag } from '../src/client/draft-attachments.ts'
 
 function file(name: string, type = ''): File {
   return new File([new Uint8Array([1, 2, 3])], name, { type })
@@ -53,6 +53,31 @@ test('prompt content is receipts first, text last, omitted when empty', () => {
   ])
   assert.deepEqual(buildPromptContent(['r1'], ''), [{ type: 'file', receiptId: 'r1' }])
   assert.deepEqual(buildPromptContent([], 'hi'), [{ type: 'text', text: 'hi' }])
+})
+
+test('fork full may send an empty first message; other modes need payload', () => {
+  const base = {
+    busy: false,
+    needsNewWorkspaceName: false,
+    isFork: true,
+    mode: 'full' as const,
+    generatingSummary: false,
+    summaryEmpty: true,
+    text: '',
+    attachmentCount: 0,
+  }
+  assert.equal(draftSendDisabled(base), false)
+  assert.equal(draftSendDisabled({ ...base, mode: 'digest' }), true)
+  assert.equal(draftSendDisabled({ ...base, mode: 'digest', summaryEmpty: false }), true)
+  assert.equal(draftSendDisabled({ ...base, mode: 'digest', summaryEmpty: false, attachmentCount: 1 }), false)
+  assert.equal(draftSendDisabled({ ...base, mode: 'digest', generatingSummary: true, summaryEmpty: false, text: 'x' }), true)
+  assert.equal(draftSendDisabled({ ...base, mode: 'none' }), true)
+  assert.equal(draftSendDisabled({ ...base, mode: 'none', text: 'x' }), false)
+  assert.equal(draftSendDisabled({ ...base, mode: 'none', attachmentCount: 1 }), false)
+  assert.equal(draftSendDisabled({ ...base, isFork: false }), true)
+  assert.equal(draftSendDisabled({ ...base, isFork: false, attachmentCount: 1 }), false)
+  assert.equal(draftSendDisabled({ ...base, busy: true }), true)
+  assert.equal(draftSendDisabled({ ...base, needsNewWorkspaceName: true }), true)
 })
 
 test('attachments alone are sendable', () => {

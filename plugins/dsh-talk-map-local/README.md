@@ -44,7 +44,7 @@ Restart `dsh web`; a map button appears at the sidebar foot.
 
 ## Compatibility
 
-Built against deepseek-harness `0.1.0-rc.6` (rc-stage APIs may drift). The structural contracts live in `src/client/dsh.ts` and `src/host/dsh-host.ts` — start there when upgrading.
+Built against deepseek-harness `0.2.2-rc.1` (rc-stage APIs may drift). Draft-card attachments additionally require the `dsh-client-file-upload` and `dsh-client-ui-file-drag` client entries, which the 0.2.x `dsh-web-app` bundle ships. The structural contracts live in `src/client/dsh.ts` and `src/host/dsh-host.ts` — start there when upgrading.
 
 ## Roadmap
 

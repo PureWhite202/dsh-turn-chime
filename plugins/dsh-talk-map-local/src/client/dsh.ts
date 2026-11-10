@@ -10,7 +10,8 @@
  *   packages/client/ui-slots/src/store.ts                    (SnapshotSelectorHook)
  *   packages/client/ui-layout/src/client/index.ts            ('shell.overlay')
  *   packages/client/ui-sidebar/src/client/contract/slots.ts  ('sidebar.footer.action')
- * all @ deepseek-harness 0.1.0-rc.6.
+ * all @ deepseek-harness 0.2.2-rc.1 (draft attachments also require the
+ * web-app bundle's dsh-client-file-upload and dsh-client-ui-file-drag entries).
  */
 
 /** Selector hook a slot's standard props deliver (subscribes the component). */

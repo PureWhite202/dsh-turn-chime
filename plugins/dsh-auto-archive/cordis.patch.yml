@@ -14,6 +14,8 @@
         dryRun: false
         # 每次扫描的运行报告（便于事后核对；填 false 可关闭）
         reportPath: 'C:\Users\Administrator\.dsh\cache\dsh-auto-archive\last-run.json'
+        # 只处理默认工作区（其它工作区的会话永不自动归档）
+        workspacePath: 'D:\Document\deepseek-harness\default-workspace'
       #   # 可选：只处理指定目录对应的工作区（默认按默认工作区走）
       #   workspacePath: 'D:\Document\deepseek-harness\default-workspace'
       #   # 可选：false 关闭运行报告；字符串则写到该绝对路径

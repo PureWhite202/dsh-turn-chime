@@ -31,8 +31,8 @@ const here = dirname(fileURLToPath(import.meta.url))
 const pluginDir = resolve(here, '..', '..')
 const artifactsDir = join(here, 'artifacts')
 
-/** The one-pixel PNG every image scenario uses. */
-const PNG_B64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lK3Q6wAAAABJRU5ErkJggg=='
+/** A valid, fully decodable red 64×64 PNG (the Host normalizes with sharp). */
+const PNG_B64 = 'iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAu0lEQVR4nOXOMREAMAgAsZeI/8NLKyMDQ/a0M++ydEBLB7R0QEsHtHRASwe0dEBLB7R0QEsHtHRASwe0dEBLB7R0QEsHtHRASwe0dEBLB7R0QEsHtHRASwe0dEBLB7R0QEsHtHRASwe0dEBLB7R0QEsHtHRASwe0dEBLB7R0QEsHtHRASwe0dEBLB7R0QEsHtHRASwe0dEBLB7R0QEsHtHRASwe0dEBLB7R0QEsHtHRASwe0dEBLB7R0QPuw07JKas17MgAAAABJRU5ErkJggg=='
 
 function loadPlaywright() {
   const candidates = []
@@ -150,16 +150,35 @@ async function prepareProfile(home, tgz) {
 }
 
 async function openMap(page) {
+  if (await page.locator('[data-talk-map-canvas]').count()) return
   const mapButton = page.getByRole('button', { name: /Talk Map|对话地图/ }).first()
   await mapButton.waitFor({ state: 'visible', timeout: 30000 })
   await mapButton.click()
   await page.waitForSelector('[data-talk-map-canvas]', { timeout: 10000 })
 }
 
-async function openDraft(page) {
+async function closeDrawer(page) {
+  const drawer = page.locator('aside[aria-label="Conversation panel"], aside[aria-label="会话窗口"]')
+  if (!(await drawer.count())) return
+  const close = drawer.first().getByRole('button', { name: /Close conversation panel|关闭会话窗口/ })
+  if (await close.count()) await close.first().click()
+  await drawer.first().waitFor({ state: 'detached', timeout: 5000 }).catch(() => {})
+}
+
+async function openDraft(page, position = { x: 500, y: 300 }) {
   if (await page.locator('[data-talk-map-draft]').count()) return
-  await page.locator('[data-talk-map-canvas]').dblclick({ position: { x: 500, y: 300 } })
-  await page.waitForSelector('[data-talk-map-draft]', { timeout: 8000 })
+  // A double-click on a card opens that Session full-screen (closing the map);
+  // retry a few known-empty points so the helper is robust to earlier cards.
+  const attempts = [position, { x: 1000, y: 400 }, { x: 700, y: 200 }, { x: 400, y: 700 }]
+  for (const point of attempts) {
+    await openMap(page)
+    await page.locator('[data-talk-map-canvas]').dblclick({ position: point })
+    try {
+      await page.waitForSelector('[data-talk-map-draft]', { timeout: 2500 })
+      return
+    } catch { /* a card or the drawer took the click: try the next point */ }
+  }
+  throw new Error('could not open a draft card')
 }
 
 async function closeDraft(page) {
@@ -182,6 +201,19 @@ async function pastePng(page, text) {
   }, { b64: PNG_B64, text })
 }
 
+/** Paste a file declared as image/png whose bytes are not an image. */
+async function pasteCorruptPng(page) {
+  return await page.evaluate(() => {
+    const textarea = document.querySelector('[data-talk-map-draft] textarea')
+    if (textarea === null) throw new Error('draft textarea missing')
+    const transfer = new DataTransfer()
+    transfer.items.add(new File([new Uint8Array([8, 9, 10, 11])], 'not-an-image.png', { type: 'image/png' }))
+    transfer.setData('text/plain', '')
+    const event = new ClipboardEvent('paste', { clipboardData: transfer, bubbles: true, cancelable: true })
+    return textarea.dispatchEvent(event)
+  })
+}
+
 /** Dispatch a drop on the draft card. `data` merges into the DataTransfer. */
 async function dropOnDraft(page, files, data) {
   return await page.evaluate(({ files: payload, data: extra }) => {
@@ -196,6 +228,37 @@ async function dropOnDraft(page, files, data) {
     const event = new DragEvent('drop', { dataTransfer: transfer, bubbles: true, cancelable: true })
     return target.dispatchEvent(event)
   }, { files, data })
+}
+
+/** Drop a large generically-typed file without shipping its bytes through the driver. */
+async function dropBigFile(page, sizeBytes) {
+  return await page.evaluate((size) => {
+    const target = document.querySelector('[data-talk-map-draft]')
+    if (target === null) throw new Error('draft card missing')
+    const bytes = new Uint8Array(size)
+    bytes.fill(7)
+    const transfer = new DataTransfer()
+    transfer.items.add(new File([bytes], 'big.bin', { type: 'application/octet-stream' }))
+    const event = new DragEvent('drop', { dataTransfer: transfer, bubbles: true, cancelable: true })
+    return target.dispatchEvent(event)
+  }, sizeBytes)
+}
+
+async function clickSend(page) {
+  const button = page.locator('[data-talk-map-draft]').getByRole('button', { name: /^(Send|发送)$/ })
+  assert((await button.count()) === 1, 'one Send button in the draft')
+  assert(await button.isEnabled(), 'Send is enabled')
+  await button.click()
+}
+
+async function sessionCards(page) {
+  return await page.locator('.react-flow__node-sessionCard').count()
+}
+
+async function waitForDrawer(page) {
+  const drawer = page.locator('aside[aria-label="Conversation panel"], aside[aria-label="会话窗口"]')
+  await drawer.first().waitFor({ state: 'visible', timeout: 20000 })
+  return drawer.first()
 }
 
 async function uploadPng(page) {
@@ -307,6 +370,58 @@ async function main() {
       assert((await remove.count()) === 1, 'one remove button')
       await remove.first().click({ force: true })
       await poll(async () => (await page.locator('[data-talk-map-attachment]').count()) === 0, 'attachment removed')
+    })
+
+    await scenario('send an image-only draft', async () => {
+      const before = await sessionCards(page)
+      const notPrevented = await pastePng(page, '')
+      assert(notPrevented === false, 'image-only paste should preventDefault')
+      await poll(async () => (await page.locator('[data-talk-map-attachment="image"]').count()) === 1, 'image attachment appears')
+      await clickSend(page)
+      await page.locator('[data-talk-map-draft]').waitFor({ state: 'detached', timeout: 30000 })
+      await poll(async () => (await sessionCards(page)) === before + 1, 'new session card appears')
+      const drawer = await waitForDrawer(page)
+      await poll(async () => (await drawer.locator('img').count()) > 0, 'drawer shows the sent image', 30000)
+    })
+
+    await scenario('send a file-only draft (no text)', async () => {
+      await openDraft(page, { x: 300, y: 550 })
+      const before = await sessionCards(page)
+      const prevented = await dropOnDraft(page, [
+        { b64: Buffer.from('%PDF-1.4\n% test\n').toString('base64'), name: 'report.pdf', type: 'application/pdf' },
+      ], {})
+      assert(prevented === false, 'drop should be owned by the draft')
+      await poll(async () => (await page.locator('[data-talk-map-attachment="file"]').count()) === 1, 'file attachment appears')
+      await clickSend(page)
+      await page.locator('[data-talk-map-draft]').waitFor({ state: 'detached', timeout: 30000 })
+      await poll(async () => (await sessionCards(page)) === before + 1, 'second session card appears')
+      const drawer = await waitForDrawer(page)
+      await poll(async () => (await drawer.innerText()).includes('report.pdf'), 'drawer shows the file name', 30000)
+    })
+
+    await scenario('host refusal keeps the draft', async () => {
+      await openDraft(page, { x: 300, y: 300 })
+      const before = await sessionCards(page)
+      await pasteCorruptPng(page)
+      await poll(async () => (await page.locator('[data-talk-map-attachment="image"]').count()) === 1, 'corrupt image attachment appears')
+      await clickSend(page)
+      await poll(async () => /upload failed|上传失败/i.test(await page.locator('[data-talk-map-draft]').innerText()), 'upload error is shown', 30000)
+      await page.waitForTimeout(500)
+      assert((await page.locator('[data-talk-map-draft]').count()) === 1, 'draft survives the refusal')
+      assert((await sessionCards(page)) === before, 'no session card on refusal')
+    })
+
+    await scenario('Escape during upload closes cleanly', async () => {
+      await closeDraft(page)
+      await closeDrawer(page)
+      await openDraft(page, { x: 1000, y: 400 })
+      const prevented = await dropBigFile(page, 20 * 1024 * 1024)
+      assert(prevented === false, 'big file drop is owned by the draft')
+      await poll(async () => (await page.locator('[data-talk-map-attachment="file"]').count()) === 1, 'big file attachment appears')
+      await clickSend(page)
+      await page.keyboard.press('Escape')
+      await page.locator('[data-talk-map-draft]').waitFor({ state: 'detached', timeout: 10000 })
+      await page.waitForTimeout(1000)
     })
 
     assert(pageErrors.length === 0, `page errors: ${pageErrors.map(error => error.message).join(' | ')}`)

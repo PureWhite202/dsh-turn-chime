@@ -1361,139 +1361,139 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			document.head.appendChild(tag);
 		}
 		var talk_map_module_css_default = {
-			"cardPinActive": "O81TBq_cardPinActive",
-			"card": "O81TBq_card",
-			"menu": "O81TBq_menu",
-			"cardBadgeWaiting": "O81TBq_cardBadgeWaiting",
-			"draftPathPreview": "O81TBq_draftPathPreview",
-			"colorToolbarLabel": "O81TBq_colorToolbarLabel",
-			"chatDrawerHeader": "O81TBq_chatDrawerHeader",
-			"chatDrawerNoticeText": "O81TBq_chatDrawerNoticeText",
-			"chatPanel": "O81TBq_chatPanel",
-			"draftCardDrop": "O81TBq_draftCardDrop",
-			"mapFallbackText": "O81TBq_mapFallbackText",
-			"interactOptions": "O81TBq_interactOptions",
-			"wsFrameEdge": "O81TBq_wsFrameEdge",
-			"wsFrameHidden": "O81TBq_wsFrameHidden",
-			"interactOpen": "O81TBq_interactOpen",
-			"cardForeign": "O81TBq_cardForeign",
-			"cardPin": "O81TBq_cardPin",
-			"interactActions": "O81TBq_interactActions",
-			"spawnError": "O81TBq_spawnError",
-			"interactOptionActive": "O81TBq_interactOptionActive",
-			"chatDrawerSpace": "O81TBq_chatDrawerSpace",
-			"cardFooter": "O81TBq_cardFooter",
-			"chatDrawerNoticeButton": "O81TBq_chatDrawerNoticeButton",
-			"draftAttachmentProgress": "O81TBq_draftAttachmentProgress",
-			"interactMenu": "O81TBq_interactMenu",
-			"draftAttachmentFileName": "O81TBq_draftAttachmentFileName",
-			"chatDrawer": "O81TBq_chatDrawer",
-			"interactError": "O81TBq_interactError",
-			"colorSwatch": "O81TBq_colorSwatch",
-			"spawnBtnGhost": "O81TBq_spawnBtnGhost",
-			"canvas": "O81TBq_canvas",
-			"toastText": "O81TBq_toastText",
-			"chatDrawerBody": "O81TBq_chatDrawerBody",
-			"runningDot": "O81TBq_runningDot",
-			"cardHandle": "O81TBq_cardHandle",
-			"colorSwatchClear": "O81TBq_colorSwatchClear",
-			"draftDropHint": "O81TBq_draftDropHint",
-			"emptyHint": "O81TBq_emptyHint",
-			"draftSelect": "O81TBq_draftSelect",
-			"spawnBtnPrimary": "O81TBq_spawnBtnPrimary",
-			"toastAction": "O81TBq_toastAction",
-			"wsFrameCount": "O81TBq_wsFrameCount",
-			"draftCard": "O81TBq_draftCard",
-			"colorToolbar": "O81TBq_colorToolbar",
-			"chatDrawerArchived": "O81TBq_chatDrawerArchived",
-			"imageCardImg": "O81TBq_imageCardImg",
-			"draftAttachmentFileMeta": "O81TBq_draftAttachmentFileMeta",
-			"menuPreview": "O81TBq_menuPreview",
-			"interactGroup": "O81TBq_interactGroup",
-			"draftRow": "O81TBq_draftRow",
-			"chatDrawerNotice": "O81TBq_chatDrawerNotice",
-			"interactSubmit": "O81TBq_interactSubmit",
-			"headerTitle": "O81TBq_headerTitle",
-			"spawnModeBtn": "O81TBq_spawnModeBtn",
-			"headerBadge": "O81TBq_headerBadge",
-			"closeButton": "O81TBq_closeButton",
-			"interactDanger": "O81TBq_interactDanger",
-			"draftAttachments": "O81TBq_draftAttachments",
-			"langButton": "O81TBq_langButton",
-			"draftAttachmentFileIcon": "O81TBq_draftAttachmentFileIcon",
-			"draftTextarea": "O81TBq_draftTextarea",
-			"toggleButtonActive": "O81TBq_toggleButtonActive",
-			"spawnTextarea": "O81TBq_spawnTextarea",
-			"talkmap-pulse": "O81TBq_talkmap-pulse",
-			"spawnHint": "O81TBq_spawnHint",
-			"draftHeading": "O81TBq_draftHeading",
-			"draftGrow": "O81TBq_draftGrow",
-			"draftAttachmentImage": "O81TBq_draftAttachmentImage",
-			"body": "O81TBq_body",
-			"mapFallback": "O81TBq_mapFallback",
-			"wsFrame": "O81TBq_wsFrame",
-			"wsFrameForeign": "O81TBq_wsFrameForeign",
-			"canvasConnecting": "O81TBq_canvasConnecting",
-			"draftInput": "O81TBq_draftInput",
-			"menuError": "O81TBq_menuError",
-			"cardForeignPulse": "O81TBq_cardForeignPulse",
-			"menuSearch": "O81TBq_menuSearch",
-			"chatDrawerArchivedButton": "O81TBq_chatDrawerArchivedButton",
-			"draftAttachmentRemove": "O81TBq_draftAttachmentRemove",
-			"menuHint": "O81TBq_menuHint",
-			"hotkeyButton": "O81TBq_hotkeyButton",
-			"menuItem": "O81TBq_menuItem",
-			"toggleRow": "O81TBq_toggleRow",
-			"chatDrawerClose": "O81TBq_chatDrawerClose",
-			"cardBadgeDone": "O81TBq_cardBadgeDone",
-			"interactScroll": "O81TBq_interactScroll",
-			"imageCard": "O81TBq_imageCard",
-			"cardFooterLeft": "O81TBq_cardFooterLeft",
-			"spawnFrom": "O81TBq_spawnFrom",
 			"spawnActions": "O81TBq_spawnActions",
-			"cardDoneDot": "O81TBq_cardDoneDot",
-			"menuTitle": "O81TBq_menuTitle",
-			"overlay": "O81TBq_overlay",
-			"toast": "O81TBq_toast",
-			"talk-map-drawer": "O81TBq_talk-map-drawer",
-			"chatDrawerNoticeActions": "O81TBq_chatDrawerNoticeActions",
-			"toggleButton": "O81TBq_toggleButton",
-			"draftAttachmentFileText": "O81TBq_draftAttachmentFileText",
-			"cardWaitingButton": "O81TBq_cardWaitingButton",
-			"interactOption": "O81TBq_interactOption",
-			"cardGhost": "O81TBq_cardGhost",
-			"draftAttachmentFile": "O81TBq_draftAttachmentFile",
-			"mapFallbackTitle": "O81TBq_mapFallbackTitle",
-			"imageCardSelected": "O81TBq_imageCardSelected",
-			"cardRemove": "O81TBq_cardRemove",
-			"cardBadgeRunning": "O81TBq_cardBadgeRunning",
-			"wsFrameLabel": "O81TBq_wsFrameLabel",
-			"toggleIcon": "O81TBq_toggleIcon",
-			"cardTime": "O81TBq_cardTime",
-			"zoomResetLabel": "O81TBq_zoomResetLabel",
-			"draftLabel": "O81TBq_draftLabel",
-			"draftAttachmentProgressBar": "O81TBq_draftAttachmentProgressBar",
-			"wsFrameSelected": "O81TBq_wsFrameSelected",
-			"cardTitle": "O81TBq_cardTitle",
-			"cardTop": "O81TBq_cardTop",
+			"cardBadgeWaiting": "O81TBq_cardBadgeWaiting",
+			"spawnTextarea": "O81TBq_spawnTextarea",
+			"draftAttachmentFileMeta": "O81TBq_draftAttachmentFileMeta",
+			"cardSelected": "O81TBq_cardSelected",
 			"toggleLabel": "O81TBq_toggleLabel",
-			"cardForeignChip": "O81TBq_cardForeignChip",
+			"wsFrameCount": "O81TBq_wsFrameCount",
+			"wsFrameSelected": "O81TBq_wsFrameSelected",
+			"draftAttachmentFileText": "O81TBq_draftAttachmentFileText",
+			"chatDrawer": "O81TBq_chatDrawer",
+			"cardBadgeRunning": "O81TBq_cardBadgeRunning",
+			"wsFrameResize": "O81TBq_wsFrameResize",
+			"draftAttachmentFile": "O81TBq_draftAttachmentFile",
+			"menuTitle": "O81TBq_menuTitle",
+			"chatDrawerTitle": "O81TBq_chatDrawerTitle",
+			"draftCard": "O81TBq_draftCard",
+			"interactScroll": "O81TBq_interactScroll",
+			"mapFallbackText": "O81TBq_mapFallbackText",
+			"draftAttachmentProgressBar": "O81TBq_draftAttachmentProgressBar",
+			"draftLabel": "O81TBq_draftLabel",
+			"menu": "O81TBq_menu",
+			"cardHandle": "O81TBq_cardHandle",
+			"draftAttachmentFileName": "O81TBq_draftAttachmentFileName",
+			"chatDrawerSpace": "O81TBq_chatDrawerSpace",
+			"chatDrawerNoticeText": "O81TBq_chatDrawerNoticeText",
+			"cardGhost": "O81TBq_cardGhost",
+			"colorSwatchClear": "O81TBq_colorSwatchClear",
+			"langButton": "O81TBq_langButton",
+			"chatDrawerNotice": "O81TBq_chatDrawerNotice",
+			"interactActions": "O81TBq_interactActions",
+			"headerSpace": "O81TBq_headerSpace",
+			"cardDoneDot": "O81TBq_cardDoneDot",
+			"spawnModeBtn": "O81TBq_spawnModeBtn",
+			"spawnBtnPrimary": "O81TBq_spawnBtnPrimary",
+			"headerTitle": "O81TBq_headerTitle",
+			"draftSelect": "O81TBq_draftSelect",
+			"draftInput": "O81TBq_draftInput",
+			"canvasConnecting": "O81TBq_canvasConnecting",
+			"cardFooterLeft": "O81TBq_cardFooterLeft",
 			"spawnModeActive": "O81TBq_spawnModeActive",
+			"body": "O81TBq_body",
+			"cardRemove": "O81TBq_cardRemove",
+			"canvas": "O81TBq_canvas",
+			"card": "O81TBq_card",
+			"cardFooter": "O81TBq_cardFooter",
+			"wsFrameForeign": "O81TBq_wsFrameForeign",
+			"draftPathPreview": "O81TBq_draftPathPreview",
+			"menuItem": "O81TBq_menuItem",
+			"talk-map-drawer": "O81TBq_talk-map-drawer",
+			"wsFrameHidden": "O81TBq_wsFrameHidden",
+			"draftGrow": "O81TBq_draftGrow",
+			"toastActionable": "O81TBq_toastActionable",
+			"chatDrawerNoticeActions": "O81TBq_chatDrawerNoticeActions",
+			"mapFallbackButton": "O81TBq_mapFallbackButton",
+			"imageCardImg": "O81TBq_imageCardImg",
+			"chatDrawerArchivedButton": "O81TBq_chatDrawerArchivedButton",
+			"draftHeading": "O81TBq_draftHeading",
+			"imageCard": "O81TBq_imageCard",
+			"chatPanel": "O81TBq_chatPanel",
+			"wsFrameLabel": "O81TBq_wsFrameLabel",
+			"toggleButton": "O81TBq_toggleButton",
+			"cardForeignPulse": "O81TBq_cardForeignPulse",
+			"cardForeign": "O81TBq_cardForeign",
+			"headerBadge": "O81TBq_headerBadge",
+			"talkmap-pulse": "O81TBq_talkmap-pulse",
+			"cardBadgeDone": "O81TBq_cardBadgeDone",
+			"draftAttachmentFileIcon": "O81TBq_draftAttachmentFileIcon",
+			"draftAttachmentRemove": "O81TBq_draftAttachmentRemove",
+			"chatDrawerClose": "O81TBq_chatDrawerClose",
+			"toggleRow": "O81TBq_toggleRow",
+			"toggleButtonActive": "O81TBq_toggleButtonActive",
+			"cardTitle": "O81TBq_cardTitle",
+			"cardPinActive": "O81TBq_cardPinActive",
+			"interactTitle": "O81TBq_interactTitle",
+			"interactText": "O81TBq_interactText",
+			"imageCardSelected": "O81TBq_imageCardSelected",
+			"menuHint": "O81TBq_menuHint",
+			"draftDropHint": "O81TBq_draftDropHint",
+			"chatDrawerHeader": "O81TBq_chatDrawerHeader",
+			"draftRow": "O81TBq_draftRow",
+			"cardTime": "O81TBq_cardTime",
+			"wsFrame": "O81TBq_wsFrame",
+			"spawnFrom": "O81TBq_spawnFrom",
+			"interactOpen": "O81TBq_interactOpen",
+			"colorToolbar": "O81TBq_colorToolbar",
+			"menuSearch": "O81TBq_menuSearch",
+			"runningDot": "O81TBq_runningDot",
+			"hotkeyButton": "O81TBq_hotkeyButton",
+			"draftCardDrop": "O81TBq_draftCardDrop",
+			"mapFallback": "O81TBq_mapFallback",
+			"mapFallbackTitle": "O81TBq_mapFallbackTitle",
+			"spawnBtnGhost": "O81TBq_spawnBtnGhost",
+			"draftAttachments": "O81TBq_draftAttachments",
+			"cardPin": "O81TBq_cardPin",
+			"spawnHint": "O81TBq_spawnHint",
+			"interactNote": "O81TBq_interactNote",
+			"interactGroup": "O81TBq_interactGroup",
+			"menuPreview": "O81TBq_menuPreview",
+			"chatDrawerBody": "O81TBq_chatDrawerBody",
+			"interactDanger": "O81TBq_interactDanger",
+			"interactError": "O81TBq_interactError",
+			"closeButton": "O81TBq_closeButton",
+			"interactAllow": "O81TBq_interactAllow",
+			"wsFrameEdge": "O81TBq_wsFrameEdge",
+			"chatDrawerNoticeButton": "O81TBq_chatDrawerNoticeButton",
+			"spawnError": "O81TBq_spawnError",
+			"draftTextarea": "O81TBq_draftTextarea",
+			"toastAction": "O81TBq_toastAction",
+			"chatDrawerArchived": "O81TBq_chatDrawerArchived",
+			"interactSubmit": "O81TBq_interactSubmit",
+			"toastText": "O81TBq_toastText",
+			"header": "O81TBq_header",
+			"cardTop": "O81TBq_cardTop",
+			"emptyHint": "O81TBq_emptyHint",
+			"interactMenu": "O81TBq_interactMenu",
+			"overlay": "O81TBq_overlay",
+			"colorToolbarLabel": "O81TBq_colorToolbarLabel",
+			"menuError": "O81TBq_menuError",
+			"cardForeignChip": "O81TBq_cardForeignChip",
+			"draftAttachmentProgress": "O81TBq_draftAttachmentProgress",
 			"menuEmpty": "O81TBq_menuEmpty",
 			"chatDrawerArchivedText": "O81TBq_chatDrawerArchivedText",
-			"cardSelected": "O81TBq_cardSelected",
-			"interactTitle": "O81TBq_interactTitle",
+			"cardWaitingButton": "O81TBq_cardWaitingButton",
+			"interactOptions": "O81TBq_interactOptions",
+			"toggleIcon": "O81TBq_toggleIcon",
+			"zoomResetLabel": "O81TBq_zoomResetLabel",
+			"interactOptionActive": "O81TBq_interactOptionActive",
+			"interactOption": "O81TBq_interactOption",
+			"toast": "O81TBq_toast",
 			"spawnModes": "O81TBq_spawnModes",
-			"chatDrawerTitle": "O81TBq_chatDrawerTitle",
-			"interactNote": "O81TBq_interactNote",
-			"interactText": "O81TBq_interactText",
-			"wsFrameResize": "O81TBq_wsFrameResize",
-			"headerSpace": "O81TBq_headerSpace",
-			"interactAllow": "O81TBq_interactAllow",
-			"header": "O81TBq_header",
-			"toastActionable": "O81TBq_toastActionable",
 			"cardForeignTouch": "O81TBq_cardForeignTouch",
-			"mapFallbackButton": "O81TBq_mapFallbackButton"
+			"colorSwatch": "O81TBq_colorSwatch",
+			"draftAttachmentImage": "O81TBq_draftAttachmentImage"
 		};
 		//#endregion
 		//#region src/client/ChatPanel.tsx
@@ -12712,6 +12712,22 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			const types = Array.from(transfer.types ?? []);
 			return types.includes("Files") || types.includes("application/x-dsh-file") || types.includes("application/x-talk-map-image");
 		}
+		/** The prompt content for one send: uploaded receipts first, text last. */
+		function buildPromptContent(receiptIds, text) {
+			const content = receiptIds.map((receiptId) => ({
+				type: "file",
+				receiptId
+			}));
+			if (text !== "") content.push({
+				type: "text",
+				text
+			});
+			return content;
+		}
+		/** A draft can be sent with attachments alone. */
+		function draftSendable(text, attachmentCount) {
+			return text.trim() !== "" || attachmentCount > 0;
+		}
 		/** Compact byte size for the generic-file card. */
 		function formatAttachmentBytes(bytes) {
 			if (bytes < 1024) return `${bytes} B`;
@@ -12821,11 +12837,16 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			const textareaRef = (0, react.useRef)(null);
 			const [attachments, setAttachments] = (0, react.useState)([]);
 			const [dragActive, setDragActive] = (0, react.useState)(false);
+			const [uploadNote, setUploadNote] = (0, react.useState)(void 0);
+			const [uploadProgress, setUploadProgress] = (0, react.useState)({});
+			const abortRef = (0, react.useRef)(null);
 			const attachmentsRef = (0, react.useRef)([]);
 			(0, react.useEffect)(() => {
 				attachmentsRef.current = attachments;
 			}, [attachments]);
 			(0, react.useEffect)(() => () => {
+				abortRef.current?.abort();
+				abortRef.current = null;
 				for (const attachment of attachmentsRef.current) if (attachment.previewUrl !== void 0) URL.revokeObjectURL(attachment.previewUrl);
 				attachmentsRef.current = [];
 			}, []);
@@ -12936,7 +12957,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			const newWsPath = `${newWorkspaceParent(data.workspaceOptions)}/${newWsName.trim()}`;
 			const isFork = parent !== void 0;
 			const needsNewWorkspaceName = (!isFork || mode !== "full") && creatingWorkspace && newWsName.trim() === "";
-			const sendDisabled = busy || (isFork ? mode === "digest" && (generatingSummary || summary.trim() === "" || text.trim() === "") || mode === "none" && text.trim() === "" || needsNewWorkspaceName : text.trim() === "" || needsNewWorkspaceName);
+			const sendDisabled = busy || needsNewWorkspaceName || isFork && mode === "digest" && (generatingSummary || summary.trim() === "") || !draftSendable(text, attachments.length);
 			/** Resolve the destination workspace, creating the folder/workspace on demand. */
 			const resolveTargetWorkspace = async (remote) => {
 				if (workspaceId !== NEW_WORKSPACE) return workspaceId;
@@ -12982,15 +13003,49 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					createdAt: Date.now()
 				} });
 			};
-			const sendPrompt = async (remote, sessionId, promptText) => {
+			/**
+			* Upload every pending attachment into the newborn Session and return the
+			* receipts a prompt cites, in the user's add order. This is the only point
+			* at which bytes leave the browser: the draft creates nothing until 发送.
+			*/
+			const uploadAttachments = async (remote, sessionId, signal) => {
+				const services = getServices();
+				if (services === void 0) throw new Error("dsh connection is not ready");
+				if (attachments.length === 0) return [];
+				const receiptIds = [];
+				try {
+					for (const [index, attachment] of attachments.entries()) {
+						setUploadNote(t("draft.uploading", {
+							done: String(index + 1),
+							total: String(attachments.length)
+						}));
+						const onProgress = (progress) => {
+							const ratio = progress.total !== void 0 && progress.total > 0 ? Math.min(1, progress.loaded / progress.total) : 0;
+							setUploadProgress((previous) => ({
+								...previous,
+								[attachment.id]: ratio
+							}));
+						};
+						const value = unwrapRemote(attachment.kind === "image" && attachment.mediaType !== void 0 ? await services.fileUpload.uploadImage(sessionId, attachment.file, attachment.mediaType, attachment.file.name, signal, onProgress) : await services.fileUpload.upload(sessionId, attachment.file, attachment.file.name, signal, onProgress), "fileUpload");
+						receiptIds.push(value.receiptId);
+					}
+				} catch (uploadError) {
+					if (signal.aborted) throw uploadError;
+					throw new Error(`${t("draft.uploadFailed")}${uploadError instanceof Error ? uploadError.message : String(uploadError)}`);
+				} finally {
+					setUploadNote(void 0);
+					setUploadProgress({});
+				}
+				return receiptIds;
+			};
+			const sendPrompt = async (remote, sessionId, promptText, receiptIds) => {
+				const content = buildPromptContent(receiptIds, promptText);
+				if (content.length === 0) return;
 				unwrapRemote(await remote.session.prompt({
 					requestId: crypto.randomUUID(),
 					sessionId,
 					mode: "queue",
-					content: [{
-						type: "text",
-						text: promptText
-					}],
+					content,
 					clientTimeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
 				}), "session.prompt");
 			};
@@ -13005,6 +13060,9 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			const send = async () => {
 				const services = getServices();
 				if (services === void 0 || sendDisabled) return;
+				const controller = new AbortController();
+				abortRef.current = controller;
+				const signal = controller.signal;
 				setBusy(true);
 				setError(void 0);
 				try {
@@ -13017,10 +13075,11 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 						if (mode === "full") {
 							const childId = sessionIdOf(unwrapRemote(await services.sessions.fork({ sessionId: parent.sessionId }), "session.fork"));
 							if (childId === void 0) throw new Error("session.fork returned no session id");
+							const receiptIds = await uploadAttachments(remote, childId, signal);
 							const forkCardId = addDraftCard(childId, parent.workspaceId);
 							addForkEdge(parent.cardId, forkCardId, "full", void 0);
 							if (parent.workspaceId !== void 0) ensureFrame(parent.workspaceId, cardX, cardY);
-							if (text.trim() !== "") await sendPrompt(remote, childId, text);
+							await sendPrompt(remote, childId, text, receiptIds);
 							finish(childId);
 							return;
 						}
@@ -13030,6 +13089,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 							...presetId !== "" ? { agentPreset: presetId } : {}
 						}), "session.create"));
 						if (sessionId === void 0) throw new Error("session.create returned no session id");
+						const receiptIds = await uploadAttachments(remote, sessionId, signal);
 						if (mode === "digest") await talkMapApi.injectContext(sessionId, [{
 							sessionId: parent.sessionId,
 							text: summary
@@ -13045,7 +13105,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 								model
 							}), "session.selectModel");
 						}
-						if (text.trim() !== "") await sendPrompt(remote, sessionId, text);
+						await sendPrompt(remote, sessionId, text, receiptIds);
 						finish(sessionId);
 						return;
 					}
@@ -13055,6 +13115,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 						...presetId !== "" ? { agentPreset: presetId } : {}
 					}), "session.create"));
 					if (sessionId === void 0) throw new Error("session.create returned no session id");
+					const receiptIds = await uploadAttachments(remote, sessionId, signal);
 					const cardX = snap$1(props.positionAbsoluteX);
 					const cardY = snap$1(props.positionAbsoluteY);
 					addDraftCard(sessionId, targetWorkspaceId);
@@ -13067,11 +13128,15 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 							model
 						}), "session.selectModel");
 					}
-					await sendPrompt(remote, sessionId, text);
+					await sendPrompt(remote, sessionId, text, receiptIds);
 					finish(sessionId);
 				} catch (sendError) {
+					if (controller.signal.aborted) return;
 					setError(String(sendError));
 					setBusy(false);
+				} finally {
+					if (abortRef.current === controller) abortRef.current = null;
+					setUploadNote(void 0);
 				}
 			};
 			const forkModes = [
@@ -13278,19 +13343,30 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 						children: attachments.map((attachment) => attachment.kind === "image" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 							className: talk_map_module_css_default["draftAttachmentImage"],
 							"data-talk-map-attachment": "image",
-							children: [attachment.previewUrl !== void 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("img", {
-								src: attachment.previewUrl,
-								alt: attachment.file.name
-							}) : null, /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
-								type: "button",
-								className: `${talk_map_module_css_default["draftAttachmentRemove"]} nodrag`,
-								title: t("draft.removeAttachment"),
-								"aria-label": t("draft.removeAttachment"),
-								onClick: () => {
-									removeAttachment(attachment.id);
-								},
-								children: "×"
-							})]
+							children: [
+								attachment.previewUrl !== void 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("img", {
+									src: attachment.previewUrl,
+									alt: attachment.file.name
+								}) : null,
+								uploadProgress[attachment.id] !== void 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+									className: talk_map_module_css_default["draftAttachmentProgress"],
+									"aria-hidden": "true",
+									children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+										className: talk_map_module_css_default["draftAttachmentProgressBar"],
+										style: { width: `${Math.round((uploadProgress[attachment.id] ?? 0) * 100)}%` }
+									})
+								}) : null,
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+									type: "button",
+									className: `${talk_map_module_css_default["draftAttachmentRemove"]} nodrag`,
+									title: t("draft.removeAttachment"),
+									"aria-label": t("draft.removeAttachment"),
+									onClick: () => {
+										removeAttachment(attachment.id);
+									},
+									children: "×"
+								})
+							]
 						}, attachment.id) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 							className: `${talk_map_module_css_default["draftAttachmentFile"]} nodrag`,
 							"data-talk-map-attachment": "file",
@@ -13316,6 +13392,14 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 										children: formatAttachmentBytes(attachment.file.size)
 									})]
 								}),
+								uploadProgress[attachment.id] !== void 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+									className: talk_map_module_css_default["draftAttachmentProgress"],
+									"aria-hidden": "true",
+									children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+										className: talk_map_module_css_default["draftAttachmentProgressBar"],
+										style: { width: `${Math.round((uploadProgress[attachment.id] ?? 0) * 100)}%` }
+									})
+								}) : null,
 								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 									type: "button",
 									className: `${talk_map_module_css_default["draftAttachmentRemove"]} nodrag`,
@@ -13365,7 +13449,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 								send();
 							},
 							disabled: sendDisabled,
-							children: busy ? isFork ? t("spawn.busy") : t("draft.sending") : isFork ? t("spawn.confirm") : t("draft.send")
+							children: busy ? uploadNote ?? (isFork ? t("spawn.busy") : t("draft.sending")) : isFork ? t("spawn.confirm") : t("draft.send")
 						})]
 					})
 				]

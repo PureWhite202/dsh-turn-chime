@@ -13,17 +13,19 @@
  */
 import { memo, useEffect, useRef, useState } from 'react'
 import type { NodeProps, Node } from '@xyflow/react'
-import type { AgentPresetEntry, ModelProviderGroup, RemoteService } from './dsh.ts'
+import type { AgentPresetEntry, FileUploadProgress, FileUploadReceipt, ModelProviderGroup, RemoteService } from './dsh.ts'
 import type { EdgeInjection } from '../shared/model.ts'
 import { talkMapApi } from './api.ts'
 import { canvas, INBOX_BOARD_ID, newCardId } from './canvas-store.ts'
 import { getServices, mapUi, openSessionInMain, sessionIdOf, unwrapRemote } from './map-state.ts'
 import { buildInjectionText, digestIsEmpty } from './digest-text.ts'
 import {
+  buildPromptContent,
   classifyDraftFile,
   collectClipboardFiles,
   collectDropIntake,
   draftImageMediaType,
+  draftSendable,
   formatAttachmentBytes,
   hasAttachmentDrag,
   type DraftAttachment,
@@ -164,9 +166,14 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
   // ---- attachments (paste / drop) -------------------------------------
   const [attachments, setAttachments] = useState<DraftAttachment[]>([])
   const [dragActive, setDragActive] = useState(false)
+  const [uploadNote, setUploadNote] = useState<string | undefined>(undefined)
+  const [uploadProgress, setUploadProgress] = useState<Readonly<Record<string, number>>>({})
+  const abortRef = useRef<AbortController | null>(null)
   const attachmentsRef = useRef<readonly DraftAttachment[]>([])
   useEffect(() => { attachmentsRef.current = attachments }, [attachments])
   useEffect(() => () => {
+    abortRef.current?.abort()
+    abortRef.current = null
     for (const attachment of attachmentsRef.current) {
       if (attachment.previewUrl !== undefined) URL.revokeObjectURL(attachment.previewUrl)
     }
@@ -309,11 +316,9 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
   const isFork = parent !== undefined
   const needsNewWorkspaceName = (!isFork || mode !== 'full') && creatingWorkspace && newWsName.trim() === ''
   const sendDisabled = busy
-    || (isFork
-      ? (mode === 'digest' && (generatingSummary || summary.trim() === '' || text.trim() === ''))
-        || (mode === 'none' && text.trim() === '')
-        || needsNewWorkspaceName
-      : text.trim() === '' || needsNewWorkspaceName)
+    || needsNewWorkspaceName
+    || (isFork && mode === 'digest' && (generatingSummary || summary.trim() === ''))
+    || !draftSendable(text, attachments.length)
 
   /** Resolve the destination workspace, creating the folder/workspace on demand. */
   const resolveTargetWorkspace = async (remote: RemoteService): Promise<string> => {
@@ -379,12 +384,71 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
     })
   }
 
-  const sendPrompt = async (remote: RemoteService, sessionId: string, promptText: string): Promise<void> => {
+  /**
+   * Upload every pending attachment into the newborn Session and return the
+   * receipts a prompt cites, in the user's add order. This is the only point
+   * at which bytes leave the browser: the draft creates nothing until 发送.
+   */
+  const uploadAttachments = async (
+    remote: RemoteService,
+    sessionId: string,
+    signal: AbortSignal,
+  ): Promise<string[]> => {
+    const services = getServices()
+    if (services === undefined) throw new Error('dsh connection is not ready')
+    if (attachments.length === 0) return []
+    const receiptIds: string[] = []
+    try {
+      for (const [index, attachment] of attachments.entries()) {
+        setUploadNote(t('draft.uploading', { done: String(index + 1), total: String(attachments.length) }))
+        const onProgress = (progress: FileUploadProgress): void => {
+          const ratio = progress.total !== undefined && progress.total > 0
+            ? Math.min(1, progress.loaded / progress.total)
+            : 0
+          setUploadProgress(previous => ({ ...previous, [attachment.id]: ratio }))
+        }
+        const result = attachment.kind === 'image' && attachment.mediaType !== undefined
+          ? await services.fileUpload.uploadImage(
+              sessionId,
+              attachment.file,
+              attachment.mediaType,
+              attachment.file.name,
+              signal,
+              onProgress,
+            )
+          : await services.fileUpload.upload(
+              sessionId,
+              attachment.file,
+              attachment.file.name,
+              signal,
+              onProgress,
+            )
+        const value = unwrapRemote<FileUploadReceipt>(result, 'fileUpload')
+        receiptIds.push(value.receiptId)
+      }
+    } catch (uploadError) {
+      if (signal.aborted) throw uploadError
+      throw new Error(`${t('draft.uploadFailed')}${uploadError instanceof Error ? uploadError.message : String(uploadError)}`)
+    } finally {
+      setUploadNote(undefined)
+      setUploadProgress({})
+    }
+    return receiptIds
+  }
+
+  const sendPrompt = async (
+    remote: RemoteService,
+    sessionId: string,
+    promptText: string,
+    receiptIds: readonly string[],
+  ): Promise<void> => {
+    const content = buildPromptContent(receiptIds, promptText)
+    if (content.length === 0) return
     unwrapRemote<void>(await remote.session.prompt({
       requestId: crypto.randomUUID(),
       sessionId,
       mode: 'queue',
-      content: [{ type: 'text', text: promptText }],
+      content,
       clientTimeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     }), 'session.prompt')
   }
@@ -404,6 +468,9 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
   const send = async (): Promise<void> => {
     const services = getServices()
     if (services === undefined || sendDisabled) return
+    const controller = new AbortController()
+    abortRef.current = controller
+    const signal = controller.signal
     setBusy(true)
     setError(undefined)
     try {
@@ -422,10 +489,11 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
           const forked = unwrapRemote(await services.sessions.fork({ sessionId: parent.sessionId }), 'session.fork')
           const childId = sessionIdOf(forked)
           if (childId === undefined) throw new Error('session.fork returned no session id')
+          const receiptIds = await uploadAttachments(remote, childId, signal)
           const forkCardId = addDraftCard(childId, parent.workspaceId)
           addForkEdge(parent.cardId, forkCardId, 'full', undefined)
           if (parent.workspaceId !== undefined) ensureFrame(parent.workspaceId, cardX, cardY)
-          if (text.trim() !== '') await sendPrompt(remote, childId, text)
+          await sendPrompt(remote, childId, text, receiptIds)
           finish(childId)
           return
         }
@@ -436,6 +504,9 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
         })
         const sessionId = sessionIdOf(unwrapRemote(createResult, 'session.create'))
         if (sessionId === undefined) throw new Error('session.create returned no session id')
+        // Upload before anything visible lands: a refused attachment leaves
+        // the draft (and its previews) intact instead of a half-made card.
+        const receiptIds = await uploadAttachments(remote, sessionId, signal)
         if (mode === 'digest') {
           // Background first, then the user's opening message.
           await talkMapApi.injectContext(sessionId, [{ sessionId: parent.sessionId, text: summary }])
@@ -447,7 +518,7 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
           const [provider, model] = modelKey.split('::') as [string, string]
           unwrapRemote<void>(await remote.session.selectModel({ sessionId, provider, model }), 'session.selectModel')
         }
-        if (text.trim() !== '') await sendPrompt(remote, sessionId, text)
+        await sendPrompt(remote, sessionId, text, receiptIds)
         finish(sessionId)
         return
       }
@@ -460,6 +531,7 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
       })
       const sessionId = sessionIdOf(unwrapRemote(createResult, 'session.create'))
       if (sessionId === undefined) throw new Error('session.create returned no session id')
+      const receiptIds = await uploadAttachments(remote, sessionId, signal)
       const cardX = snap(props.positionAbsoluteX)
       const cardY = snap(props.positionAbsoluteY)
       addDraftCard(sessionId, targetWorkspaceId)
@@ -468,11 +540,15 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
         const [provider, model] = modelKey.split('::') as [string, string]
         unwrapRemote<void>(await remote.session.selectModel({ sessionId, provider, model }), 'session.selectModel')
       }
-      await sendPrompt(remote, sessionId, text)
+      await sendPrompt(remote, sessionId, text, receiptIds)
       finish(sessionId)
     } catch (sendError) {
+      if (controller.signal.aborted) return
       setError(String(sendError))
       setBusy(false)
+    } finally {
+      if (abortRef.current === controller) abortRef.current = null
+      setUploadNote(undefined)
     }
   }
 
@@ -660,6 +736,16 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
                       {attachment.previewUrl !== undefined
                         ? <img src={attachment.previewUrl} alt={attachment.file.name} />
                         : null}
+                      {uploadProgress[attachment.id] !== undefined
+                        ? (
+                            <span className={styles['draftAttachmentProgress']} aria-hidden="true">
+                              <span
+                                className={styles['draftAttachmentProgressBar']}
+                                style={{ width: `${Math.round((uploadProgress[attachment.id] ?? 0) * 100)}%` }}
+                              />
+                            </span>
+                          )
+                        : null}
                       <button
                         type="button"
                         className={`${styles['draftAttachmentRemove']} nodrag`}
@@ -698,6 +784,16 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
                           {formatAttachmentBytes(attachment.file.size)}
                         </span>
                       </span>
+                      {uploadProgress[attachment.id] !== undefined
+                        ? (
+                            <span className={styles['draftAttachmentProgress']} aria-hidden="true">
+                              <span
+                                className={styles['draftAttachmentProgressBar']}
+                                style={{ width: `${Math.round((uploadProgress[attachment.id] ?? 0) * 100)}%` }}
+                              />
+                            </span>
+                          )
+                        : null}
                       <button
                         type="button"
                         className={`${styles['draftAttachmentRemove']} nodrag`}
@@ -741,7 +837,7 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
           disabled={sendDisabled}
         >
           {busy
-            ? (isFork ? t('spawn.busy') : t('draft.sending'))
+            ? (uploadNote ?? (isFork ? t('spawn.busy') : t('draft.sending')))
             : (isFork ? t('spawn.confirm') : t('draft.send'))}
         </button>
       </div>

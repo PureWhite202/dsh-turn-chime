@@ -205,6 +205,9 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			"draft.removeAttachment": "移除附件",
 			"draft.uploading": "上传中 {done}/{total}…",
 			"draft.uploadFailed": "附件上传失败：",
+			"draft.createFailed": "创建对话失败：",
+			"draft.createNotReady": "dsh 连接还没就绪，稍后再试",
+			"draft.createNoWorkspace": "还没有工作区 —— 先右键空白新建一个工作区",
 			"draft.attachFailed": "添加附件失败：",
 			"draft.untitledFile": "未命名文件",
 			"preset.standard": "标准模式",
@@ -246,6 +249,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			"hotkey.title": "地图切换快捷键 · 点击后按新组合键修改",
 			"hotkey.capturing": "按下新组合键…",
 			"menu.newChat": "新对话",
+			"menu.newChatDraft": "新对话（先填写）…",
 			"menu.importWs": "导入工作区",
 			"menu.importSession": "导入对话",
 			"menu.moveGroup": "移动到分组（仅地图）",
@@ -340,6 +344,9 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			"draft.removeAttachment": "Remove attachment",
 			"draft.uploading": "Uploading {done}/{total}…",
 			"draft.uploadFailed": "Attachment upload failed: ",
+			"draft.createFailed": "Could not create the conversation: ",
+			"draft.createNotReady": "The dsh connection is not ready yet — try again in a moment",
+			"draft.createNoWorkspace": "No workspace yet — right-click empty canvas and create one first",
 			"draft.attachFailed": "Could not add attachment: ",
 			"draft.untitledFile": "Untitled file",
 			"preset.standard": "Standard mode",
@@ -381,6 +388,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			"hotkey.title": "Map toggle hotkey · click, then press a new combo",
 			"hotkey.capturing": "Press a combo…",
 			"menu.newChat": "New conversation",
+			"menu.newChatDraft": "New conversation (fill in first)…",
 			"menu.importWs": "Import workspace",
 			"menu.importSession": "Import conversation",
 			"menu.moveGroup": "Move to group (map only)",
@@ -1361,139 +1369,139 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			document.head.appendChild(tag);
 		}
 		var talk_map_module_css_default = {
-			"spawnModeActive": "O81TBq_spawnModeActive",
-			"chatDrawerBody": "O81TBq_chatDrawerBody",
-			"chatPanel": "O81TBq_chatPanel",
-			"draftAttachmentFileText": "O81TBq_draftAttachmentFileText",
-			"interactError": "O81TBq_interactError",
+			"canvas": "O81TBq_canvas",
+			"cardFooterLeft": "O81TBq_cardFooterLeft",
+			"headerBadge": "O81TBq_headerBadge",
+			"cardTime": "O81TBq_cardTime",
+			"draftTextarea": "O81TBq_draftTextarea",
+			"interactOptions": "O81TBq_interactOptions",
+			"wsFrameLabel": "O81TBq_wsFrameLabel",
+			"cardForeignChip": "O81TBq_cardForeignChip",
+			"menuPreview": "O81TBq_menuPreview",
+			"draftLabel": "O81TBq_draftLabel",
+			"mapFallbackTitle": "O81TBq_mapFallbackTitle",
+			"toastActionable": "O81TBq_toastActionable",
+			"talk-map-drawer": "O81TBq_talk-map-drawer",
+			"draftDropHint": "O81TBq_draftDropHint",
+			"interactSubmit": "O81TBq_interactSubmit",
+			"draftCardDrop": "O81TBq_draftCardDrop",
+			"imageCard": "O81TBq_imageCard",
+			"cardForeign": "O81TBq_cardForeign",
+			"chatDrawerArchivedButton": "O81TBq_chatDrawerArchivedButton",
+			"wsFrameSelected": "O81TBq_wsFrameSelected",
+			"toastText": "O81TBq_toastText",
+			"chatDrawerArchived": "O81TBq_chatDrawerArchived",
+			"interactMenu": "O81TBq_interactMenu",
+			"wsFrameHidden": "O81TBq_wsFrameHidden",
+			"chatDrawerArchivedText": "O81TBq_chatDrawerArchivedText",
+			"draftPathPreview": "O81TBq_draftPathPreview",
+			"draftAttachmentRemove": "O81TBq_draftAttachmentRemove",
+			"imageCardImg": "O81TBq_imageCardImg",
+			"card": "O81TBq_card",
+			"draftAttachmentFile": "O81TBq_draftAttachmentFile",
+			"mapFallback": "O81TBq_mapFallback",
+			"interactGroup": "O81TBq_interactGroup",
+			"draftAttachmentProgress": "O81TBq_draftAttachmentProgress",
+			"spawnFrom": "O81TBq_spawnFrom",
+			"menuHint": "O81TBq_menuHint",
+			"draftAttachments": "O81TBq_draftAttachments",
+			"menuItem": "O81TBq_menuItem",
+			"cardBadgeDone": "O81TBq_cardBadgeDone",
+			"cardSelected": "O81TBq_cardSelected",
+			"draftAttachmentFileMeta": "O81TBq_draftAttachmentFileMeta",
+			"toggleButtonActive": "O81TBq_toggleButtonActive",
+			"draftHeading": "O81TBq_draftHeading",
+			"colorToolbarLabel": "O81TBq_colorToolbarLabel",
+			"chatDrawerNoticeText": "O81TBq_chatDrawerNoticeText",
 			"menuEmpty": "O81TBq_menuEmpty",
-			"wsFrameCount": "O81TBq_wsFrameCount",
-			"draftAttachmentFileName": "O81TBq_draftAttachmentFileName",
-			"spawnModes": "O81TBq_spawnModes",
+			"draftAttachmentImage": "O81TBq_draftAttachmentImage",
+			"colorSwatch": "O81TBq_colorSwatch",
+			"interactActions": "O81TBq_interactActions",
+			"canvasConnecting": "O81TBq_canvasConnecting",
+			"interactError": "O81TBq_interactError",
+			"cardPinActive": "O81TBq_cardPinActive",
+			"cardRemove": "O81TBq_cardRemove",
+			"toastAction": "O81TBq_toastAction",
+			"menu": "O81TBq_menu",
+			"chatDrawerNoticeButton": "O81TBq_chatDrawerNoticeButton",
+			"spawnBtnPrimary": "O81TBq_spawnBtnPrimary",
+			"interactScroll": "O81TBq_interactScroll",
+			"cardGhost": "O81TBq_cardGhost",
+			"draftAttachmentFileText": "O81TBq_draftAttachmentFileText",
+			"cardForeignPulse": "O81TBq_cardForeignPulse",
+			"interactDanger": "O81TBq_interactDanger",
+			"colorToolbar": "O81TBq_colorToolbar",
+			"cardForeignTouch": "O81TBq_cardForeignTouch",
+			"draftSelect": "O81TBq_draftSelect",
+			"draftAttachmentFileIcon": "O81TBq_draftAttachmentFileIcon",
+			"spawnActions": "O81TBq_spawnActions",
+			"colorSwatchClear": "O81TBq_colorSwatchClear",
+			"cardTop": "O81TBq_cardTop",
+			"body": "O81TBq_body",
+			"chatDrawerClose": "O81TBq_chatDrawerClose",
+			"draftRow": "O81TBq_draftRow",
+			"chatPanel": "O81TBq_chatPanel",
+			"interactOptionActive": "O81TBq_interactOptionActive",
+			"cardBadgeWaiting": "O81TBq_cardBadgeWaiting",
+			"wsFrameForeign": "O81TBq_wsFrameForeign",
+			"toggleButton": "O81TBq_toggleButton",
+			"chatDrawerNoticeActions": "O81TBq_chatDrawerNoticeActions",
+			"cardHandle": "O81TBq_cardHandle",
+			"chatDrawerBody": "O81TBq_chatDrawerBody",
+			"interactAllow": "O81TBq_interactAllow",
+			"headerSpace": "O81TBq_headerSpace",
+			"hotkeyButton": "O81TBq_hotkeyButton",
+			"langButton": "O81TBq_langButton",
+			"chatDrawerNotice": "O81TBq_chatDrawerNotice",
+			"toggleRow": "O81TBq_toggleRow",
+			"spawnBtnGhost": "O81TBq_spawnBtnGhost",
+			"wsFrameEdge": "O81TBq_wsFrameEdge",
+			"chatDrawerSpace": "O81TBq_chatDrawerSpace",
+			"draftInput": "O81TBq_draftInput",
+			"chatDrawerTitle": "O81TBq_chatDrawerTitle",
+			"menuError": "O81TBq_menuError",
+			"wsFrameResize": "O81TBq_wsFrameResize",
+			"spawnModeBtn": "O81TBq_spawnModeBtn",
+			"closeButton": "O81TBq_closeButton",
+			"toggleLabel": "O81TBq_toggleLabel",
+			"talkmap-pulse": "O81TBq_talkmap-pulse",
+			"header": "O81TBq_header",
+			"interactTitle": "O81TBq_interactTitle",
+			"mapFallbackText": "O81TBq_mapFallbackText",
+			"cardDoneDot": "O81TBq_cardDoneDot",
+			"menuTitle": "O81TBq_menuTitle",
+			"draftCard": "O81TBq_draftCard",
+			"chatDrawerHeader": "O81TBq_chatDrawerHeader",
+			"toast": "O81TBq_toast",
+			"imageCardSelected": "O81TBq_imageCardSelected",
+			"menuSearch": "O81TBq_menuSearch",
+			"toggleIcon": "O81TBq_toggleIcon",
+			"overlay": "O81TBq_overlay",
+			"runningDot": "O81TBq_runningDot",
+			"spawnError": "O81TBq_spawnError",
+			"interactText": "O81TBq_interactText",
+			"cardPin": "O81TBq_cardPin",
+			"spawnModeActive": "O81TBq_spawnModeActive",
+			"spawnHint": "O81TBq_spawnHint",
+			"interactOption": "O81TBq_interactOption",
+			"cardBadgeRunning": "O81TBq_cardBadgeRunning",
 			"draftAttachmentProgressBar": "O81TBq_draftAttachmentProgressBar",
+			"draftGrow": "O81TBq_draftGrow",
+			"mapFallbackButton": "O81TBq_mapFallbackButton",
 			"cardTitle": "O81TBq_cardTitle",
 			"cardFooter": "O81TBq_cardFooter",
-			"toastActionable": "O81TBq_toastActionable",
-			"draftAttachmentImage": "O81TBq_draftAttachmentImage",
-			"cardDoneDot": "O81TBq_cardDoneDot",
-			"canvasConnecting": "O81TBq_canvasConnecting",
-			"draftSelect": "O81TBq_draftSelect",
-			"colorToolbar": "O81TBq_colorToolbar",
-			"spawnError": "O81TBq_spawnError",
-			"talkmap-pulse": "O81TBq_talkmap-pulse",
-			"chatDrawerArchivedText": "O81TBq_chatDrawerArchivedText",
-			"draftHeading": "O81TBq_draftHeading",
-			"imageCardImg": "O81TBq_imageCardImg",
-			"cardPinActive": "O81TBq_cardPinActive",
-			"interactTitle": "O81TBq_interactTitle",
-			"chatDrawerNoticeActions": "O81TBq_chatDrawerNoticeActions",
-			"interactGroup": "O81TBq_interactGroup",
-			"cardFooterLeft": "O81TBq_cardFooterLeft",
-			"draftRow": "O81TBq_draftRow",
-			"wsFrameForeign": "O81TBq_wsFrameForeign",
-			"interactSubmit": "O81TBq_interactSubmit",
-			"wsFrameHidden": "O81TBq_wsFrameHidden",
-			"wsFrameSelected": "O81TBq_wsFrameSelected",
-			"draftAttachmentFileIcon": "O81TBq_draftAttachmentFileIcon",
-			"toggleButton": "O81TBq_toggleButton",
-			"body": "O81TBq_body",
-			"chatDrawerNoticeText": "O81TBq_chatDrawerNoticeText",
-			"talk-map-drawer": "O81TBq_talk-map-drawer",
-			"cardBadgeRunning": "O81TBq_cardBadgeRunning",
-			"spawnHint": "O81TBq_spawnHint",
-			"chatDrawerNotice": "O81TBq_chatDrawerNotice",
-			"chatDrawerHeader": "O81TBq_chatDrawerHeader",
-			"spawnModeBtn": "O81TBq_spawnModeBtn",
-			"interactOptions": "O81TBq_interactOptions",
-			"hotkeyButton": "O81TBq_hotkeyButton",
-			"zoomResetLabel": "O81TBq_zoomResetLabel",
-			"headerSpace": "O81TBq_headerSpace",
-			"closeButton": "O81TBq_closeButton",
-			"spawnActions": "O81TBq_spawnActions",
-			"toggleButtonActive": "O81TBq_toggleButtonActive",
-			"card": "O81TBq_card",
-			"cardTop": "O81TBq_cardTop",
-			"draftPathPreview": "O81TBq_draftPathPreview",
-			"toastText": "O81TBq_toastText",
-			"chatDrawerTitle": "O81TBq_chatDrawerTitle",
-			"interactOption": "O81TBq_interactOption",
-			"spawnTextarea": "O81TBq_spawnTextarea",
-			"chatDrawer": "O81TBq_chatDrawer",
-			"mapFallbackTitle": "O81TBq_mapFallbackTitle",
-			"overlay": "O81TBq_overlay",
-			"draftAttachmentRemove": "O81TBq_draftAttachmentRemove",
-			"menuPreview": "O81TBq_menuPreview",
-			"runningDot": "O81TBq_runningDot",
-			"spawnBtnPrimary": "O81TBq_spawnBtnPrimary",
-			"wsFrameResize": "O81TBq_wsFrameResize",
-			"draftTextarea": "O81TBq_draftTextarea",
-			"menuSearch": "O81TBq_menuSearch",
-			"interactText": "O81TBq_interactText",
-			"draftAttachmentFileMeta": "O81TBq_draftAttachmentFileMeta",
-			"toastAction": "O81TBq_toastAction",
-			"cardGhost": "O81TBq_cardGhost",
-			"spawnBtnGhost": "O81TBq_spawnBtnGhost",
-			"draftGrow": "O81TBq_draftGrow",
-			"draftAttachmentFile": "O81TBq_draftAttachmentFile",
 			"cardWaitingButton": "O81TBq_cardWaitingButton",
+			"zoomResetLabel": "O81TBq_zoomResetLabel",
+			"draftAttachmentFileName": "O81TBq_draftAttachmentFileName",
 			"emptyHint": "O81TBq_emptyHint",
-			"draftDropHint": "O81TBq_draftDropHint",
-			"interactNote": "O81TBq_interactNote",
-			"interactDanger": "O81TBq_interactDanger",
-			"colorSwatchClear": "O81TBq_colorSwatchClear",
-			"toast": "O81TBq_toast",
-			"cardForeignChip": "O81TBq_cardForeignChip",
-			"toggleRow": "O81TBq_toggleRow",
-			"cardPin": "O81TBq_cardPin",
-			"colorToolbarLabel": "O81TBq_colorToolbarLabel",
-			"interactMenu": "O81TBq_interactMenu",
-			"interactScroll": "O81TBq_interactScroll",
-			"imageCard": "O81TBq_imageCard",
-			"cardSelected": "O81TBq_cardSelected",
-			"cardForeignTouch": "O81TBq_cardForeignTouch",
-			"cardForeignPulse": "O81TBq_cardForeignPulse",
-			"cardHandle": "O81TBq_cardHandle",
-			"wsFrameLabel": "O81TBq_wsFrameLabel",
-			"wsFrame": "O81TBq_wsFrame",
-			"colorSwatch": "O81TBq_colorSwatch",
-			"menuItem": "O81TBq_menuItem",
-			"interactOptionActive": "O81TBq_interactOptionActive",
-			"menu": "O81TBq_menu",
-			"cardRemove": "O81TBq_cardRemove",
 			"headerTitle": "O81TBq_headerTitle",
-			"draftInput": "O81TBq_draftInput",
-			"chatDrawerClose": "O81TBq_chatDrawerClose",
-			"canvas": "O81TBq_canvas",
-			"wsFrameEdge": "O81TBq_wsFrameEdge",
-			"chatDrawerArchived": "O81TBq_chatDrawerArchived",
-			"spawnFrom": "O81TBq_spawnFrom",
-			"draftCard": "O81TBq_draftCard",
-			"interactActions": "O81TBq_interactActions",
-			"imageCardSelected": "O81TBq_imageCardSelected",
-			"toggleIcon": "O81TBq_toggleIcon",
-			"cardForeign": "O81TBq_cardForeign",
-			"chatDrawerNoticeButton": "O81TBq_chatDrawerNoticeButton",
-			"langButton": "O81TBq_langButton",
-			"toggleLabel": "O81TBq_toggleLabel",
-			"headerBadge": "O81TBq_headerBadge",
-			"chatDrawerArchivedButton": "O81TBq_chatDrawerArchivedButton",
-			"menuError": "O81TBq_menuError",
-			"cardBadgeDone": "O81TBq_cardBadgeDone",
-			"menuTitle": "O81TBq_menuTitle",
-			"mapFallbackText": "O81TBq_mapFallbackText",
-			"chatDrawerSpace": "O81TBq_chatDrawerSpace",
-			"header": "O81TBq_header",
-			"draftAttachments": "O81TBq_draftAttachments",
-			"draftAttachmentProgress": "O81TBq_draftAttachmentProgress",
-			"interactAllow": "O81TBq_interactAllow",
+			"wsFrameCount": "O81TBq_wsFrameCount",
+			"chatDrawer": "O81TBq_chatDrawer",
 			"interactOpen": "O81TBq_interactOpen",
-			"draftLabel": "O81TBq_draftLabel",
-			"menuHint": "O81TBq_menuHint",
-			"mapFallback": "O81TBq_mapFallback",
-			"cardBadgeWaiting": "O81TBq_cardBadgeWaiting",
-			"draftCardDrop": "O81TBq_draftCardDrop",
-			"cardTime": "O81TBq_cardTime",
-			"mapFallbackButton": "O81TBq_mapFallbackButton"
+			"spawnModes": "O81TBq_spawnModes",
+			"interactNote": "O81TBq_interactNote",
+			"wsFrame": "O81TBq_wsFrame",
+			"spawnTextarea": "O81TBq_spawnTextarea"
 		};
 		//#endregion
 		//#region src/client/ChatPanel.tsx
@@ -12277,6 +12285,134 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			}), ...digestBody(digest)].join("\n");
 		}
 		//#endregion
+		//#region src/client/new-chat.ts
+		/** Directory part of a path (both separators), lower-cased. */
+		function workspaceDirectoryName$1(path) {
+			const trimmed = path.replace(/[\\/]+$/, "");
+			const cut = Math.max(trimmed.lastIndexOf("\\"), trimmed.lastIndexOf("/"));
+			return (cut >= 0 ? trimmed.slice(cut + 1) : trimmed).toLowerCase();
+		}
+		/**
+		* The deployment's own `default-workspace`, matched by title or directory
+		* name — the same rule the sidebar and the frame layout use. Conversations
+		* born on bare canvas land there instead of silently creating yet another
+		* workspace.
+		*/
+		function defaultWorkspaceOption(options) {
+			return options.find((option) => option.title.trim().toLowerCase() === "default-workspace" || workspaceDirectoryName$1(option.path) === "default-workspace")?.id;
+		}
+		/**
+		* Where a brand-new conversation goes: the workspace frame the click landed
+		* in, else the deployment default, else the first workspace the host still
+		* has. `undefined` only when the host has no workspace at all.
+		*/
+		function newConversationWorkspace(input) {
+			const insideFrame = input.frameWorkspaceId;
+			if (insideFrame !== void 0 && insideFrame !== "") return insideFrame;
+			return defaultWorkspaceOption(input.options) ?? input.options[0]?.id;
+		}
+		function snapToGrid(value) {
+			return Math.round(value / 16) * 16;
+		}
+		/**
+		* Card position for a click at (flowX, flowY): horizontally centred on the
+		* click, top edge slightly below it. This is the spot the draft box used to
+		* occupy, so an instant creation lands exactly where the user pointed.
+		*/
+		function newChatCardPosition(flowX, flowY) {
+			return {
+				x: snapToGrid(flowX - 125),
+				y: snapToGrid(flowY - 40)
+			};
+		}
+		/**
+		* Starting rect for a workspace frame that is about to receive its first
+		* card. Sizes match the draft box's historic frame; the board re-fits the
+		* frame from the real member cards on the next render.
+		*/
+		function newChatFrameRect(x, y, cardWidth = 224, cardHeight = 120) {
+			const pad = 32;
+			const labelHeight = 30;
+			return {
+				x: x - pad,
+				y: y - pad - labelHeight,
+				width: cardWidth + 64,
+				height: cardHeight + 64 + labelHeight
+			};
+		}
+		//#endregion
+		//#region src/client/map-create.ts
+		let draftCatalogPromise = null;
+		/** The model catalog / agent presets / default labels are page-wide static:
+		*  load them once, lazily, and reuse them for every draft box and every
+		*  instant creation. Never rejects — an unreachable catalog yields defaults. */
+		function loadDraftCatalog() {
+			if (draftCatalogPromise !== null) return draftCatalogPromise;
+			draftCatalogPromise = (async () => {
+				const remote = getServices()?.remote;
+				let groups = [];
+				let presets = [];
+				let defaultModel = "";
+				let defaultPreset = "";
+				try {
+					if (remote !== void 0) {
+						const catalog = await remote.session.modelCatalog().catch(() => void 0);
+						if (catalog !== void 0 && catalog.ok) groups = catalog.value.groups ?? [];
+						const list = await remote.agentPresets.list().catch(() => void 0);
+						if (list !== void 0 && list.ok) presets = list.value.presets;
+					}
+					const defaults = await talkMapApi.getDefaults().catch(() => void 0);
+					if (defaults !== void 0 && defaults.model !== null) defaultModel = defaults.model.model;
+					if (defaults !== void 0 && defaults.preset !== null) defaultPreset = defaults.preset;
+				} catch (error) {
+					console.warn("[dsh-talk-map] draft catalog unavailable:", error);
+				}
+				return {
+					groups,
+					presets,
+					defaultModel,
+					defaultPreset
+				};
+			})();
+			return draftCatalogPromise;
+		}
+		/**
+		* The agent preset map-born conversations prefer: the plain 'standard' mode,
+		* because the deployment default may be a specialized one (e.g. cordis).
+		* `undefined` when the deployment does not ship that preset — the host then
+		* applies its own default.
+		*/
+		async function preferredAgentPreset() {
+			return (await loadDraftCatalog()).presets.some((preset) => preset.id === "standard") ? "standard" : void 0;
+		}
+		/**
+		* Add the newborn card at exactly (x, y). Blank conversations are not drawn
+		* on the board yet (an empty log is noise), but the placement is recorded, so
+		* the card appears at this spot as soon as the first message lands.
+		*/
+		function addSessionCard(sessionId, x, y, wsOverride) {
+			const cardId = newCardId();
+			canvas.addCards({ [cardId]: {
+				boardId: INBOX_BOARD_ID,
+				sessionId,
+				x,
+				y,
+				...wsOverride !== void 0 && wsOverride !== "" ? { wsOverride } : {},
+				createdAt: Date.now()
+			} });
+			return cardId;
+		}
+		/**
+		* The default workspace stays unframed; any other workspace grows a frame
+		* the first time a card lands in it. An existing frame is never overwritten
+		* (the user may have resized it).
+		*/
+		function ensureWorkspaceFrame(workspaceId, options, x, y) {
+			if (workspaceId === defaultWorkspaceOption(options)) return;
+			if (canvas.get().global?.wsFrames?.[workspaceId] !== void 0) return;
+			canvas.setWsFrameRect(workspaceId, newChatFrameRect(x, y));
+		}
+		//#endregion
 		//#region src/client/ContextMenu.tsx
 		/**
 		* Right-click menu for the board. One flat panel; entries that need a second
@@ -12766,18 +12902,9 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 		/**
 		* Workspace a map-born conversation lands in when the draft was opened on
 		* bare canvas (outside every workspace frame): the deployment's own
-		* `default-workspace`, matched by title or directory name. The host keeps
-		* that workspace as its default; the map mirrors it instead of silently
-		* offering to create yet another workspace.
+		* `default-workspace`. The rule itself lives in new-chat.ts, shared with the
+		* instant double-click path so both surfaces pick the same workspace.
 		*/
-		function defaultWorkspaceOption(options) {
-			const dirName = (path) => {
-				const trimmed = path.replace(/[\\/]+$/, "");
-				const cut = Math.max(trimmed.lastIndexOf("\\"), trimmed.lastIndexOf("/"));
-				return (cut >= 0 ? trimmed.slice(cut + 1) : trimmed).toLowerCase();
-			};
-			return options.find((option) => option.title.trim().toLowerCase() === "default-workspace" || dirName(option.path) === "default-workspace")?.id;
-		}
 		/** Localized copy for a shipped preset id; custom presets render their name. */
 		function presetDisplayName(id) {
 			const key = `preset.${id}`;
@@ -12790,39 +12917,6 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			if (sample === void 0) return "~";
 			const cut = sample.lastIndexOf("/");
 			return cut > 0 ? sample.slice(0, cut) : sample;
-		}
-		let draftCatalogPromise = null;
-		/** The model catalog / agent presets / default labels are page-wide static:
-		*  load them once, lazily, and reuse them for every draft box. */
-		function loadDraftCatalog() {
-			if (draftCatalogPromise !== null) return draftCatalogPromise;
-			draftCatalogPromise = (async () => {
-				const remote = getServices()?.remote;
-				let groups = [];
-				let presets = [];
-				let defaultModel = "";
-				let defaultPreset = "";
-				try {
-					if (remote !== void 0) {
-						const catalog = await remote.session.modelCatalog().catch(() => void 0);
-						if (catalog !== void 0 && catalog.ok) groups = catalog.value.groups ?? [];
-						const list = await remote.agentPresets.list().catch(() => void 0);
-						if (list !== void 0 && list.ok) presets = list.value.presets;
-					}
-					const defaults = await talkMapApi.getDefaults().catch(() => void 0);
-					if (defaults !== void 0 && defaults.model !== null) defaultModel = defaults.model.model;
-					if (defaults !== void 0 && defaults.preset !== null) defaultPreset = defaults.preset;
-				} catch (error) {
-					console.warn("[dsh-talk-map] draft catalog unavailable:", error);
-				}
-				return {
-					groups,
-					presets,
-					defaultModel,
-					defaultPreset
-				};
-			})();
-			return draftCatalogPromise;
 		}
 		function DraftCard(props) {
 			const { data } = props;
@@ -12990,31 +13084,14 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				await talkMapApi.ensureDir(newWsPath);
 				return unwrapRemote(await remote.workspace.create({ path: newWsPath }), "workspace.create").workspace.workspaceId;
 			};
-			/** The default workspace stays unframed; other workspaces grow a frame on
-			*  first use, matching the legacy draft flow. */
+			/** Frame the target workspace on demand (shared with the instant path):
+			*  the default workspace stays unframed, any other grows one on first use. */
 			const ensureFrame = (targetWorkspaceId, cardX, cardY) => {
-				if (targetWorkspaceId === defaultWorkspaceOption(data.workspaceOptions)) return;
-				if (canvas.get().global?.wsFrames?.[targetWorkspaceId] !== void 0) return;
-				const PAD = 32;
-				canvas.setWsFrameRect(targetWorkspaceId, {
-					x: cardX - PAD,
-					y: cardY - PAD - 30,
-					width: 288,
-					height: 214
-				});
+				ensureWorkspaceFrame(targetWorkspaceId, data.workspaceOptions, cardX, cardY);
 			};
 			/** Add the newborn card at the draft's exact spot; returns its card id. */
 			const addDraftCard = (sessionId, wsOverride) => {
-				const cardId = newCardId();
-				canvas.addCards({ [cardId]: {
-					boardId: INBOX_BOARD_ID,
-					sessionId,
-					x: snap$1(props.positionAbsoluteX),
-					y: snap$1(props.positionAbsoluteY),
-					...wsOverride !== void 0 && wsOverride !== "" ? { wsOverride } : {},
-					createdAt: Date.now()
-				} });
-				return cardId;
+				return addSessionCard(sessionId, snap$1(props.positionAbsoluteX), snap$1(props.positionAbsoluteY), wsOverride);
 			};
 			/** Persist the fork relationship as a map edge (digest/full/none). */
 			const addForkEdge = (parentCardId, toCardId, kind, injectedText) => {
@@ -14799,6 +14876,63 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					...groupId !== void 0 ? { groupId } : {}
 				});
 			};
+			/**
+			* The instant path: a plain double-click on empty canvas — or 新对话 in the
+			* right-click menu — creates the conversation outright instead of opening
+			* the draft form. Everything uses deployment defaults: the workspace frame
+			* the click landed in, else the default workspace; the plain 'standard'
+			* preset when the deployment ships it; the deployment's default model.
+			*
+			* The card placement is recorded at the click point, and the conversation
+			* opens in the drawer right away. The card itself stays invisible until the
+			* first message lands — an empty log is not drawn on the board — then it
+			* appears exactly where the click was.
+			*/
+			const creatingChatRef = (0, react.useRef)(false);
+			const createConversationAt = async (flowX, flowY) => {
+				if (creatingChatRef.current) return;
+				const services = getServices();
+				if (services === void 0) {
+					showToast(t("draft.createNotReady"));
+					return;
+				}
+				const remote = services.remote;
+				const createSession = services.sessions.create;
+				if (remote === void 0 || createSession === void 0) {
+					showToast(t("draft.createNotReady"));
+					return;
+				}
+				const frameId = groupAtPoint(flowX, flowY);
+				const targetWorkspaceId = newConversationWorkspace({
+					...frameId !== void 0 && wsTitles.has(frameId) ? { frameWorkspaceId: frameId } : {},
+					options: draftWorkspaceOptions
+				});
+				if (targetWorkspaceId === void 0) {
+					showToast(t("draft.createNoWorkspace"));
+					return;
+				}
+				creatingChatRef.current = true;
+				try {
+					const presetId = await preferredAgentPreset();
+					const sessionId = sessionIdOf(unwrapRemote(await createSession.call(services.sessions, {
+						workspaceId: targetWorkspaceId,
+						...presetId !== void 0 ? { agentPreset: presetId } : {}
+					}), "session.create"));
+					if (sessionId === void 0) throw new Error("session.create returned no session id");
+					const position = newChatCardPosition(flowX, flowY);
+					addSessionCard(sessionId, position.x, position.y, targetWorkspaceId);
+					ensureWorkspaceFrame(targetWorkspaceId, draftWorkspaceOptions, position.x, position.y);
+					if (props.onOpenChat !== void 0) props.onOpenChat(sessionId);
+					else {
+						mapUi.setOpen(false);
+						openSessionInMain(sessionId);
+					}
+				} catch (error) {
+					showToast(`${t("draft.createFailed")}${errorText(error)}`);
+				} finally {
+					creatingChatRef.current = false;
+				}
+			};
 			const boardSessionIds = (0, react.useMemo)(() => new Set(Object.values(canvasState.cards).map((card) => card.sessionId)), [canvasState.cards]);
 			const importWorkspace = (workspaceId, atX, atY) => {
 				const memberSessions = placeableSessionIds(sessions).filter((id) => sessionWs.get(id) === workspaceId && !boardSessionIds.has(id)).sort((a, b) => (sessions.byId[b]?.updatedAt ?? 0) - (sessions.byId[a]?.updatedAt ?? 0));
@@ -15025,6 +15159,14 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					items.push({
 						key: "draft",
 						label: t("menu.newChat"),
+						onPick: () => {
+							close();
+							createConversationAt(menu.flowX, menu.flowY);
+						}
+					});
+					items.push({
+						key: "draft-form",
+						label: t("menu.newChatDraft"),
 						onPick: () => {
 							openDraftAt(menu.flowX, menu.flowY);
 							close();
@@ -15256,7 +15398,8 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 						x: event.clientX,
 						y: event.clientY
 					});
-					openDraftAt(position.x, position.y);
+					if (event.shiftKey) openDraftAt(position.x, position.y);
+					else createConversationAt(position.x, position.y);
 				},
 				onDragOver: onImageDragOver,
 				onDrop: onImageDrop,

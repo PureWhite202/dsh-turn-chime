@@ -19,6 +19,7 @@ node tests/e2e/draft-attachments.e2e.mjs
 ## Scenarios
 
 0. macOS chrome: setting `data-platform=darwin` on `<html>` (as the desktop shell does) moves the map header below `--dsh-frame-top-clearance`, so the native traffic lights never cover the title.
+0. double-click empty canvas → the conversation is created and opened in the drawer, with no draft box (the plain double-click no longer opens the form).
 1. paste an image → one image attachment with a `blob:` preview; the paste is consumed.
 2. paste text + image → image attached **and** the paste is not consumed, so the textarea keeps its text.
 3. drop a PDF → a generic-file card with name; no canvas image node is created.
@@ -40,5 +41,5 @@ Failures write a screenshot to `tests/e2e/artifacts/` (git-ignored) and exit non
 
 - The app's locale is whatever Playwright's Chromium reports (English by default); selectors accept both `Talk Map`/`对话地图` and the drawer/close labels.
 - The test PNG is a valid, fully decodable 64×64 image: the Host's `sharp` admission rejects header-only or CRC-broken 1×1 fixtures with `attachment-invalid`, which is exactly what scenario 8 exercises with deliberately corrupt bytes.
-- `openDraft` retries a few known-empty canvas points: a double-click on an existing session card opens that Session full-screen (closing the map), and the helper reopens the map and tries the next point.
+- `openDraft` opens the form through the pane context menu ("New conversation (fill in first)…") and retries a few known-empty canvas points: a right-click on a card or frame opens that node's own menu, and the drawer covers the right edge of the canvas.
 - Each run re-uploads the PNG to `/talk-map/images/upload` for the drawer-image scenario, so that path is exercised too.

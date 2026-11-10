@@ -5,7 +5,7 @@ English | [中文](README.zh.md)
 A visual conversation map plugin for DeepSeek Harness (dsh): every session becomes a card on an infinite whiteboard.
 
 - **Spatial memory instead of working memory**: free placement + grid snapping, and nothing ever rearranges your cards — if you remember "that conversation was bottom-left", it stays bottom-left. Designed for ADHD users, useful for everyone.
-- **Double-click to chat**: double-click empty canvas to start a new session; the card is born exactly where you clicked.
+- **Double-click to chat**: double-click empty canvas and the session is created and opened on the spot — no form in the way; the card's position is remembered from the exact point you clicked and appears once the first message lands.
 - **Draw an edge to fork**: drag a line from a card onto empty space, preview (and edit) the context digest to inject, confirm — a new session starts *knowing* the old conversation.
 - **Card front = resume surface**: title, the digest's "next step", relative time, running state. One glance tells you what to do next.
 - **Automatic digests**: after a session goes idle, a three-field digest (summary / key findings / next step) is generated with your deployment's default model; hit ⟳ on a card to regenerate manually.
@@ -29,9 +29,11 @@ Restart `dsh web`; a map button appears at the sidebar foot.
 |---|---|
 | Sidebar map button / Esc | toggle the map |
 | Drag a card | place it (16px grid snap, persisted) |
-| Double-click empty space | create a session there and enter it |
+| Double-click empty space | create a session there and enter it (no form) |
+| Right-click → New conversation | same, create and enter directly |
+| Shift+double-click empty space / right-click → New conversation (fill in first)… | open the draft box: pick workspace/model/preset, write the first message, attach files |
 | Double-click a card | open that session |
-| Paste or drop files into the draft | send them as attachments with the first message |
+| Paste or drop files into the draft box | send them as attachments with the first message |
 | Drag from a card's right handle to empty space | preview injection → fork a new session |
 | ⟳ on a card | regenerate the digest |
 | Language pill in the map header | cycle Auto → 中文 → English |

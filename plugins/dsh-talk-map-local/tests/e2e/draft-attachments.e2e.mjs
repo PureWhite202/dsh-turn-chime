@@ -165,18 +165,35 @@ async function closeDrawer(page) {
   await drawer.first().waitFor({ state: 'detached', timeout: 5000 }).catch(() => {})
 }
 
+/**
+ * Open the draft box through the pane context menu. A plain double-click used
+ * to open it, but that gesture now creates the conversation outright (see the
+ * 'double-click creates a conversation' scenario), so the form lives behind
+ * the second menu entry.
+ */
 async function openDraft(page, position = { x: 500, y: 300 }) {
   if (await page.locator('[data-talk-map-draft]').count()) return
-  // A double-click on a card opens that Session full-screen (closing the map);
-  // retry a few known-empty points so the helper is robust to earlier cards.
-  const attempts = [position, { x: 1000, y: 400 }, { x: 700, y: 200 }, { x: 400, y: 700 }]
+  // Retry a few known-empty points: a right-click on a card or frame opens
+  // that node's own menu (no draft entry), and the drawer covers the right
+  // edge of the canvas.
+  const attempts = [position, { x: 700, y: 200 }, { x: 400, y: 700 }, { x: 200, y: 500 }]
   for (const point of attempts) {
     await openMap(page)
-    await page.locator('[data-talk-map-canvas]').dblclick({ position: point })
+    await closeDrawer(page)
+    await page.locator('[data-talk-map-canvas]').click({ button: 'right', position: point })
+    const entry = page.getByRole('menuitem', { name: /New conversation \(fill in first\)|新对话（先填写）/ })
     try {
-      await page.waitForSelector('[data-talk-map-draft]', { timeout: 2500 })
+      await entry.waitFor({ state: 'visible', timeout: 2000 })
+    } catch {
+      // Right-click landed on a card/frame (its menu has no draft entry).
+      await page.keyboard.press('Escape')
+      continue
+    }
+    await entry.click()
+    try {
+      await page.waitForSelector('[data-talk-map-draft]', { timeout: 3000 })
       return
-    } catch { /* a card or the drawer took the click: try the next point */ }
+    } catch { /* the panel closed on its own: try the next point */ }
   }
   throw new Error('could not open a draft card')
 }
@@ -331,6 +348,28 @@ async function main() {
         if (platform === null) document.documentElement.removeAttribute('data-platform')
         else document.documentElement.setAttribute('data-platform', platform)
       }, previousPlatform)
+    })
+
+    await scenario('double-click creates a conversation without the draft box', async () => {
+      await openMap(page)
+      await closeDrawer(page)
+      const draftBefore = await page.locator('[data-talk-map-draft]').count()
+      assert(draftBefore === 0, 'no draft box is open before the double-click')
+      await page.locator('[data-talk-map-canvas]').dblclick({ position: { x: 520, y: 320 } })
+      // The form must never show up on this path.
+      await page.waitForTimeout(1200)
+      assert((await page.locator('[data-talk-map-draft]').count()) === 0, 'double-click must not open the draft box')
+      // The newborn conversation opens in the map's right-hand drawer.
+      const drawer = page.locator('aside[aria-label="Conversation panel"], aside[aria-label="会话窗口"]')
+      await drawer.first().waitFor({ state: 'visible', timeout: 20000 })
+      await closeDrawer(page)
+
+      // Shift is the escape hatch back to the form: it must still open the
+      // draft box instead of creating yet another conversation.
+      await openMap(page)
+      await page.locator('[data-talk-map-canvas]').dblclick({ position: { x: 300, y: 620 }, modifiers: ['Shift'] })
+      await page.waitForSelector('[data-talk-map-draft]', { timeout: 5000 })
+      await closeDraft(page)
     })
 
     await scenario('paste image only', async () => {

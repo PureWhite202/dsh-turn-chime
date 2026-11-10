@@ -24,7 +24,9 @@ import type { ArchivedCardPlacement, Card, FrameGeometry, MapEdgeData } from '..
 import { canvas, INBOX_BOARD_ID, newCardId, type CanvasState } from './canvas-store.ts'
 import { COLOR_TAGS } from './colors.ts'
 import { buildPushText, digestIsEmpty } from './digest-text.ts'
-import { getServices, mapUi, openSessionInMain, unwrapRemote, useArchivedSessionIds } from './map-state.ts'
+import { getServices, mapUi, openSessionInMain, sessionIdOf, unwrapRemote, useArchivedSessionIds } from './map-state.ts'
+import { addSessionCard, ensureWorkspaceFrame, preferredAgentPreset } from './map-create.ts'
+import { newChatCardPosition, newConversationWorkspace } from './new-chat.ts'
 import { ContextMenu, type MenuItem, type MenuState } from './ContextMenu.tsx'
 import { InteractionMenu } from './InteractionMenu.tsx'
 import { completions, interactions, interactionMenu } from './interactions.ts'
@@ -1206,6 +1208,67 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
     })
   }
 
+  /**
+   * The instant path: a plain double-click on empty canvas — or 新对话 in the
+   * right-click menu — creates the conversation outright instead of opening
+   * the draft form. Everything uses deployment defaults: the workspace frame
+   * the click landed in, else the default workspace; the plain 'standard'
+   * preset when the deployment ships it; the deployment's default model.
+   *
+   * The card placement is recorded at the click point, and the conversation
+   * opens in the drawer right away. The card itself stays invisible until the
+   * first message lands — an empty log is not drawn on the board — then it
+   * appears exactly where the click was.
+   */
+  const creatingChatRef = useRef(false)
+  const createConversationAt = async (flowX: number, flowY: number): Promise<void> => {
+    // Two fast double-clicks must not race into two conversations.
+    if (creatingChatRef.current) return
+    const services = getServices()
+    if (services === undefined) {
+      showToast(t('draft.createNotReady'))
+      return
+    }
+    const remote = services.remote
+    const createSession = services.sessions.create
+    if (remote === undefined || createSession === undefined) {
+      showToast(t('draft.createNotReady'))
+      return
+    }
+    const frameId = groupAtPoint(flowX, flowY)
+    const targetWorkspaceId = newConversationWorkspace({
+      ...(frameId !== undefined && wsTitles.has(frameId) ? { frameWorkspaceId: frameId } : {}),
+      options: draftWorkspaceOptions,
+    })
+    if (targetWorkspaceId === undefined) {
+      showToast(t('draft.createNoWorkspace'))
+      return
+    }
+    creatingChatRef.current = true
+    try {
+      const presetId = await preferredAgentPreset()
+      const created = await createSession.call(services.sessions, {
+        workspaceId: targetWorkspaceId,
+        ...(presetId !== undefined ? { agentPreset: presetId } : {}),
+      })
+      const sessionId = sessionIdOf(unwrapRemote(created, 'session.create'))
+      if (sessionId === undefined) throw new Error('session.create returned no session id')
+      const position = newChatCardPosition(flowX, flowY)
+      addSessionCard(sessionId, position.x, position.y, targetWorkspaceId)
+      ensureWorkspaceFrame(targetWorkspaceId, draftWorkspaceOptions, position.x, position.y)
+      if (props.onOpenChat !== undefined) {
+        props.onOpenChat(sessionId)
+      } else {
+        mapUi.setOpen(false)
+        openSessionInMain(sessionId)
+      }
+    } catch (error) {
+      showToast(`${t('draft.createFailed')}${errorText(error)}`)
+    } finally {
+      creatingChatRef.current = false
+    }
+  }
+
   // ---- import actions -------------------------------------------------
 
   const boardSessionIds = useMemo(
@@ -1450,6 +1513,14 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
         key: 'draft',
         label: t('menu.newChat'),
         onPick: () => {
+          close()
+          void createConversationAt(menu.flowX, menu.flowY)
+        },
+      })
+      items.push({
+        key: 'draft-form',
+        label: t('menu.newChatDraft'),
+        onPick: () => {
           openDraftAt(menu.flowX, menu.flowY)
           close()
         },
@@ -1672,7 +1743,11 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
         }
         if (target.closest('.react-flow__pane') === null) return
         const position = screenToFlowPosition({ x: event.clientX, y: event.clientY })
-        openDraftAt(position.x, position.y)
+        // Plain double-click creates the conversation straight away; Shift
+        // keeps the old composer (workspace / model / first message /
+        // attachments) for when the defaults are not what the user wants.
+        if (event.shiftKey) openDraftAt(position.x, position.y)
+        else void createConversationAt(position.x, position.y)
       }}
       onDragOver={onImageDragOver}
       onDrop={onImageDrop}

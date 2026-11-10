@@ -16,7 +16,7 @@ import type { NodeProps, Node } from '@xyflow/react'
 import type { AgentPresetEntry, FileUploadProgress, FileUploadReceipt, ModelProviderGroup, RemoteService } from './dsh.ts'
 import type { EdgeInjection } from '../shared/model.ts'
 import { talkMapApi } from './api.ts'
-import { canvas, INBOX_BOARD_ID, newCardId } from './canvas-store.ts'
+import { canvas, INBOX_BOARD_ID } from './canvas-store.ts'
 import { getServices, mapUi, openSessionInMain, sessionIdOf, unwrapRemote } from './map-state.ts'
 import { buildInjectionText, digestIsEmpty } from './digest-text.ts'
 import {
@@ -31,6 +31,8 @@ import {
   type DraftAttachment,
   type DraftImageSource,
 } from './draft-attachments.ts'
+import { addSessionCard, ensureWorkspaceFrame, loadDraftCatalog } from './map-create.ts'
+import { defaultWorkspaceOption, type WorkspaceOption } from './new-chat.ts'
 import { t } from './i18n.ts'
 import styles from './talk-map.module.css'
 
@@ -44,7 +46,7 @@ export interface DraftParent {
 
 export interface DraftCardData extends Record<string, unknown> {
   /** Workspaces to choose from (id + display title + path), map-order. */
-  workspaceOptions: { id: string; title: string; path: string }[]
+  workspaceOptions: WorkspaceOption[]
   /** Preselected workspace (set when the double-click landed inside a frame). */
   defaultWorkspaceId?: string
   /** Map group the draft was opened in — the new card's frame membership. */
@@ -67,21 +69,9 @@ const snap = (value: number): number => Math.round(value / GRID) * GRID
 /**
  * Workspace a map-born conversation lands in when the draft was opened on
  * bare canvas (outside every workspace frame): the deployment's own
- * `default-workspace`, matched by title or directory name. The host keeps
- * that workspace as its default; the map mirrors it instead of silently
- * offering to create yet another workspace.
+ * `default-workspace`. The rule itself lives in new-chat.ts, shared with the
+ * instant double-click path so both surfaces pick the same workspace.
  */
-function defaultWorkspaceOption(options: DraftCardData['workspaceOptions']): string | undefined {
-  const dirName = (path: string): string => {
-    const trimmed = path.replace(/[\\/]+$/, '')
-    const cut = Math.max(trimmed.lastIndexOf('\\'), trimmed.lastIndexOf('/'))
-    return (cut >= 0 ? trimmed.slice(cut + 1) : trimmed).toLowerCase()
-  }
-  const match = options.find(option =>
-    option.title.trim().toLowerCase() === 'default-workspace'
-    || dirName(option.path) === 'default-workspace')
-  return match?.id
-}
 
 /** Localized copy for a shipped preset id; custom presets render their name. */
 function presetDisplayName(id: string): string {
@@ -96,44 +86,6 @@ function newWorkspaceParent(options: { path: string }[]): string {
   if (sample === undefined) return '~'
   const cut = sample.lastIndexOf('/')
   return cut > 0 ? sample.slice(0, cut) : sample
-}
-
-interface DraftCatalog {
-  groups: ModelProviderGroup[]
-  presets: readonly AgentPresetEntry[]
-  defaultModel: string
-  defaultPreset: string
-}
-
-let draftCatalogPromise: Promise<DraftCatalog> | null = null
-
-/** The model catalog / agent presets / default labels are page-wide static:
- *  load them once, lazily, and reuse them for every draft box. */
-function loadDraftCatalog(): Promise<DraftCatalog> {
-  if (draftCatalogPromise !== null) return draftCatalogPromise
-  draftCatalogPromise = (async () => {
-    const services = getServices()
-    const remote = services?.remote
-    let groups: ModelProviderGroup[] = []
-    let presets: readonly AgentPresetEntry[] = []
-    let defaultModel = ''
-    let defaultPreset = ''
-    try {
-      if (remote !== undefined) {
-        const catalog = await remote.session.modelCatalog().catch(() => undefined)
-        if (catalog !== undefined && catalog.ok) groups = catalog.value.groups ?? []
-        const list = await remote.agentPresets.list().catch(() => undefined)
-        if (list !== undefined && list.ok) presets = list.value.presets
-      }
-      const defaults = await talkMapApi.getDefaults().catch(() => undefined)
-      if (defaults !== undefined && defaults.model !== null) defaultModel = defaults.model.model
-      if (defaults !== undefined && defaults.preset !== null) defaultPreset = defaults.preset
-    } catch (error) {
-      console.warn('[dsh-talk-map] draft catalog unavailable:', error)
-    }
-    return { groups, presets, defaultModel, defaultPreset }
-  })()
-  return draftCatalogPromise
 }
 
 function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
@@ -345,38 +297,15 @@ function DraftCard(props: NodeProps<DraftCardNodeType>): React.JSX.Element {
     return created.workspace.workspaceId
   }
 
-  /** The default workspace stays unframed; other workspaces grow a frame on
-   *  first use, matching the legacy draft flow. */
+  /** Frame the target workspace on demand (shared with the instant path):
+   *  the default workspace stays unframed, any other grows one on first use. */
   const ensureFrame = (targetWorkspaceId: string, cardX: number, cardY: number): void => {
-    const defaultWsId = defaultWorkspaceOption(data.workspaceOptions)
-    if (targetWorkspaceId === defaultWsId) return
-    if (canvas.get().global?.wsFrames?.[targetWorkspaceId] !== undefined) return
-    const CARD_W = 224
-    const CARD_H = 120
-    const PAD = 32
-    const LABEL = 30
-    canvas.setWsFrameRect(targetWorkspaceId, {
-      x: cardX - PAD,
-      y: cardY - PAD - LABEL,
-      width: CARD_W + PAD * 2,
-      height: CARD_H + PAD * 2 + LABEL,
-    })
+    ensureWorkspaceFrame(targetWorkspaceId, data.workspaceOptions, cardX, cardY)
   }
 
   /** Add the newborn card at the draft's exact spot; returns its card id. */
   const addDraftCard = (sessionId: string, wsOverride: string | undefined): string => {
-    const cardId = newCardId()
-    canvas.addCards({
-      [cardId]: {
-        boardId: INBOX_BOARD_ID,
-        sessionId,
-        x: snap(props.positionAbsoluteX),
-        y: snap(props.positionAbsoluteY),
-        ...(wsOverride !== undefined && wsOverride !== '' ? { wsOverride } : {}),
-        createdAt: Date.now(),
-      },
-    })
-    return cardId
+    return addSessionCard(sessionId, snap(props.positionAbsoluteX), snap(props.positionAbsoluteY), wsOverride)
   }
 
   /** Persist the fork relationship as a map edge (digest/full/none). */

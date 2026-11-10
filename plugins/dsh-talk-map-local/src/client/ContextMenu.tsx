@@ -1,8 +1,9 @@
 /**
  * Right-click menu for the board. One flat panel; entries that need a second
  * step (import workspace, move to group, import session) swap the panel body
- * for a searchable pick list. Right-DRAG still pans — React Flow only raises
- * the contextmenu callbacks on a plain right click.
+ * for a searchable pick list. Right-DRAG still pans: the board holds the
+ * request until the right-button release and drops it once the pointer has
+ * travelled (see MapCanvas), so opening happens only for a plain right click.
  */
 import { useEffect, useRef, useState } from 'react'
 import { mapUi } from './map-state.ts'

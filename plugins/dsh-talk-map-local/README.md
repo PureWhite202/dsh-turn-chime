@@ -29,6 +29,7 @@ Restart `dsh web`; a map button appears at the sidebar foot.
 |---|---|
 | Sidebar map button / Esc | toggle the map |
 | Drag a card | place it (16px grid snap, persisted) |
+| Right-drag / middle-drag empty space | pan the board (a right-drag never opens the menu) |
 | Double-click empty space | create a session there and enter it (no form) |
 | Right-click → New conversation | same, create and enter directly |
 | Shift+double-click empty space / right-click → New conversation (fill in first)… | open the draft box: pick workspace/model/preset, write the first message, attach files |

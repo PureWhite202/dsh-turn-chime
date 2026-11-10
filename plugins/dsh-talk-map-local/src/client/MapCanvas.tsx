@@ -10,7 +10,9 @@
  * no group-moving — what the sidebar cannot do, the map does not pretend to.
  *
  * Interaction: right/middle-drag pans, plain right-click opens the context
- * menu, left-drag box-selects on the pane and drags nodes.
+ * menu, left-drag box-selects on the pane and drags nodes. The menu waits for
+ * the right-button release (Chromium raises `contextmenu` on the press), so a
+ * right-drag never opens it.
  */
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import {
@@ -50,6 +52,8 @@ const COLS = 3
 const FRAME_PAD = 32
 const FRAME_LABEL_H = 30
 const LAYOUT_VERSION = 3
+/** Right-button travel (px) that turns a click into a drag: a pan, not a menu. */
+const RIGHT_MOVED_BEYOND_CLICK = 5
 
 type TalkMapNode = SessionCardNodeType | WsFrameNodeType | DraftCardNodeType | ImageNodeType
 
@@ -160,6 +164,17 @@ interface MenuContext {
   view: 'root' | 'import-ws' | 'import-session' | 'new-ws'
 }
 
+/** Where/what a contextmenu event should open, before the panel is shown. */
+type MenuRequest = Omit<MenuContext, 'view'>
+
+/** A right-button press in flight; `moved` latches once past the click slop. */
+interface RightGesture {
+  x: number
+  y: number
+  moved: boolean
+  pressed: boolean
+}
+
 /** Props of the board; the overlay adds the drawer opener. */
 export interface MapCanvasProps extends RootSlotStandardProps {
   /** Single-clicked card: open that Session beside the map (right drawer). */
@@ -237,51 +252,139 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
     return undefined
   }
 
-  // React Flow treats ANY right-button movement as a pan and then withholds
-  // its context-menu callbacks, so a right click with a pixel of jitter used
-  // to do nothing. Track the press ourselves and only suppress the menu once
-  // the pointer really travelled (a deliberate right-drag pan).
-  const rightGesture = useRef<{ x: number; y: number; moved: boolean } | null>(null)
-  const rightMovedBeyondClick = 5
-  const trackRightDown = (event: React.PointerEvent): void => {
-    if (event.button !== 2) return
-    rightGesture.current = { x: event.clientX, y: event.clientY, moved: false }
-  }
-  const trackRightMove = (event: React.PointerEvent): void => {
-    const gesture = rightGesture.current
-    if (gesture === null || gesture.moved) return
-    if (
-      Math.abs(event.clientX - gesture.x) > rightMovedBeyondClick
-      || Math.abs(event.clientY - gesture.y) > rightMovedBeyondClick
-    ) gesture.moved = true
-  }
-  const handleContextMenu = (event: React.MouseEvent): void => {
-    event.preventDefault()
-    const gesture = rightGesture.current
-    rightGesture.current = null
-    if (gesture !== null && gesture.moved) return
+  // Chromium raises `contextmenu` on the right-button PRESS — before the
+  // pointer has travelled — so the menu cannot be opened there: a right-drag
+  // pan would open it too (the board listens to the raw event, so React Flow
+  // never gets to withhold it). Hold the request and let the release tell a
+  // click from a drag. Engines that raise `contextmenu` on the RELEASE decide
+  // right in the handler; both paths share the press tracking below.
+  const rightGesture = useRef<RightGesture | null>(null)
+  const pendingMenu = useRef<MenuRequest | null>(null)
+
+  /** What the menu should show for a contextmenu event, if anything. */
+  const menuRequest = (event: React.MouseEvent): MenuRequest | null => {
+    const wrapper = wrapperRef.current
+    if (wrapper === null) return null
     const target = event.target as HTMLElement
-    // Edges keep React Flow's own menu callback (their DOM carries no
-    // endpoints, and the callback only fires for plain right clicks anyway).
-    if (target.closest('.react-flow__edge') !== null) return
+    const geometry = (): Pick<MenuContext, 'left' | 'top' | 'flowX' | 'flowY'> => {
+      const bounds = wrapper.getBoundingClientRect()
+      const flow = screenToFlowPosition({ x: event.clientX, y: event.clientY })
+      return {
+        left: event.clientX - bounds.left,
+        top: event.clientY - bounds.top,
+        flowX: flow.x,
+        flowY: flow.y,
+      }
+    }
+    // Edges keep their own menu: the DOM carries the id, and the endpoints
+    // ride on our edge data (card ids contain dashes — the id is not parsable).
+    const edgeNode = target.closest('.react-flow__edge')
+    if (edgeNode !== null) {
+      const edgeId = edgeNode.getAttribute('data-id')
+      if (edgeId === null || edgeId === '') return null
+      const data = edges.find(edge => edge.id === edgeId)?.data as
+        | { fromCardId?: string; toCardId?: string }
+        | undefined
+      if (data?.fromCardId === undefined || data.toCardId === undefined) return null
+      return { ...geometry(), kind: 'edge', targetId: edgeId, edgeFrom: data.fromCardId, edgeTo: data.toCardId }
+    }
     const cardNode = target.closest('.react-flow__node[data-id^="card-"]')
     if (cardNode !== null) {
       const cardId = cardNode.getAttribute('data-id')
-      if (cardId !== null && cardId !== '') openMenu(event, 'card', cardId)
-      return
+      if (cardId === null || cardId === '') return null
+      return { ...geometry(), kind: 'card', targetId: cardId }
     }
     const frameNode = target.closest('.react-flow__node[data-id^="frame-"]')
     if (frameNode !== null) {
       const frameId = frameNode.getAttribute('data-id')?.slice('frame-'.length)
-      if (frameId !== undefined && frameId !== '') openMenu(event, 'frame', frameId)
-      return
+      if (frameId === undefined || frameId === '') return null
+      return { ...geometry(), kind: 'frame', targetId: frameId }
     }
     // Other nodes (the draft card) own no menu; overlay UI is not the pane.
-    if (target.closest('.react-flow__node') !== null) return
-    if (target.closest('.react-flow__pane') === null) return
-    openMenu(event, 'pane')
+    if (target.closest('.react-flow__node') !== null) return null
+    if (target.closest('.react-flow__pane') === null) return null
+    return { ...geometry(), kind: 'pane' }
+  }
+
+  const openMenu = useCallback((request: MenuRequest): void => {
+    setMenu({ ...request, view: 'root' })
+  }, [])
+
+  const handleContextMenu = (event: React.MouseEvent): void => {
+    // Always swallow the native menu — this board owns its own.
+    event.preventDefault()
+    const request = menuRequest(event)
+    if (request === null) return
+    // Non-right triggers (keyboard, macOS ctrl+click) never pan: open now.
+    if (event.button !== 2) {
+      openMenu(request)
+      return
+    }
+    const gesture = rightGesture.current
+    if (gesture !== null && gesture.pressed) {
+      // Chromium: the press is still down, so this may yet become a drag.
+      pendingMenu.current = request
+      return
+    }
+    // Some engines raise contextmenu on the release: the press is over, so
+    // the tracked gesture already knows whether the pointer travelled.
+    rightGesture.current = null
+    pendingMenu.current = null
+    if (gesture === null || !gesture.moved) openMenu(request)
   }
   const wrapperRef = useRef<HTMLDivElement | null>(null)
+
+  // Window-level press tracking (capture phase): React Flow's pane drag grabs
+  // the pointer for the pan, so wrapper-level move handlers are not guaranteed
+  // to fire, and capture keeps this ahead of handlers that stop propagation.
+  useEffect(() => {
+    const withinMap = (target: EventTarget | null): boolean => {
+      const wrapper = wrapperRef.current
+      return wrapper !== null && target instanceof Node && wrapper.contains(target)
+    }
+    const onDown = (event: PointerEvent): void => {
+      if (event.button !== 2) return
+      pendingMenu.current = null
+      rightGesture.current = withinMap(event.target)
+        ? { x: event.clientX, y: event.clientY, moved: false, pressed: true }
+        : null
+    }
+    const onMove = (event: PointerEvent): void => {
+      const gesture = rightGesture.current
+      if (gesture === null || !gesture.pressed || gesture.moved) return
+      if (
+        Math.abs(event.clientX - gesture.x) > RIGHT_MOVED_BEYOND_CLICK
+        || Math.abs(event.clientY - gesture.y) > RIGHT_MOVED_BEYOND_CLICK
+      ) gesture.moved = true
+    }
+    const onUp = (event: PointerEvent): void => {
+      if (event.button !== 2) return
+      const gesture = rightGesture.current
+      if (gesture !== null) gesture.pressed = false
+      const request = pendingMenu.current
+      pendingMenu.current = null
+      // The contextmenu that arrived on the press left this pending: open it
+      // now unless the pointer travelled — that gesture was a right-drag pan.
+      if (request !== null && (gesture === null || !gesture.moved)) openMenu(request)
+    }
+    const onCancel = (): void => {
+      rightGesture.current = null
+      pendingMenu.current = null
+    }
+    window.addEventListener('pointerdown', onDown, true)
+    window.addEventListener('pointermove', onMove, true)
+    window.addEventListener('pointerup', onUp, true)
+    window.addEventListener('pointercancel', onCancel, true)
+    window.addEventListener('blur', onCancel)
+    return () => {
+      window.removeEventListener('pointerdown', onDown, true)
+      window.removeEventListener('pointermove', onMove, true)
+      window.removeEventListener('pointerup', onUp, true)
+      window.removeEventListener('pointercancel', onCancel, true)
+      window.removeEventListener('blur', onCancel)
+    }
+  }, [openMenu])
+
   // While a rubber-band drag is running, the node/edge arrays are frozen:
   // a mid-drag data refresh (digest SSE, running-state flip) re-renders the
   // flow and corrupts React Flow's in-flight hit testing — the intermittent
@@ -1409,29 +1512,6 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
 
   // ---- context menu ----------------------------------------------------
 
-  const openMenu = (
-    event: React.MouseEvent | MouseEvent,
-    kind: MenuContext['kind'],
-    targetId?: string,
-    edgeEnds?: { from: string; to: string },
-  ): void => {
-    event.preventDefault()
-    const wrapper = wrapperRef.current
-    if (wrapper === null) return
-    const bounds = wrapper.getBoundingClientRect()
-    const flow = screenToFlowPosition({ x: event.clientX, y: event.clientY })
-    setMenu({
-      left: event.clientX - bounds.left,
-      top: event.clientY - bounds.top,
-      flowX: flow.x,
-      flowY: flow.y,
-      kind,
-      ...(targetId !== undefined ? { targetId } : {}),
-      ...(edgeEnds !== undefined ? { edgeFrom: edgeEnds.from, edgeTo: edgeEnds.to } : {}),
-      view: 'root',
-    })
-  }
-
   const menuState: MenuState | null = useMemo(() => {
     if (menu === null) return null
     const close = (): void => { setMenu(null) }
@@ -1751,8 +1831,6 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
       }}
       onDragOver={onImageDragOver}
       onDrop={onImageDrop}
-      onPointerDown={trackRightDown}
-      onPointerMove={trackRightMove}
       onContextMenu={handleContextMenu}
       onClick={() => {
         if (menu !== null) setMenu(null)
@@ -1803,14 +1881,6 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
           if (node.type === 'sessionCard' && !(node as SessionCardNodeType).data.ghost) {
             cancelChatSoon()
             openSession((node as SessionCardNodeType).data.sessionId)
-          }
-        }}
-        onEdgeContextMenu={(event, edge) => {
-          const data = edge.data as { fromCardId?: string; toCardId?: string } | undefined
-          if (data?.fromCardId !== undefined && data.toCardId !== undefined) {
-            openMenu(event, 'edge', edge.id, { from: data.fromCardId, to: data.toCardId })
-          } else {
-            event.preventDefault()
           }
         }}
         onMoveEnd={(_event, viewport: Viewport) => {

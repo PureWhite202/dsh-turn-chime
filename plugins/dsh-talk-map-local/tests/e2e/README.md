@@ -43,3 +43,14 @@ Failures write a screenshot to `tests/e2e/artifacts/` (git-ignored) and exit non
 - The test PNG is a valid, fully decodable 64×64 image: the Host's `sharp` admission rejects header-only or CRC-broken 1×1 fixtures with `attachment-invalid`, which is exactly what scenario 8 exercises with deliberately corrupt bytes.
 - `openDraft` opens the form through the pane context menu ("New conversation (fill in first)…") and retries a few known-empty canvas points: a right-click on a card or frame opens that node's own menu, and the drawer covers the right edge of the canvas.
 - Each run re-uploads the PNG to `/talk-map/images/upload` for the drawer-image scenario, so that path is exercised too.
+
+# Right-button gesture E2E
+
+`context-menu-gesture.e2e.mjs` runs the same private-host setup (build + pack, throwaway `DSH_HOME`/`e2e` profile, `dsh web --port 0`) but only exercises the board's right-button contract on a fresh, empty board:
+
+1. a plain right click opens the context menu, anchored at the press point;
+2. a jittery right click (a few pixels) still opens it;
+3. a right drag pans the viewport and never opens the menu — not while the button is down, not after the release;
+4. a right click after a drag still opens the menu (the drag leaves no sticky gesture behind).
+
+It exists because Chromium raises `contextmenu` on the right-button **press**, before the pointer has moved: the board has to hold the request until the release to tell a click from a pan. Preconditions are the same as above.

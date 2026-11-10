@@ -31,6 +31,7 @@ Restart `dsh web`; a map button appears at the sidebar foot.
 | Drag a card | place it (16px grid snap, persisted) |
 | Double-click empty space | create a session there and enter it |
 | Double-click a card | open that session |
+| Paste or drop files into the draft | send them as attachments with the first message |
 | Drag from a card's right handle to empty space | preview injection → fork a new session |
 | ⟳ on a card | regenerate the digest |
 | Language pill in the map header | cycle Auto → 中文 → English |

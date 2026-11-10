@@ -318,6 +318,21 @@ async function main() {
     }
     await openMap(page)
 
+    await scenario('macOS traffic-light clearance', async () => {
+      const header = page.locator('[data-talk-map-header]')
+      const base = await header.boundingBox()
+      assert(base !== null, 'map header is visible')
+      const previousPlatform = await page.evaluate(() => document.documentElement.getAttribute('data-platform'))
+      await page.evaluate(() => { document.documentElement.setAttribute('data-platform', 'darwin') })
+      await page.waitForTimeout(80)
+      const darwin = await header.boundingBox()
+      assert(darwin !== null && darwin.y >= 48, `darwin header clears the traffic lights (y=${darwin?.y})`)
+      await page.evaluate((platform) => {
+        if (platform === null) document.documentElement.removeAttribute('data-platform')
+        else document.documentElement.setAttribute('data-platform', platform)
+      }, previousPlatform)
+    })
+
     await scenario('paste image only', async () => {
       await openDraft(page)
       const notPrevented = await pastePng(page, '')

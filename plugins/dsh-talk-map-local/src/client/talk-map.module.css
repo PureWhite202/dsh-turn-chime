@@ -75,6 +75,25 @@
   padding-top: var(--dsh-windows-titlebar-height, 40px);
 }
 
+/* macOS desktop: the native traffic lights float over the window's top-left
+ * while the shell starts its content below them (--dsh-frame-top-clearance).
+ * A full-window overlay starts at y=0, so reserve the same strip or the map
+ * title sits under the lights. The strip is also the window drag region;
+ * fullscreen has no traffic lights and no strip. */
+html[data-platform='darwin']:not([data-fullscreen]) .overlay {
+  padding-top: var(--dsh-frame-top-clearance, 48px);
+}
+
+html[data-platform='darwin']:not([data-fullscreen]) .overlay::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: var(--dsh-frame-top-clearance, 48px);
+  -webkit-app-region: drag;
+}
+
 .header {
   display: flex;
   align-items: center;

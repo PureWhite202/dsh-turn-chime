@@ -769,7 +769,7 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
 
   return (
     <div className={styles['overlay']} lang={activeLocale()} role="dialog" aria-label={t('map.title')}>
-      <div className={styles['header']}>
+      <div className={styles['header']} data-talk-map-header="">
         <span className={styles['headerTitle']}>{t('map.title')}</span>
         <span className={styles['headerBadge']}>{sessionCount} {t('map.sessions')}</span>
         <span className={styles['headerSpace']} />

@@ -18,6 +18,7 @@ node tests/e2e/draft-attachments.e2e.mjs
 
 ## Scenarios
 
+0. macOS chrome: setting `data-platform=darwin` on `<html>` (as the desktop shell does) moves the map header below `--dsh-frame-top-clearance`, so the native traffic lights never cover the title.
 1. paste an image → one image attachment with a `blob:` preview; the paste is consumed.
 2. paste text + image → image attached **and** the paste is not consumed, so the textarea keeps its text.
 3. drop a PDF → a generic-file card with name; no canvas image node is created.
@@ -27,6 +28,8 @@ node tests/e2e/draft-attachments.e2e.mjs
 7. send a file-only draft (empty textarea) → Send is enabled, a second session card appears, and the drawer shows the file name.
 8. host refusal (a file declared `image/png` whose bytes are not an image) → the error row appears, the draft survives, and no session card is added.
 9. Escape while a 20 MB upload is starting → the draft closes, no page error escapes, and the host is torn down cleanly.
+
+The macOS scenario only proves the CSS clearance in Chromium (it toggles the same `data-platform` attribute the desktop shell sets); the native traffic lights themselves only exist in the Electron window.
 
 The success scenarios really call the configured model (the prompt is accepted before the model replies); only the throwaway host is affected.
 

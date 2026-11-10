@@ -9,6 +9,6 @@
         #   maxLongEdge: 1600         # 图片长边上限，0 = 不缩放
         #   format: png               # png | jpeg
         #   saveDir: ''               # 空 = 会话工作目录根
-        #   backend: auto             # auto | helper | powershell
+        #   backend: auto             # auto | helper | powershell（Windows）；macOS 恒走 screencapture
         #   cursor: false             # 是否把鼠标指针画进图里
         #   blankUniformity: 0.995    # 判定纯色（黑屏/锁屏）的阈值

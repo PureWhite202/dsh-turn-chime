@@ -4,15 +4,15 @@
 
 ## 工具：screenshot
 
-截取 Windows 桌面并**直接把图片作为内容块返回给模型**，不需要再调用 `read_image`。
+截取当前桌面（Windows / macOS）并**直接把图片作为内容块返回给模型**，不需要再调用 `read_image`。Windows 走自编译的 C# helper，macOS 走系统 `screencapture` + `sips`，都不需要第三方依赖。
 
 | 参数 | 类型 | 默认 | 说明 |
 |---|---|---|---|
 | `target` | `screen` / `window` / `region` | `screen` | 截取目标 |
-| `window` | string | — | `target=window` 时用：窗口标题子串，不区分大小写 |
-| `hwnd` | integer | — | 精确窗口句柄，优先级高于 `window` |
-| `restore` | boolean | `false` | 目标窗口最小化时是否临时恢复后截图 |
-| `region` | `{x,y,width,height}` | — | `target=region` 时用，虚拟桌面物理像素 |
+| `window` | string | — | `target=window` 时用：窗口标题子串，不区分大小写（macOS 标题不匹配时再匹配进程名） |
+| `hwnd` | integer | — | 精确窗口编号：Windows 为 HWND，macOS 为 CGWindowID；优先级高于 `window` |
+| `restore` | boolean | `false` | 目标窗口最小化时是否临时恢复后截图（仅 Windows；macOS 不支持，会尝试直接捕获并给警告） |
+| `region` | `{x,y,width,height}` | — | `target=region` 时用；Windows 为虚拟桌面物理像素，macOS 为点（原点在主屏左上角） |
 | `monitor` | integer | `0` | 显示器序号（1 起）；0 = 所有屏幕合成 |
 | `scale` | number | — | 0.1–1 缩放，省 token |
 | `format` | `png` / `jpeg` | `png` | — |
@@ -35,13 +35,16 @@
 
 | code | 含义 |
 |---|---|
-| `WindowNotFound` | 标题没匹配到窗口，`message` 里附可见窗口标题列表 |
-| `WindowMinimized` | 目标窗口最小化且 `restore=false` |
-| `WindowNotVisible` | 窗口存在但不可见 |
-| `BLANK_CAPTURE` | 截到纯色画面（锁屏、UAC 弹窗、GPU 合成空表面） |
-| `RegionOutsideScreen` | 区域与虚拟屏幕不相交 |
-| `HELPER_BUILD_FAILED` / `HELPER_COMPILER_MISSING` | helper 编译失败且无法回退 |
-| `CAPTURE_TIMEOUT` | 截图进程超过 20 秒 |
+| `WindowNotFound` | 标题/进程名/编号没匹配到窗口，`message` 里附可见窗口列表 |
+| `WindowMinimized` | 目标窗口最小化且 `restore=false`（macOS 不支持自动恢复） |
+| `WindowNotVisible` | 窗口存在但不可见（Windows） |
+| `BLANK_CAPTURE` | 截到纯色画面（锁屏、UAC 弹窗、GPU 合成空表面、没给屏幕录制权限） |
+| `RegionOutsideScreen` | 区域与屏幕不相交 |
+| `RegionMissing` / `WindowSelectorMissing` | region 尺寸缺失 / window 与 hwnd 都没传 |
+| `SCREEN_RECORDING_DENIED` | macOS 没给「屏幕录制」权限（`error.message` 里有授权步骤） |
+| `HELPER_BUILD_FAILED` / `HELPER_COMPILER_MISSING` | Windows helper 编译失败且无法回退 |
+| `CAPTURE_TIMEOUT` | 截图进程超时（20 秒） |
+| `CAPTURE_SPAWN_FAILED` / `CAPTURE_FAILED` / `CONVERT_FAILED` | 子进程起不来 / 截图失败 / 转码失败 |
 
 ## 配置
 
@@ -54,16 +57,18 @@
 | `maxLongEdge` | `1600` | 图片长边上限，0 = 不缩放 |
 | `format` | `png` | 默认格式 |
 | `saveDir` | `''` | 默认保存目录，空 = 会话工作目录根 |
-| `backend` | `auto` | `auto` / `helper` / `powershell` |
+| `backend` | `auto` | `auto` / `helper` / `powershell`（Windows）；macOS 恒走 `screencapture`，该键只做兼容 |
 | `cursor` | `false` | 默认是否画鼠标指针 |
 | `blankUniformity` | `0.995` | 判定纯色画面的阈值 |
 
 ## 构建与测试
 
 ```bash
-node scripts/build-helper.mjs      # 编译 build/dshtool-capture.exe（csc，约 0.2 秒）
-node test/smoke.mjs                # 冒烟测试：真截一张屏 + 窗口错误路径
+node scripts/build-helper.mjs      # Windows：编译 build/dshtool-capture.exe（csc，约 0.2 秒）
+node test/smoke.mjs                # 冒烟测试：纯函数单测 + 真截一张屏 + 区域 + 窗口错误路径
 ```
+
+macOS 不需要构建步骤（系统自带 `screencapture` / `sips` / `osascript`），直接 `node test/smoke.mjs`。
 
 `build/` 是产物目录，不入库（`.gitignore` 已忽略）。首次执行工具时若 exe 不存在或比 `.cs` 旧，会自动重编译。
 
@@ -75,10 +80,20 @@ node test/smoke.mjs                # 冒烟测试：真截一张屏 + 窗口错�
 - **窗口截图**：`PrintWindow` + `PW_RENDERFULLCONTENT`。被遮挡、非前台、比屏幕还大的窗口都能截；最小化窗口拿不到内容（DWM 不渲染），`restore=true` 时用 `SW_SHOWNOACTIVATE` 临时显示 → 截图 → 再最小化，全程不抢焦点，窗口会可见约 0.4 秒。
 - **DPI**：目标窗口是 DPI 不感知的老程序时，按它的 DPI 缩放级别修正位图尺寸，避免右下角出现大片留白。
 
+## macOS 实现（2026-11-10 新增）
+
+- **截屏**：`/usr/sbin/screencapture -x -t png`。整屏按 `NSScreen` 的 frame 算所有显示器的联合矩形，用 `-R` 一次截出（多显示器按桌面布局排布，显示器之间的空隙是黑的）；`monitor=N` 走 `-D N`（1 = 主显示器）。
+- **区域**：`-R x,y,w,h`，坐标单位是**点**（Retina 上输出 2 倍像素），原点在主显示器左上角。
+- **窗口**：JXA（`osascript -l JavaScript`）调 `CGWindowListCopyWindowInfo` 列出窗口，按「进程名精确 > 标题精确 > 标题前缀 > 标题包含 > 进程名包含」打分挑选，然后 `screencapture -o -l <CGWindowID>`（不带阴影）。`hwnd` 直接当 CGWindowID。
+- **缩放/转档/统计**：`sips -Z` 缩长边，`sips -s format jpeg` 转档（质量 88），再把图缩到 24px 的 BMP 上采样算亮度和颜色集中度，纯色判定口径与 Windows helper 一致。
+- **权限**：首次使用需要在「系统设置 → 隐私与安全性 → 屏幕录制」里勾选宿主 App（DeepSeek Harness）并重启。没授权时 `screencapture` 可能只截到壁纸、或返回退出码 1；后者会被归类成 `SCREEN_RECORDING_DENIED`，前者会被 `BLANK_CAPTURE` 拦住。
+
 ## 已知限制
 
-- 仅 Windows（依赖 user32 / GDI+ / .NET Framework 4.x）。
-- 没有 `csc.exe` 时退到 PowerShell 兜底：只有整屏能力，每次约 1.5 秒。
+- Windows 依赖 user32 / GDI+ / .NET Framework 4.x；macOS 依赖系统自带的 `screencapture` / `sips` / `osascript`。
+- macOS 上最小化窗口**不能**自动恢复；而且系统 API 区分不了“最小化”和“在其它桌面/Space”，两者都会先返回 `WindowMinimized`，传 `restore=true` 才会尝试直接捕获（截到空白就归为 `BLANK_CAPTURE`）；窗口截图不带阴影。
+- macOS 的窗口标题需要「屏幕录制」权限才读得到；没权限时只能按进程名匹配。
+- 没有 `csc.exe` 时 Windows 退到 PowerShell 兜底：只有整屏能力，每次约 1.5 秒。
 - 硬件加速视频、全屏独占游戏、DRM 保护内容、部分 UWP 应用可能截到黑图。
 - 锁屏、UAC 提权弹窗期间截不到真实桌面。
 - 跨虚拟桌面（Windows 多桌面）的窗口行为未验证。
@@ -106,3 +121,9 @@ profile 里按普通 bundle 安装（`link:` 指向本目录），宿主会读 `
 - 默认落盘位置：不传 `outDir` 时写到会话工作目录根，文件名 `screen-YYYYMMDD-HHmmss.png`。
 - PowerShell 兜底路径可用（仅整屏，800x500 验证通过）。
 - 端到端耗时：整屏 284–302 毫秒，窗口 382 毫秒。
+
+## 验证记录（2026-11-10，本机 macOS 26.6 / DSH 0.2.2-rc.1）
+
+- `node test/smoke.mjs` 全部通过：整屏 1176x764（scale=0.4）、区域 200x120（200x120 点 × 2 倍 ÷ 2）、相对目录、窗口不存在、`save=false`、BMP 统计单测、窗口匹配优先级单测、错误归类单测。
+- 手动验证：`target=window, window="DeepSeek Harness"` 命中宿主窗口（CGWindowID 181，1280x820 点）；`hwnd=181` 同样命中；`target=screen, monitor=1` 可用；`format=jpeg` 正常（sips 质量 88）；越界 region 返回 `RegionOutsideScreen`。
+- 宿主热加载后 `screenshot` 工具可直接调用（截图内容块正常返回）。

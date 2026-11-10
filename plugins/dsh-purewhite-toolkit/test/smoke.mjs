@@ -1,5 +1,6 @@
 // 冒烟测试：用假 ctx 走一遍「注册 -> 执行 -> 渲染」，会真的截一张屏。
-// 运行：node test/smoke.mjs（先跑 scripts/build-helper.mjs 确保 helper 存在）
+// 运行：node test/smoke.mjs
+// Windows 需要先生成 helper（scripts/build-helper.mjs）；macOS 走系统 screencapture，无需额外依赖。
 
 import assert from 'node:assert/strict'
 import { mkdirSync, rmSync } from 'node:fs'
@@ -7,6 +8,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { apply, createScreenshotTool } from '../index.js'
+import { analyzeBmp, classifyMacFailure, selectMacWindow } from '../index.js'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const OUT_DIR = join(ROOT, 'test', '.out')
@@ -37,6 +39,26 @@ function fakeExec(cwd) {
   return { agent: { session: { header: { cwd } } } }
 }
 
+// 构造 2x2 24bit BMP：三黑一白（底行黑黑、顶行黑白）。
+function buildBmp2x2() {
+  const rowSize = 8
+  const buffer = Buffer.alloc(54 + rowSize * 2)
+  buffer.write('BM', 0, 'ascii')
+  buffer.writeUInt32LE(buffer.length, 2)
+  buffer.writeUInt32LE(54, 10)
+  buffer.writeUInt32LE(40, 14)
+  buffer.writeInt32LE(2, 18)
+  buffer.writeInt32LE(2, 22)
+  buffer.writeUInt16LE(1, 26)
+  buffer.writeUInt16LE(24, 28)
+  buffer.writeUInt32LE(rowSize * 2, 34)
+  // 顶行第二个像素为白色（BGR 顺序），其余为黑。
+  buffer.writeUInt8(255, 54 + rowSize + 3)
+  buffer.writeUInt8(255, 54 + rowSize + 4)
+  buffer.writeUInt8(255, 54 + rowSize + 5)
+  return buffer
+}
+
 async function main() {
   rmSync(OUT_DIR, { recursive: true, force: true })
   mkdirSync(OUT_DIR, { recursive: true })
@@ -50,6 +72,50 @@ async function main() {
   assert.ok(tool.output && typeof tool.output.render === 'function')
   console.log('ok 注册:', tool.name)
 
+  // 1b. 纯函数：窗口匹配优先级
+  const fakeWindows = [
+    {
+      id: 425,
+      owner: 'Safari浏览器',
+      title: 'omdsh-dev/dsh-genui: GenUI for DeepSeek Harness: interactive UI components',
+      width: 1400,
+      height: 800,
+      onscreen: true,
+    },
+    { id: 181, owner: 'DeepSeek Harness', title: 'DeepSeek Harness', width: 1280, height: 820, onscreen: true },
+  ]
+  const byOwner = selectMacWindow(fakeWindows, { window: 'DeepSeek Harness' })
+  assert.equal(byOwner.ok, true)
+  assert.equal(byOwner.window.id, 181, '进程名精确匹配应优先于标题里恰好包含该词的其他窗口')
+  const byTitle = selectMacWindow(fakeWindows, { window: 'dsh-genui' })
+  assert.equal(byTitle.ok, true)
+  assert.equal(byTitle.window.id, 425)
+  const byHwnd = selectMacWindow(fakeWindows, { hwnd: 425 })
+  assert.equal(byHwnd.ok, true)
+  assert.equal(byHwnd.window.id, 425)
+  const noMatch = selectMacWindow(fakeWindows, { window: '____nope____' })
+  assert.equal(noMatch.ok, false)
+  assert.equal(noMatch.code, 'WindowNotFound')
+  assert.match(noMatch.message, /可见窗口/)
+  console.log('ok 窗口匹配优先级')
+
+  // 1c. 纯函数：越界区域归类成 RegionOutsideScreen
+  const outside = classifyMacFailure(
+    '/usr/sbin/screencapture',
+    1,
+    'screencapture: rect (90000.0, 90000.0, 50.0, 50.0) does not intersect any displays',
+  )
+  assert.equal(outside.code, 'RegionOutsideScreen')
+  const denied = classifyMacFailure('/usr/sbin/screencapture', 1, 'screencapture: not authorized to capture screen')
+  assert.equal(denied.code, 'SCREEN_RECORDING_DENIED')
+  console.log('ok 错误归类')
+
+  // 1d. 纯函数：BMP 统计（2x2，三黑一白 → 亮度 63.75、最大同色占比 0.75）
+  const stats = analyzeBmp(buildBmp2x2())
+  assert.ok(Math.abs(stats.mean - 63.75) < 0.01, `mean 应约为 63.75，实际 ${stats.mean}`)
+  assert.ok(Math.abs(stats.uniform - 0.75) < 0.01, `uniform 应约为 0.75，实际 ${stats.uniform}`)
+  console.log('ok BMP 统计')
+
   // 2. 整屏截图 + 落盘到指定目录
   const value = await tool.execute(
     { target: 'screen', outDir: OUT_DIR, fileName: 'smoke.png', scale: 0.4 },
@@ -60,6 +126,26 @@ async function main() {
   assert.ok(value.width > 0 && value.height > 0, '应有宽高')
   assert.equal(value.capture.kind, 'screen')
   console.log(`ok 整屏: ${value.width}x${value.height} ${value.bytes} bytes`)
+
+  // 2b. 区域截图：宽高比应贴合请求的矩形（macOS 的 -R 用点，Windows 用像素，比例一致）
+  const regionShot = await tool.execute(
+    {
+      target: 'region',
+      region: { x: 0, y: 0, width: 200, height: 120 },
+      save: false,
+      scale: 0.5,
+    },
+    fakeExec(ROOT),
+  )
+  assert.equal(regionShot.ok, true, `区域截图应成功，实际：${JSON.stringify(regionShot)}`)
+  assert.equal(regionShot.capture.kind, 'region')
+  assert.ok(regionShot.width > 0 && regionShot.height > 0, '区域截图应有宽高')
+  const regionRatio = regionShot.width / regionShot.height
+  assert.ok(
+    Math.abs(regionRatio - 200 / 120) < 0.1,
+    `区域宽高比应接近 5:3，实际 ${regionShot.width}x${regionShot.height}`,
+  )
+  console.log(`ok 区域: ${regionShot.width}x${regionShot.height}`)
 
   // 3. 渲染出 image 块
   const blocks = tool.output.render({}, value)

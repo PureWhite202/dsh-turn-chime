@@ -1,6 +1,6 @@
 {
   "name": "dsh-talk-map-local",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Visual conversation map for DeepSeek Harness: an infinite whiteboard where every session is a card — drag to arrange, double-click to start a chat in place, draw an edge to fork a new session with injected context. Built for ADHD-friendly spatial memory. · DSH 可视化对话地图：会话即卡片，双击即聊，连线分叉带上下文的新对话。",
   "type": "module",
   "main": "lib/index.js",
@@ -23,6 +23,7 @@
     "build": "tsdown && node scripts/normalize-client-banner.mjs",
     "watch": "tsdown --watch",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test tests/*.test.ts",
     "prepack": "npm run build"
   },
   "dsh": {

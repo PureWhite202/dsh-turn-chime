@@ -4,7 +4,7 @@
  * module-level external store (useSyncExternalStore on the React side).
  */
 import { useMemo, useSyncExternalStore } from 'react'
-import type { ConnectionService, RemoteService, SessionsService, UiWorkspaceService, WorkspacesService } from './dsh.ts'
+import type { ConnectionService, FileDragService, FileUploadService, RemoteService, SessionsService, UiWorkspaceService, WorkspacesService } from './dsh.ts'
 
 export interface MapUiState {
   readonly open: boolean
@@ -102,6 +102,10 @@ export interface MapServices {
   sessions: SessionsService
   workspaces: WorkspacesService
   connection: ConnectionService
+  /** Official browser upload service for draft attachments. */
+  fileUpload: FileUploadService
+  /** Official application-internal file drag reader (drawer images → draft). */
+  fileDrag: FileDragService
   /** Generated Remote namespaces; absent on hosts without the gateway. */
   remote?: RemoteService
   /** Host session selection; absent on older hosts. */

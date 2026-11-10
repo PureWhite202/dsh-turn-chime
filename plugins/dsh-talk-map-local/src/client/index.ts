@@ -29,6 +29,8 @@ export const inject = [
   'remote.session',
   'remote.workspace',
   'remote.agentPresets',
+  'fileUpload',
+  'fileDrag',
 ]
 
 let applied = false
@@ -45,6 +47,8 @@ export function apply(ctx: TalkMapClientContext): void {
       sessions: ctx.sessions,
       workspaces: ctx.workspaces,
       connection: ctx.connection,
+      fileUpload: ctx.fileUpload,
+      fileDrag: ctx.fileDrag,
       ...(ctx.remote !== undefined ? { remote: ctx.remote } : {}),
       ...(ctx.uiWorkspace !== undefined ? { uiWorkspace: ctx.uiWorkspace } : {}),
     })

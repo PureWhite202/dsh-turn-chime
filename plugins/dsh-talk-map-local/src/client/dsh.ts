@@ -16,6 +16,59 @@
 /** Selector hook a slot's standard props deliver (subscribes the component). */
 export type SnapshotSelectorHook<T> = <S>(sel: (state: T) => S, eq?: (a: S, b: S) => boolean) => S
 
+/** Raster image types the Host accepts as prompt images. */
+export type ImageMediaType = 'image/png' | 'image/jpeg' | 'image/webp' | 'image/gif'
+
+/**
+ * Browser-submitted prompt content (dsh-api-session-controller/types
+ * `PromptContentPart`). Image parts carry base64 bytes the Host promotes to a
+ * durable reference; file parts cite the receipt of an upload made on the
+ * same Session — an image upload's receipt enters the message as that image.
+ */
+export type PromptContentPart =
+  | { type: 'text'; text: string }
+  | { type: 'image'; mediaType: ImageMediaType; data: string; name?: string }
+  | { type: 'file'; receiptId: string }
+
+/** Byte progress reported while one browser upload is consumed. */
+export interface FileUploadProgress {
+  readonly loaded: number
+  readonly total?: number
+}
+
+/** Staged-receipt half of one completed upload (the rest is display data). */
+export interface FileUploadReceipt {
+  readonly receiptId: string
+}
+
+/**
+ * ctx.fileUpload (subset of the dsh-client-file-upload contract): store one
+ * file or prompt image for a Session and return the receipt a later prompt
+ * cites. Addresses the raw route and falls back to the generated Remote.
+ */
+export interface FileUploadService {
+  upload(
+    sessionId: string,
+    data: Blob,
+    name?: string,
+    signal?: AbortSignal,
+    onProgress?: (progress: FileUploadProgress) => void,
+  ): Promise<RemoteResult<FileUploadReceipt>>
+  uploadImage(
+    sessionId: string,
+    data: Blob,
+    mediaType: ImageMediaType,
+    name?: string,
+    signal?: AbortSignal,
+    onProgress?: (progress: FileUploadProgress) => void,
+  ): Promise<RemoteResult<FileUploadReceipt>>
+}
+
+/** ctx.fileDrag.read: original bytes of an application-internal file drag. */
+export interface FileDragService {
+  read(transfer: DataTransfer): File | undefined
+}
+
 /** One row of the sessions list feed (subset of SessionSummary we render). */
 export interface SessionSummary {
   readonly id: string
@@ -188,7 +241,7 @@ export interface RemoteService {
       requestId: string
       sessionId: string
       mode: 'queue' | 'steer'
-      content: { type: 'text'; text: string }[]
+      content: PromptContentPart[]
       clientTimeZone?: string
     }): Promise<RemoteResult<unknown>>
     selectModel(payload: { sessionId: string; provider: string; model: string; reasoningEffort?: string }):
@@ -314,5 +367,9 @@ export interface TalkMapClientContext {
   /** Live per-Session status (running / pending interaction). Optional on
    *  hosts that predate the ui-session service. */
   uiSession?: UiSessionService
+  /** Official browser upload service (dsh-client-file-upload). */
+  fileUpload: FileUploadService
+  /** Official application-internal file drag service (dsh-client-ui-file-drag). */
+  fileDrag: FileDragService
   effect(callback: () => unknown, label?: string): void
 }

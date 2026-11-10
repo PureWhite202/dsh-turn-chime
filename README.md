@@ -20,7 +20,13 @@
 
 ## 技能
 
-仓库内暂无技能条目。`humanizer-zh` 的历程：2026-11-09 从技能移到全局指令（正文并入 `config/AGENTS.md` 与 `~/.dsh/AGENTS.md`），2026-11-10 11:27 又从全局指令整段移除（本机备份 `~/.dsh/backups/AGENTS.md.before-remove-humanizer-20261110`）。需要原文时：`git show 28802bc:config/AGENTS.md` 取合并后的正文，`git checkout c8b7fa5 -- skills/humanizer-zh` 取最初的技能目录。
+| 目录 | 做什么 | 触发 |
+| --- | --- | --- |
+| [plugins/dsh-purewhite-toolkit/skills/sync-config](plugins/dsh-purewhite-toolkit/skills/sync-config/SKILL.md) | 对比本机实装环境与云端仓库的插件、技能、全局指令差异；拉取/推送方式写在正文里 | `/sync-config`，或说「对比本机和云端」「同步个人配置」 |
+
+这个技能随 `dsh-purewhite-toolkit` 插件加载时注册（`ctx.skills.register`），不需要单独软链。
+
+`humanizer-zh` 的历程：2026-11-09 从技能移到全局指令（正文并入 `config/AGENTS.md` 与 `~/.dsh/AGENTS.md`），2026-11-10 11:27 又从全局指令整段移除（本机备份 `~/.dsh/backups/AGENTS.md.before-remove-humanizer-20261110`）。需要原文时：`git show 28802bc:config/AGENTS.md` 取合并后的正文，`git checkout c8b7fa5 -- skills/humanizer-zh` 取最初的技能目录。
 
 codex/grok/hermes/kimi-cli-calling 和 memory-consolidate 由 `dsh-memory-evolve` 启动时自动同步到 `~/.agents/skills`，不在仓库存储。
 

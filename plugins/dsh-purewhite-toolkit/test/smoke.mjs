@@ -72,6 +72,34 @@ async function main() {
   assert.ok(tool.output && typeof tool.output.render === 'function')
   console.log('ok 注册:', tool.name)
 
+  // 1a-bis. 内置技能注册：DSH 的 skills.register 要求 source 是非空字符串。
+  // 缺了会抛「loaded skill "x" source must be a string」，整轮启动被标成失败，
+  // 技能不会出现在目录里。这里锁住契约，避免以后又退回只传 path。
+  {
+    const skillSpecs = []
+    const skillsCtx = {
+      skills: { register(spec) { skillSpecs.push(spec); return () => {} } },
+      effect(factory) { return factory() },
+    }
+    const skillHost = {
+      tools: { register() { return () => {} } },
+      effect(factory) { return factory() },
+      inject(services, cb) {
+        if (Array.isArray(services) && services.includes('skills')) cb(skillsCtx)
+      },
+    }
+    apply(skillHost, { skills: true })
+    assert.ok(skillSpecs.length >= 1, '应当注册至少一个内置技能')
+    for (const spec of skillSpecs) {
+      assert.equal(typeof spec.source, 'string', `${spec.name} 的 source 必须是字符串`)
+      assert.ok(spec.source.length > 0, `${spec.name} 的 source 不能为空`)
+      assert.equal(typeof spec.name, 'string')
+      assert.equal(typeof spec.description, 'string')
+      assert.ok(spec.content.length > 0, `${spec.name} 的正文不能为空`)
+    }
+    console.log('ok 内置技能:', skillSpecs.map((s) => `${s.name}(${s.source})`).join(', '))
+  }
+
   // 1b. 纯函数：窗口匹配优先级
   const fakeWindows = [
     {

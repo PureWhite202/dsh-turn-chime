@@ -233,7 +233,11 @@ function registerBundledSkills(ctx) {
         }
         if (skill === undefined) continue
         try {
-          const register = () => skills.register({ ...skill, path: filePath })
+          // DSH 的 skills.register 要求 source 是非空字符串，缺了会抛
+          // 「loaded skill "x" source must be a string」并把整轮启动标记为失败。
+          // 插件自带的技能属于 bundled（宿主据此视为受保护、不可在 UI 里禁用）。
+          const register = () =>
+            skills.register({ ...skill, source: 'bundled', path: filePath })
           if (typeof skillsCtx.effect === 'function') {
             skillsCtx.effect(register, `dsh-purewhite-toolkit: skill ${skill.name}`)
           } else {

@@ -16,12 +16,17 @@ DeepSeek Harness（dsh）的可视化对话地图插件：把你的每一个会�
 
 ## 安装
 
+本仓库是本地插件 **`dsh-talk-map-local`** 的源码副本。构建产物（`lib/`、`client/`）已随仓库提交，免构建、无需 allowBuilds。
+
 ```sh
-# GitHub（构建产物已随仓库提交，免构建、无需 allowBuilds）
-dsh plugin --profile web add github:Tasihi89/dsh-talk-map
+# 改了源码后重新构建
+npm run build
+
+# 然后把 client/ 与 lib/ 同步进本机已安装该插件的 profile：
+#   ~/.dsh/profiles/<profile>/node_modules/dsh-talk-map-local/{client,lib}/
 ```
 
-npm 包（`dsh plugin --profile web add dsh-talk-map`）待发布。
+> 本仓库的提交与推送都不经过 GitHub 上的 `Tasihi89/dsh-talk-map`——那个仓库只是这个本地插件的原型来源；本地 git 也没有配置指向它的远程。
 
 重启 `dsh web`，侧栏底部出现地图按钮。
 

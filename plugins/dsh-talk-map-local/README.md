@@ -15,12 +15,17 @@ A visual conversation map plugin for DeepSeek Harness (dsh): every session becom
 
 ## Install
 
+This repository is the source of the local plugin **`dsh-talk-map-local`**. Built artifacts (`lib/`, `client/`) are committed, so no build step or allowBuilds is needed.
+
 ```sh
-# GitHub (built artifacts are committed — no build step, no allowBuilds needed)
-dsh plugin --profile web add github:Tasihi89/dsh-talk-map
+# rebuild after changing the source
+npm run build
+
+# then sync client/ and lib/ into the profile that already has the plugin:
+#   ~/.dsh/profiles/<profile>/node_modules/dsh-talk-map-local/{client,lib}/
 ```
 
-npm package (`dsh plugin --profile web add dsh-talk-map`) coming soon.
+> This repository neither commits nor pushes to `Tasihi89/dsh-talk-map` on GitHub — that repository is only the original prototype of this local plugin, and no git remote points at it.
 
 Restart `dsh web`; a map button appears at the sidebar foot.
 

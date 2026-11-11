@@ -1,6 +1,6 @@
 {
   "name": "dsh-purewhite-toolkit",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "description": "纯白莱茵自用 DSH 工具集：screenshot 工具（整屏 / 窗口 / 区域截图）与内置技能 sync-config（对比本机与云端配置仓库）。",

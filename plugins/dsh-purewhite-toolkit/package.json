@@ -7,10 +7,12 @@
   "main": "index.js",
   "exports": {
     ".": "./index.js",
+    "./readonly-guard": "./readonly-guard.js",
     "./package.json": "./package.json"
   },
   "files": [
     "index.js",
+    "readonly-guard.js",
     "cordis.patch.yml",
     "skills",
     "native",

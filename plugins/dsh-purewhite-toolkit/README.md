@@ -55,6 +55,30 @@
 - 内容：全自然语言。仓库与 SSH 连接信息、本机/云端各指什么、对比步骤、报告格式、只读与确认规矩、拉取/推送命令，都写在正文里
 - 关掉：配置项 `skills: false`
 
+## 只读模式（Agent 预设 + 权限预设，2026-11-11 新增）
+
+bundle 里声明了一个 `readonly` Agent 预设（模式下拉里的「只读模式」），外加它的执行守卫 `readonly-guard.js`：
+
+- 预设的插件清单与「标准模式」逐项一致（persona、文件工具、bash/pwsh、搜索、子代理、压缩、技能都保留），只是执行时被钉成只读，不是阉割版；
+- 守卫在会话**第一轮**的 `agent/pre-step` 里追加 `sandbox/mode = read-only` 与 `approval/policy = never`：fs-sandbox 和 Windows ACL 沙箱拒绝一切写、删、移，模型申请升权会被直接拒绝，不弹审批；
+- 只读会话每轮额外收到一句运行时上下文（`readonly:mode`）：可读整台电脑、禁止改动文件、不要申请升权。它排在内置 sandbox 策略行之后，用来抵消那句「先试试、被拒再申请」的措辞；
+- 只在首轮钉一次，后续轮次和恢复会话都不再改写，所以手动切权限不会被覆盖；子代理默认继承预设，也会被同样钉住；
+- **受控出口**：模型可以调用 `request_standard_mode` 申请解除只读，但走 `ctx.userQuestions` 的阻塞式人工确认，只有用户选「允许切换到标准模式」才写入解除只读的事件；拒绝、跳过或确认通道不可用都保持只读。这个工具只在只读会话里出现在工具目录（`tools.register(..., { when })`）；
+- 解除只读后写入的旋钮默认是 `danger-full-access` / `never`（和这台机器 profile 的默认权限预设一致），可用下面三个配置键改；Agent 预设不能中途切换，所以顶部模式标签仍显示「只读模式」；
+- 左下角权限下拉里的「只读模式」（键 `read-only-mode`）来自 profile 的 `cordis.patch.yml`，不是本插件；它和 Agent 预设共用同一个名字，让权限芯片显示「只读模式」而不是 `Custom`。
+
+配置（`cordis.patch.yml` 里 `readonly-guard` 行的 `config`）：
+
+| 键 | 默认 | 说明 |
+|---|---|---|
+| `preset` | `readonly` | 要钉成只读的 Agent 预设 id |
+| `permissionPreset` | `read-only-mode` | 写进会话日志的权限预设名，影响权限芯片的推导显示 |
+| `writablePreset` | `danger-full-access` | 用户批准后写入的权限预设名 |
+| `writableMode` | `danger-full-access` | 用户批准后写入的沙箱模式 |
+| `writableApproval` | `never` | 用户批准后写入的审批策略 |
+
+改动后如果模式下拉里没有「只读模式」，在插件管理器里把 `dsh-purewhite-toolkit` 关一次再开（触发重新组合），或者重启 DSH。
+
 ## 配置
 
 `cordis.patch.yml` 里 `config`，全部可省略：
@@ -76,6 +100,7 @@
 ```bash
 node scripts/build-helper.mjs      # Windows：编译 build/dshtool-capture.exe（csc，约 0.2 秒）
 node test/smoke.mjs                # 冒烟测试：纯函数单测 + 真截一张屏 + 区域 + 窗口错误路径
+node test/readonly-guard.test.mjs  # 只读守卫单测：钉住/幂等/非首轮/提示词/申请工具（12 个场景）
 ```
 
 macOS 不需要构建步骤（系统自带 `screencapture` / `sips` / `osascript`），直接 `node test/smoke.mjs`。

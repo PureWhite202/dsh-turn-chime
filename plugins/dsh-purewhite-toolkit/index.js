@@ -52,6 +52,7 @@ const TOOL_DESCRIPTION = [
     ? '窗口用 window 传标题子串（不区分大小写，匹配不到标题时再匹配进程名）或 hwnd 传 CGWindowID；窗口最小化时返回 WINDOW_MINIMIZED（macOS 不支持自动恢复），需要截请先手动恢复。'
     : '窗口用 window 传标题子串（不区分大小写）或 hwnd 传句柄；窗口被最小化时默认返回 WINDOW_MINIMIZED，需要截就用 restore=true（窗口会短暂显示约 0.4 秒）。',
   '默认保存到会话工作目录根，可用 outDir 指定目录、fileName 指定文件名；save=false 只返回图片不落盘。',
+  '只读模式（read-only）会话下不会落盘，图片只作为内容块返回。',
   '截图内容会包含桌面上的敏感信息，调用前请确认用户知情。',
 ].join(' ')
 
@@ -302,6 +303,7 @@ export function createScreenshotTool(ctx, options) {
 
     async execute(args, exec) {
       const sessionCwd = readSessionCwd(exec)
+      const readOnly = isReadOnlySession(ctx, exec)
       const target = normalizeTarget(args)
       const format = normalizeFormat(args.format, options.format)
       const ext = format === 'jpeg' ? 'jpg' : 'png'
@@ -346,7 +348,9 @@ export function createScreenshotTool(ctx, options) {
           value.message = '截到的画面是纯色（可能是锁屏、UAC 提权弹窗挡住了桌面，或目标窗口没有可渲染内容）。'
         }
 
-        if (options.save !== false && args.save !== false) {
+        if (readOnly && options.save !== false && args.save !== false) {
+          value.warnings.push('READ_ONLY_MODE: 只读模式不落盘，图片只作为内容块返回')
+        } else if (options.save !== false && args.save !== false) {
           const outDir = resolveOutDir(args.outDir, options.saveDir, sessionCwd)
           const prefix = target === 'window' ? 'window' : 'screen'
           const fileName = typeof args.fileName === 'string' && args.fileName.trim() !== ''
@@ -1077,6 +1081,24 @@ function readSessionCwd(exec) {
   const direct = exec?.cwd
   if (typeof direct === 'string' && direct !== '') return direct
   return process.cwd()
+}
+
+/**
+ * 当前调用是否处在只读沙箱会话里。只读时截图不落盘，避免绕开沙箱往工作区写文件。
+ * @param ctx Cordis 上下文（sandboxPolicy 缺失时按可写处理）。
+ * @param exec 工具执行上下文。
+ * @returns 是否只读会话。
+ */
+function isReadOnlySession(ctx, exec) {
+  const session = exec?.agent?.session
+  if (session === undefined || session === null) return false
+  const policy = ctx?.sandboxPolicy
+  if (policy === undefined || policy === null || typeof policy.resolve !== 'function') return false
+  try {
+    return policy.resolve({ session }).mode === 'read-only'
+  } catch {
+    return false
+  }
 }
 
 function resolveOutDir(requested, configured, base) {

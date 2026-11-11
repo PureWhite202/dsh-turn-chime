@@ -70,6 +70,17 @@ export interface FileDragService {
   read(transfer: DataTransfer): File | undefined
 }
 
+/**
+ * Session projections the client mirrors onto the list feed. The committed
+ * agent preset is recorded here by the Session log (the creation header seeds
+ * it; `agent-preset/selected` advances it while the Session is blank).
+ */
+export interface SessionProjectionValues {
+  readonly agentPreset?: string | null
+  readonly title?: string
+  readonly [key: string]: unknown
+}
+
 /** One row of the sessions list feed (subset of SessionSummary we render). */
 export interface SessionSummary {
   readonly id: string
@@ -77,6 +88,8 @@ export interface SessionSummary {
   readonly displayTitle: string
   readonly cwd?: string
   readonly agentPreset?: string
+  /** Projection values the host appends to every list row. */
+  readonly projectionValues?: SessionProjectionValues
   /** Fork/subagent lineage — the free provenance edge on the map. */
   readonly parentId?: string
   readonly origin?: 'subagent'
@@ -231,7 +244,15 @@ export interface SessionsService {
 /** One Remote result envelope (api-gateway client): no nested `result`. */
 export type RemoteResult<T> =
   | { readonly ok: true; readonly value: T }
-  | { readonly ok: false; readonly error: { readonly code?: string; readonly message?: string } }
+  | {
+      readonly ok: false
+      readonly error: {
+        readonly code?: string
+        readonly message?: string
+        /** Structured refusal data; the preset registry puts its reason here. */
+        readonly details?: { readonly reason?: string; readonly [key: string]: unknown }
+      }
+    }
 
 /** Generated Remote namespaces this plugin calls (subset of ctx.remote). */
 export interface RemoteService {
@@ -255,6 +276,10 @@ export interface RemoteService {
   }
   agentPresets: {
     list(): Promise<RemoteResult<{ presets: AgentPresetEntry[] }>>
+    /** Commit a preset for one blank Session (its first turn has not run yet).
+     *  Returns the committed identity; the Host refuses started Sessions with
+     *  `agent-preset/locked`. */
+    select(sessionId: string, agentPreset: string): Promise<RemoteResult<string>>
   }
   workspace: {
     create(payload: { path: string }): Promise<RemoteResult<{ workspace: { workspaceId: string } }>>
@@ -318,10 +343,18 @@ export interface ModelProviderGroup {
   models: ModelCatalogModel[]
 }
 
+/** One roster row of `agentPresets/list` (subset of the registry's payload). */
 export interface AgentPresetEntry {
   id: string
   name?: string
   description?: string
+  /** Sort order declared by the composition. */
+  order?: number
+  /** Diagnostic of a composition that failed to build; such a preset cannot
+   *  start a Session and the host hides it from pickers. */
+  broken?: string
+  /** The registry marks the deployment's default row. */
+  isDefault?: boolean
 }
 
 /**

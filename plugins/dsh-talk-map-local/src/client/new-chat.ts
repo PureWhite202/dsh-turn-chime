@@ -37,6 +37,14 @@ export function defaultWorkspaceOption(options: readonly WorkspaceOption[]): str
   return match?.id
 }
 
+/** Parent directory new workspaces land in: alongside the existing ones. */
+export function newWorkspaceParent(options: readonly WorkspaceOption[]): string {
+  const sample = options[0]?.path
+  if (sample === undefined) return '~'
+  const cut = sample.lastIndexOf('/')
+  return cut > 0 ? sample.slice(0, cut) : sample
+}
+
 /**
  * Where a brand-new conversation goes: the workspace frame the click landed
  * in, else the deployment default, else the first workspace the host still
@@ -53,8 +61,7 @@ export function newConversationWorkspace(input: {
 }
 
 /** Grid the board snaps card positions to. */
-export const NEW_CHAT_GRID = 16
-/** Card width the placement math centres on (the rendered card may grow). */
+export const NEW_CHAT_GRID = 16/** Card width the placement math centres on (the rendered card may grow). */
 export const NEW_CHAT_CARD_W = 250
 /** Card height the renderer assumes before it reports a real height. */
 export const NEW_CHAT_CARD_H = 120

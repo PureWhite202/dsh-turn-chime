@@ -221,6 +221,13 @@ html[data-platform='darwin']:not([data-fullscreen]) .overlay::before {
   border-style: dashed;
 }
 
+/* A temporary new-conversation box: the Session exists but its first turn has
+ * not run. Dashed like a ghost, but it is alive — the first message turns it
+ * into an ordinary card. */
+.cardPending {
+  border-style: dashed;
+}
+
 .cardTop {
   display: flex;
   align-items: center;
@@ -331,6 +338,12 @@ html[data-platform='darwin']:not([data-fullscreen]) .overlay::before {
 
 .cardTime {
   flex: none;
+}
+
+/* "未开始" on a temporary box; the tooltip explains it becomes a card. */
+.cardPendingHint {
+  font-size: 11px;
+  color: var(--dsw-alias-label-tertiary);
 }
 
 /* A card sitting inside another workspace's frame: membership never changes,
@@ -562,6 +575,94 @@ html[data-platform='darwin']:not([data-fullscreen]) .overlay::before {
 
 .spawnBtnGhost:hover {
   background: var(--dsw-alias-interactive-bg-hover);
+}
+
+/* Fork marker: a connection drag's placeholder. No Session exists behind it
+ * yet, so it owns none of a card's affordances (no menu, pin or handles). */
+.forkBox {
+  position: relative;
+  width: 224px;
+  min-height: 88px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 2px dashed var(--dsw-alias-border-l2);
+  border-radius: 10px;
+  background: color-mix(in oklab, var(--dsw-alias-bg-layer-1) 70%, transparent);
+  color: var(--dsw-alias-label-primary);
+  font-size: 13px;
+  box-shadow: 0 1px 3px var(--dsw-alias-bg-mask-1);
+}
+
+/* Highlighted while its setup panel is open in the drawer. */
+.forkBoxActive {
+  border-color: var(--dsw-alias-brand-primary);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--dsw-alias-brand-primary) 35%, transparent);
+}
+
+.forkBoxTitle {
+  font-weight: 600;
+}
+
+.forkBoxFrom {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.forkBoxHint {
+  font-size: 11px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.forkBoxRemove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 14px;
+  line-height: 18px;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.forkBox:hover .forkBoxRemove,
+.forkBox:focus-within .forkBoxRemove {
+  opacity: 1;
+}
+
+.forkBoxRemove:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+/* The drawer body of the fork setup: scrolls inside the drawer column. */
+.forkPanel {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px 18px;
+  overflow-y: auto;
+}
+
+/* Attachments dragged over the panel. */
+.forkPanelDrop {
+  outline: 2px dashed var(--dsw-alias-brand-primary);
+  outline-offset: -6px;
 }
 
 .wsFrame {
@@ -1200,6 +1301,194 @@ html[data-platform='darwin']:not([data-fullscreen]) .overlay::before {
 .chatDrawerLockActive:hover {
   background: var(--dsw-alias-interactive-bg-active);
   color: var(--dsw-alias-brand-primary);
+}
+
+/* Mode badge beside the drawer title. The host renders the same read-only
+ * preset label in its own session header; the drawer never mounts that
+ * header, so the title bar carries the copy. */
+.chatDrawerMode {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  max-width: 140px;
+  height: 22px;
+  padding: 0 8px 0 6px;
+  border-radius: 6px;
+  background: var(--dsw-alias-fill-tertiary);
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 22px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.chatDrawerModeIcon {
+  display: flex;
+  flex: none;
+}
+
+.chatDrawerModeText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The hero row is the host's own component: it right-aligns its options
+ * block (margin-left: auto) with the host's agent-preset picker beside it.
+ * The drawer's picker rides that options block, so inside the drawer the
+ * block joins the row and drops the picker beside the workspace chip — the
+ * same order the main view's new-session screen shows. Scoped to the drawer;
+ * the main view keeps the host layout. The host class is a CSS-module name
+ * (`<hash>_heroOptions`), matched by substring like the turn-rail rule below;
+ * if it ever changes the picker still renders, only the nudge is lost. */
+.chatDrawer :global([class*='heroOptions']) {
+  display: contents;
+}
+
+/* Mode picker on the drawer's new-conversation hero (the same control the
+ * main view puts beside the workspace picker). */
+.modeChipWrap {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+}
+
+.modeChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 200px;
+  min-height: 28px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dsw-alias-label-primary);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.modeChip:hover:not(:disabled),
+.modeChip[aria-expanded='true'] {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.modeChip:disabled {
+  cursor: default;
+  color: var(--dsw-alias-label-dimmed);
+}
+
+.modeChipIcon {
+  display: flex;
+  flex: none;
+  color: var(--dsw-alias-label-primary);
+}
+
+.modeChipLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.modeChipChevron {
+  display: flex;
+  flex: none;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+/* Opens upward: the picker sits at the bottom of the hero, and the drawer
+ * body clips anything that leaves the column. */
+.modeMenu {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 6px);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  min-width: 220px;
+  max-width: 300px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid var(--dsw-alias-border-l1);
+  border-radius: 10px;
+  background: var(--dsw-alias-bg-layer-1);
+  box-shadow: 0 8px 30px var(--dsw-alias-bg-mask-2);
+}
+
+.modeMenuTitle {
+  flex: none;
+  padding: 4px 10px 6px;
+  font-size: 11px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.modeMenuItem {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--dsw-alias-label-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.modeMenuItem:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.modeMenuItem:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.modeMenuItemActive {
+  background: var(--dsw-alias-interactive-bg-active);
+}
+
+.modeMenuItemName {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.modeMenuCheck {
+  color: var(--dsw-alias-brand-primary);
+  font-size: 12px;
+}
+
+.modeMenuItemDesc {
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
+  line-height: 16px;
+  white-space: normal;
+}
+
+.modeMenuHint {
+  flex: none;
+  padding: 4px 10px;
+  font-size: 11px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.modeMenuError {
+  flex: none;
+  padding: 4px 10px;
+  font-size: 11px;
+  color: var(--dsw-alias-state-error-primary);
+  word-break: break-all;
 }
 
 .chatDrawerArchived {

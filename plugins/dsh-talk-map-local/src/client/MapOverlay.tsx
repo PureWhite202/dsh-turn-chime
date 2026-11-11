@@ -10,16 +10,23 @@
  * Factory), so it stays fully interactive — composer, streaming, approvals —
  * while the board keeps its exact position underneath.
  */
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import type { LocalePref } from '../shared/model.ts'
 import type { RootSlotStandardProps, SessionReference } from './dsh.ts'
+import type { WorkspaceOption } from './new-chat.ts'
 import { canvas } from './canvas-store.ts'
 import { DEFAULT_HOTKEY, hotkeyFromEvent, hotkeyLabel } from './hotkey.ts'
 import { activeLocale, LOCALE_CYCLE, subscribeLocale, t } from './i18n.ts'
-import { getServices, mapUi, openSessionInMain, persistDrawer, persistedDrawer, useArchivedSessionIds } from './map-state.ts'
+import { getServices, mapUi, openSessionInMain, persistDrawer, persistedDrawer, showMapNotice, useArchivedSessionIds } from './map-state.ts'
+import { talkMapApi } from './api.ts'
+import { clearPendingChat, isPendingChat, pendingAbandonAction } from './pending-chat.ts'
+import { getForkBoxState, removeForkBox, setActiveForkBox, useForkBoxState } from './fork-box.ts'
+import { requestCardSelection } from './selection-request.ts'
+import { ForkSetupPanel } from './ForkSetupPanel.tsx'
 import { completions } from './interactions.ts'
 import { MapCanvas } from './MapCanvas.tsx'
 import { MapErrorBoundary } from './MapErrorBoundary.tsx'
+import { SessionModeLabel } from './ModeChip.tsx'
 import styles from './talk-map.module.css'
 
 /**
@@ -156,8 +163,20 @@ function mainConversationSessionId(): string | undefined {
 
 function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
   const sessionCount = props.useSessions(state => state.ids.length)
+  const workspaces = props.useWorkspaces(state => state)
   const [chat, setChat] = useState<ChatTarget | null>(null)
   const [notice, setNotice] = useState<ChatNotice | null>(null)
+  // Fork markers dropped by a connection drag: the active one owns the drawer's
+  // setup panel. The store is the single source, so deleting the marker (its ×)
+  // also closes the panel.
+  const forkBoxes = useForkBoxState()
+  const activeForkBox = forkBoxes.activeId === undefined
+    ? undefined
+    : forkBoxes.boxes.get(forkBoxes.activeId)
+  const workspaceOptions = useMemo<WorkspaceOption[]>(
+    () => workspaces.items.map(item => ({ id: item.workspaceId, title: item.title, path: item.path })),
+    [workspaces.items],
+  )
   // Drawer width: the CSS clamp is the default, a drag remembers an explicit
   // px width in the canvas global. While dragging, the width is written
   // straight to the DOM (no per-pointermove React render of the transcript).
@@ -426,12 +445,49 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
     window.setTimeout(() => { openSessionInMain(swap.original) }, 0)
   }
 
+  /**
+   * Walking away from a fresh conversation before its first turn withdraws
+   * the temporary box and archives the blank Session: neither the board nor
+   * the sidebar should keep a conversation that never started. A Session that
+   * already ran is a real card and is never touched here.
+   *
+   * The decision waits one beat: a first prompt and the drawer's close can
+   * land in the same instant, and the catalog's `blank` flag flips with the
+   * Host event that follows. Re-reading it after the delay keeps a just-
+   * started conversation out of the archive.
+   */
+  const abandonPendingChat = useCallback((sessionId: string): void => {
+    if (!isPendingChat(sessionId)) return
+    window.setTimeout(() => {
+      // Re-opened in the meantime (or a swap is on its way): keep the box.
+      if (chatRef.current?.sessionId === sessionId
+        || chatWantedRef.current === sessionId
+        || swapPendingRef.current === sessionId) return
+      const summary = getServices()?.sessions.list.getSnapshot().byId[sessionId]
+      if (pendingAbandonAction(summary) !== 'archive') {
+        clearPendingChat(sessionId)
+        return
+      }
+      clearPendingChat(sessionId)
+      for (const [cardId, card] of Object.entries(canvas.get().cards)) {
+        if (card.sessionId === sessionId) canvas.removeCard(cardId)
+      }
+      void talkMapApi.archiveSession(sessionId).catch((error: unknown) => {
+        const detail = error instanceof Error ? error.message : String(error)
+        showMapNotice(`${t('toast.archiveFailed')}${detail}`)
+      })
+    }, 400)
+  }, [])
+
   const closeChat = (): void => {
     const sessionId = chatRef.current?.sessionId
     closeChatNow()
     persistDrawer(undefined)
     restoreSwap()
-    if (sessionId !== undefined) clearUnreadAfterDrawer(sessionId)
+    if (sessionId !== undefined) {
+      abandonPendingChat(sessionId)
+      clearUnreadAfterDrawer(sessionId)
+    }
   }
 
   /**
@@ -471,7 +527,10 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
       chatRef.current = { sessionId, reference }
       setChat({ sessionId, reference })
       persistDrawer(sessionId)
-      if (previous !== undefined && previous !== sessionId) clearUnreadAfterDrawer(previous)
+      if (previous !== undefined && previous !== sessionId) {
+        abandonPendingChat(previous)
+        clearUnreadAfterDrawer(previous)
+      }
       return true
     }
 
@@ -495,7 +554,7 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
     }
     stop = services.sessions.list.subscribe(check)
     check()
-  }, [clearUnreadAfterDrawer])
+  }, [abandonPendingChat, clearUnreadAfterDrawer])
 
   const handleFullOpen = useCallback((sessionId: string): void => {
     // A full open wins over any parked or pre-map Session: never restore it
@@ -503,6 +562,12 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
     swapPendingRef.current = undefined
     swapRef.current = null
     clearedSessionRef.current = undefined
+    // Handing a fresh conversation to the main view keeps it: no archive. The
+    // placeholder must not linger on the board though — it has no menu to
+    // dismiss it, and the conversation continues outside the map.
+    for (const candidate of [chatRef.current?.sessionId, sessionId]) {
+      if (candidate !== undefined && isPendingChat(candidate)) clearPendingChat(candidate)
+    }
     closeChatNow()
     persistDrawer(undefined)
     setNotice(null)
@@ -517,7 +582,9 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
    * drawer. Shared by the automatic open path and the notice's manual retry.
    */
   const parkAndShow = useCallback(async (sessionId: string, candidates: string[]): Promise<void> => {
+    const leaving = chatRef.current?.sessionId
     closeChatNow()
+    if (leaving !== undefined) abandonPendingChat(leaving)
     setNotice(null)
     swapPendingRef.current = sessionId
     for (const parking of candidates) {
@@ -540,7 +607,7 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
     if (!mountedRef.current) return
     openSessionInMain(sessionId)
     setNotice({ sessionId })
-  }, [retainAndShow])
+  }, [abandonPendingChat, retainAndShow])
 
   /**
    * A card's drawer. The host owns ONE editable composer root per Session
@@ -550,6 +617,9 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
    */
   const openChat = useCallback((sessionId: string): void => {
     if (drawerLockedRef.current && chatRef.current !== null) return
+    // A fork setup owns the drawer while it is open: opening a conversation
+    // means leaving the setup (its marker stays on the board).
+    if (getForkBoxState().activeId !== undefined) setActiveForkBox(undefined)
     const services = getServices()
     const retain = services?.sessions.retain
     if (services === undefined) return
@@ -571,7 +641,9 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
     const swap = swapRef.current
     if (swap !== null && sessionId === swap.parking) {
       // The parked Session is the one on screen: it cannot be duplicated.
+      const leaving = chatRef.current?.sessionId
       closeChatNow()
+      if (leaving !== undefined) abandonPendingChat(leaving)
       setNotice({ sessionId })
       return
     }
@@ -583,12 +655,38 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
     const candidates = findParkingSessions(sessionId)
     if (candidates.length === 0) {
       console.warn('[dsh-talk-map] no Session available to park the main column', { sessionId })
+      const leaving = chatRef.current?.sessionId
       closeChatNow()
+      if (leaving !== undefined) abandonPendingChat(leaving)
       setNotice({ sessionId })
       return
     }
     void parkAndShow(sessionId, candidates)
-  }, [parkAndShow, retainAndShow])
+  }, [abandonPendingChat, parkAndShow, retainAndShow])
+
+  /**
+   * Open one fork marker's setup in the drawer. The setup is a drawer surface
+   * of its own: whatever conversation was showing is left exactly like a
+   * drawer close (a temporary new conversation is withdrawn with it), and the
+   * marker becomes the active one.
+   */
+  const openForkSetup = (boxId: string): void => {
+    if (chatRef.current !== null) closeChat()
+    else if (notice !== null) setNotice(null)
+    setActiveForkBox(boxId)
+  }
+
+  /**
+   * The setup created the fork: withdraw the marker, switch the drawer to the
+   * new conversation, and select the fresh card on the board (the state a
+   * click would have left — this is the card the user just asked for).
+   */
+  const handleForkCreated = (boxId: string, sessionId: string, cardId: string): void => {
+    removeForkBox(boxId)
+    setActiveForkBox(undefined)
+    requestCardSelection(cardId)
+    openChat(sessionId)
+  }
 
   /**
    * Drawer pin toggle. Locking keeps the current Session on screen no matter
@@ -755,7 +853,12 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
       // An inner surface (draft card, spawn preview) claims Esc for itself.
       if (mapUi.escapeClaimed()) return
       event.stopPropagation()
-      // The drawer sits above the map: close it before the map itself.
+      // The drawer sits above the map: close it before the map itself. A fork
+      // setup is the drawer's current content; closing it keeps the marker.
+      if (forkBoxes.activeId !== undefined) {
+        setActiveForkBox(undefined)
+        return
+      }
       if (notice !== null) {
         setNotice(null)
         return
@@ -769,7 +872,7 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
     window.addEventListener('keydown', onKeyDown, { capture: true })
     return () => { window.removeEventListener('keydown', onKeyDown, { capture: true }) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [notice])
+  }, [notice, forkBoxes.activeId])
 
   // The overlay unmounts on close (Esc, ✕, or a double-clicked full open):
   // drop the retained Session with it so its history stream does not leak, and
@@ -925,7 +1028,34 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
   )
   const chatTitle = drawerCardTitle ?? drawerSessionTitle ?? ''
 
-  const drawer = notice !== null
+  const drawer = activeForkBox !== undefined
+    ? (
+        <aside className={styles['chatDrawer']} aria-label={t('fork.title')} ref={drawerRef} style={drawerStyle}>
+          {resizeStrip}
+          <div className={styles['chatDrawerHeader']}>
+            <span className={styles['chatDrawerTitle']} title={t('fork.title')}>{t('fork.title')}</span>
+            <span className={styles['chatDrawerSpace']} />
+            <button
+              type="button"
+              className={styles['chatDrawerClose']}
+              title={t('fork.close')}
+              aria-label={t('fork.close')}
+              onClick={() => { setActiveForkBox(undefined) }}
+            >
+              <CloseIcon />
+            </button>
+          </div>
+          <div className={styles['chatDrawerBody']} ref={drawerBodyRef}>
+            <ForkSetupPanel
+              box={activeForkBox}
+              workspaceOptions={workspaceOptions}
+              onClose={() => { setActiveForkBox(undefined) }}
+              onCreated={(sessionId, cardId) => { handleForkCreated(activeForkBox.id, sessionId, cardId) }}
+            />
+          </div>
+        </aside>
+      )
+    : notice !== null
     ? (
         <aside className={styles['chatDrawer']} aria-label={t('map.chat')} ref={drawerRef} style={drawerStyle}>
           {resizeStrip}
@@ -970,6 +1100,9 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
           {resizeStrip}
           <div className={styles['chatDrawerHeader']}>
             <span className={styles['chatDrawerTitle']} title={chatTitle}>{chatTitle}</span>
+            {/* The host renders the same read-only preset badge in its own
+             * session header; the drawer supplies the title bar's copy. */}
+            <SessionModeLabel sessionId={chat.sessionId} useSessions={props.useSessions} />
             <span className={styles['chatDrawerSpace']} />
             <button
               type="button"
@@ -1043,6 +1176,7 @@ function OpenMapOverlay(props: TalkMapOverlayProps): React.JSX.Element {
             onDeselectChat={putDrawerAway}
             onForkChat={putDrawerAway}
             onSelectionChange={(sessionId) => { selectedSessionRef.current = sessionId }}
+            onOpenForkSetup={openForkSetup}
             activeChatSessionId={chat?.sessionId}
           />
           {drawer}

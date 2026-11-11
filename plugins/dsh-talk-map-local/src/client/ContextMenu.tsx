@@ -29,6 +29,8 @@ export interface MenuState {
   /** Prompt views ask for one line of text instead of picking from a list. */
   prompt?: {
     placeholder: string
+    /** Pre-filled input text (e.g. an existing custom card title). */
+    initialValue?: string
     submitLabel: string
     /** Live preview under the input (e.g. the resulting folder path). */
     preview?: (value: string) => string
@@ -39,7 +41,9 @@ export interface MenuState {
 
 export function ContextMenu(props: { menu: MenuState; onClose: () => void }): React.JSX.Element {
   const { menu } = props
-  const [query, setQuery] = useState('')
+  // Prompt views open fresh (the canvas keys the menu by view), so the input
+  // starts from the value the caller handed us instead of an empty box.
+  const [query, setQuery] = useState(menu.prompt?.initialValue ?? '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | undefined>(undefined)
   const inputRef = useRef<HTMLInputElement | null>(null)

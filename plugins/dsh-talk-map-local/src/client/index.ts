@@ -13,7 +13,9 @@ import { DEFAULT_HOTKEY, hotkeyMatches } from './hotkey.ts'
 import { attachServices, mapUi, persistedMapOpen, showMapNotice } from './map-state.ts'
 import { interactions } from './interactions.ts'
 import { ChatPanel } from './ChatPanel.tsx'
+import { HeroModeChip } from './ModeChip.tsx'
 import { MapOverlay } from './MapOverlay.tsx'
+import { attachConfigForms } from './preset-mode.ts'
 import { MapToggleButton } from './MapToggleButton.tsx'
 import { installSidebarFallbackOnClient } from './sidebar-fallback-wire.ts'
 import { t } from './i18n.ts'
@@ -56,7 +58,21 @@ export function apply(ctx: TalkMapClientContext): void {
     // Pending approvals/questions ride the host's own Session-status store;
     // without ui-session (older host) the map simply shows the old badge.
     interactions.attach(ctx.uiSession?.sessionStatus)
-    ctx.effect(() => () => { attachServices(undefined); interactions.attach(undefined) }, 'dsh-talk-map: services')
+    // The mode picker mirrors the host's own gate: shipped PTC/Minimal modes
+    // are offered only when the coding view preference is on. The service is
+    // optional and may mount after this plugin, so the lookup stays lazy.
+    attachConfigForms(() => {
+      try {
+        return typeof ctx.get === 'function' ? ctx.get('configForms') : undefined
+      } catch {
+        return undefined
+      }
+    })
+    ctx.effect(() => () => {
+      attachServices(undefined)
+      interactions.attach(undefined)
+      attachConfigForms(undefined)
+    }, 'dsh-talk-map: services')
 
     // File links inside a card's drawer go through the host's right-Sidebar
     // controller, which refuses every open while the map keeps the main column
@@ -92,6 +108,21 @@ export function apply(ctx: TalkMapClientContext): void {
     ctx.slots.inject('talk-map.chat', () => ctx.slots.register({
       name: 'talk-map.chat',
     }, ChatPanel))
+
+    // The drawer's new-conversation mode picker. The host's own picker lives
+    // on the main-view hero only (its AgentPresetSeat returns null outside
+    // the main view), so the drawer contributes the same control through the
+    // hero row's option outlet. The component itself stays out of every
+    // occurrence that is not the drawer's conversation, and out of started
+    // sessions (their mode is fixed and shown beside the drawer title).
+    ctx.slots.inject('conversation.hero.options', () => ctx.slots.register({
+      name: 'conversation.hero.options',
+      id: 'talk-map-agent-preset',
+      order: 20,
+      // Session-scoped entries receive the bound Session id; the component
+      // reads that session's list row and preset projection.
+      inject: (...args: unknown[]) => ({ sessionId: typeof args[0] === 'string' ? args[0] : undefined }),
+    }, HeroModeChip))
 
     // Toggle hotkey (default ⌥F, user-configurable in the map header).
     // preventDefault stops macOS from typing the dead character (ƒ etc.)

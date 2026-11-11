@@ -29,7 +29,12 @@ import { buildPushText, digestIsEmpty } from './digest-text.ts'
 import { getServices, mapUi, openSessionInMain, sessionIdOf, unwrapRemote, useArchivedSessionIds, subscribeMapNotice, getMapNotice, clearMapNotice } from './map-state.ts'
 import { addSessionCard, ensureWorkspaceFrame, preferredAgentPreset } from './map-create.ts'
 import { newChatCardPosition, newConversationWorkspace } from './new-chat.ts'
+import { clearPendingChat, isPendingChat, markPendingChat, usePendingChatSessions } from './pending-chat.ts'
+import { addForkBox, moveForkBox, newForkBoxId, removeForkBox, useForkBoxState } from './fork-box.ts'
+import { ForkBoxNode, type ForkBoxNodeType } from './ForkBoxNode.tsx'
+import { consumeCardSelectionRequest, useCardSelectionRequest } from './selection-request.ts'
 import { ContextMenu, type MenuItem, type MenuState } from './ContextMenu.tsx'
+import { drawnHandle, sideHandles } from './edge-handles.ts'
 import { InteractionMenu } from './InteractionMenu.tsx'
 import { completions, interactions, interactionMenu } from './interactions.ts'
 import { DraftCardNode, type DraftCardData, type DraftCardNodeType, type DraftParent } from './DraftCard.tsx'
@@ -41,7 +46,7 @@ import { talkMapApi, type ApiError } from './api.ts'
 import { useDsDarkTheme } from './use-dark.ts'
 import styles from './talk-map.module.css'
 
-const nodeTypes = { sessionCard: SessionCardNode, wsFrame: WsFrameNode, draftCard: DraftCardNode, imageNode: ImageNodeView }
+const nodeTypes = { sessionCard: SessionCardNode, wsFrame: WsFrameNode, draftCard: DraftCardNode, imageNode: ImageNodeView, forkBox: ForkBoxNode }
 
 const GRID = 16
 const CARD_W = 250
@@ -60,7 +65,7 @@ const LAYOUT_VERSION = 3
  */
 const POINTER_CLICK_SLOP = 5
 
-type TalkMapNode = SessionCardNodeType | WsFrameNodeType | DraftCardNodeType | ImageNodeType
+type TalkMapNode = SessionCardNodeType | WsFrameNodeType | DraftCardNodeType | ImageNodeType | ForkBoxNodeType
 
 /** Shallow compare of the fields a SessionCard renders — the node cache reuses
  *  the previous node object (and thus skips the card's render) while equal. */
@@ -75,6 +80,7 @@ function sameSessionCardData(left: SessionCardData, right: SessionCardData): boo
     && left.timeLabel === right.timeLabel
     && left.waiting === right.waiting
     && left.done === right.done
+    && left.pending === right.pending
     && left.foreignLabel === right.foreignLabel
     && left.foreignTouch === right.foreignTouch
 }
@@ -201,6 +207,8 @@ export interface MapCanvasProps extends RootSlotStandardProps {
   /** The card selection changed; `undefined` when no Session card is selected.
    *  The drawer's pin uses it to resume the selection when it unlocks. */
   onSelectionChange?: (sessionId: string | undefined) => void
+  /** A fork marker was clicked: the overlay opens its setup in the drawer. */
+  onOpenForkSetup?: (boxId: string) => void
 }
 
 /** Directory part of a workspace path, lower-cased (both separators). */
@@ -222,6 +230,11 @@ function isDefaultWorkspaceItem(item: { title: string; path: string }): boolean 
 function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = useDsDarkTheme()
   const canvasState = useSyncExternalStore(canvas.subscribe, canvas.get)
   const sessions = props.useSessions(state => state)
+  // Placements created by 右键「新对话」 whose conversation has not started:
+  // blank Sessions are normally hidden on the board, these boxes are not.
+  const pendingChats = usePendingChatSessions()
+  // Fork markers dropped by a connection drag; no Session behind them yet.
+  const forkBoxes = useForkBoxState()
   const workspaces = props.useWorkspaces(state => state)
   const archivedIds = useArchivedSessionIds()
   // Live pending interactions (approvals / questions / plan reviews) per
@@ -232,6 +245,15 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
   const { screenToFlowPosition, zoomTo } = useReactFlow()
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set())
   const [selectedEdgeIds, setSelectedEdgeIds] = useState<ReadonlySet<string>>(new Set())
+  // "Select that new card" request from the drawer's fork setup: the canvas
+  // owns React Flow's selection, so the panel asks here instead of touching it.
+  const cardSelectionRequest = useCardSelectionRequest()
+  useEffect(() => {
+    if (cardSelectionRequest === null) return
+    setSelectedIds(new Set([cardSelectionRequest.cardId]))
+    setSelectedEdgeIds(new Set())
+    consumeCardSelectionRequest(cardSelectionRequest.seq)
+  }, [cardSelectionRequest])
   // Connection drag in flight → every card shows its (otherwise hidden)
   // connection points, so drop targets are visible.
   const [connecting, setConnecting] = useState(false)
@@ -312,6 +334,13 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
     if (cardNode !== null) {
       const cardId = cardNode.getAttribute('data-id')
       if (cardId === null || cardId === '') return null
+      // A temporary box owns no card menu: rename / archive / fork all assume
+      // a conversation that exists. It gains them once the first message runs.
+      const sessionId = canvas.get().cards[cardId]?.sessionId
+      if (sessionId !== undefined && isPendingChat(sessionId)) {
+        const summary = sessions.byId[sessionId]
+        if (summary === undefined || summary.blank === true) return null
+      }
       return { ...geometry(), kind: 'card', targetId: cardId }
     }
     const frameNode = target.closest('.react-flow__node[data-id^="frame-"]')
@@ -532,14 +561,25 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
   const visibleCards = useMemo(() => {
     const out: Record<string, Card> = {}
     for (const [cardId, card] of Object.entries(canvasState.cards)) {
-      if (blankSessions.has(card.sessionId)) continue
+      // A blank Session is noise on the board — unless it is the temporary box
+      // a fresh conversation just opened and has not started yet.
+      if (blankSessions.has(card.sessionId) && !pendingChats.has(card.sessionId)) continue
       // Archiving a conversation (sidebar or the card menu) removes its node
       // from the board; the placement survives so unarchiving brings it back.
       if (archivedIds.has(card.sessionId)) continue
       out[cardId] = card
     }
     return out
-  }, [canvasState.cards, blankSessions, archivedIds])
+  }, [canvasState.cards, blankSessions, pendingChats, archivedIds])
+
+  // A placeholder that took its first turn is an ordinary card now: forget
+  // the marker so leaving the drawer never archives it.
+  useEffect(() => {
+    for (const sessionId of pendingChats) {
+      const summary = sessions.byId[sessionId]
+      if (summary !== undefined && summary.blank === false) clearPendingChat(sessionId)
+    }
+  }, [pendingChats, sessions])
   // Stable id set: dragging changes positions (a new visibleCards object every
   // frame) but not this key, so the height observer does not reattach per move.
   const cardIdsKey = useMemo(() => Object.keys(visibleCards).sort().join('|'), [visibleCards])
@@ -873,18 +913,22 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
       .map(([cardId, card]) => {
         const summary = sessions.byId[card.sessionId]
         const selected = liveSelectedIds.has(cardId)
+        // Still a temporary box: the conversation never took its first turn.
+        const temporary = pendingChats.has(card.sessionId)
+          && (summary === undefined || summary.blank === true)
         const data: SessionCardData = {
           cardId,
           sessionId: card.sessionId,
-          title: card.title ?? summary?.displayTitle ?? card.sessionId,
-          running: summary?.running ?? false,
-          ghost: summary === undefined,
+          title: temporary ? t('card.pendingTitle') : card.title ?? summary?.displayTitle ?? card.sessionId,
+          running: temporary ? false : (summary?.running ?? false),
+          ghost: !temporary && summary === undefined,
           updatedAt: summary?.updatedAt,
-          waiting: pendingInteractions.has(card.sessionId) || summary?.pendingInteraction !== undefined,
-          done: completedIds.has(card.sessionId) && card.sessionId !== props.activeChatSessionId,
+          waiting: temporary ? false : (pendingInteractions.has(card.sessionId) || summary?.pendingInteraction !== undefined),
+          done: temporary ? false : (completedIds.has(card.sessionId) && card.sessionId !== props.activeChatSessionId),
           ...(card.colorTag !== undefined ? { colorTag: card.colorTag } : {}),
           ...(foreign.labels.has(cardId) ? { foreignLabel: foreign.labels.get(cardId) } : {}),
           ...(foreign.touching.has(cardId) ? { foreignTouch: true } : {}),
+          ...(temporary ? { pending: true } : {}),
           timeLabel: relativeTime(summary?.updatedAt),
         }
         const cached = previousNodes.get(cardId)
@@ -927,9 +971,26 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
       height: image.height,
       data: { image, onResize: handleImageResize },
     }))
+    // Fork markers: no Session yet, so they are their own node type and own
+    // none of a card's affordances. Dragging moves the marker (and where the
+    // card will land); clicking opens the drawer's setup.
+    const forkNodes: TalkMapNode[] = [...forkBoxes.boxes.values()].map(box => ({
+      id: box.id,
+      type: 'forkBox' as const,
+      position: { x: box.x, y: box.y },
+      // Its highlight is the open setup, never React Flow's selection set.
+      selectable: false,
+      focusable: false,
+      zIndex: 5,
+      data: {
+        parentTitle: box.parentTitle,
+        active: forkBoxes.activeId === box.id,
+        onRemove: () => { removeForkBox(box.id) },
+      },
+    }))
     nodeCacheRef.current = nextCache
-    return [...frameNodes, ...imageNodes, ...cardNodes, ...draftNodes]
-  }, [frameGeometry, membersByGroup, wsTitles, visibleCards, wsColors, sessions, liveSelectedIds, draft, draftNodeData, workspaces.items, locale, pendingInteractions, completedIds, foreign, archivedIds, nowMinute, isSelecting, props.onOpenChat, props.activeChatSessionId, canvasState.images, handleImageResize])
+    return [...frameNodes, ...imageNodes, ...cardNodes, ...forkNodes, ...draftNodes]
+  }, [frameGeometry, membersByGroup, wsTitles, visibleCards, wsColors, sessions, liveSelectedIds, draft, draftNodeData, workspaces.items, locale, pendingInteractions, completedIds, foreign, archivedIds, nowMinute, isSelecting, props.onOpenChat, props.activeChatSessionId, canvasState.images, handleImageResize, pendingChats, forkBoxes])
 
   const sessionIdToCardId = useMemo(() => {
     const index = new Map<string, string>()
@@ -963,13 +1024,20 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
       explicitPairs.add(`${edge.toCardId}->${edge.fromCardId}`)
       if (!present.has(edge.fromCardId) || !present.has(edge.toCardId)) continue
       const kind = edge.injection.kind
+      // Stored anchors win. Older edges predate handle storage (they always
+      // rendered r→l); deriving their sides from the cards' placement at
+      // least matches where the two cards actually sit.
+      const fromCard = canvasState.cards[edge.fromCardId]
+      const toCard = canvasState.cards[edge.toCardId]
+      const geometry = fromCard !== undefined && toCard !== undefined
+        ? sideHandles(fromCard, toCard)
+        : { fromHandle: 'r', toHandle: 'l' }
       out.push({
         id: edgeId,
         source: edge.fromCardId,
         target: edge.toCardId,
-        // Handles stored per edge; legacy edges keep their old r→l anchoring.
-        sourceHandle: edge.fromHandle ?? 'r',
-        targetHandle: edge.toHandle ?? 'l',
+        sourceHandle: edge.fromHandle ?? geometry.fromHandle,
+        targetHandle: edge.toHandle ?? geometry.toHandle,
         type: 'smoothstep',
         selected: liveSelectedEdgeIds.has(edgeId),
         // Endpoints ride along for the edge context menu (id parsing would
@@ -1066,6 +1134,10 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
           }
         } else if (change.id.startsWith('image-')) {
           imagePositionUpdates[change.id.slice('image-'.length)] = { x: change.position.x, y: change.position.y }
+        } else if (change.id.startsWith('fork-')) {
+          // The marker's spot is where its card will land, so it keeps its own
+          // position in the fork store instead of the canvas card store.
+          moveForkBox(change.id, change.position.x, change.position.y)
         } else {
           // Free dragging — the frame stretches after its members.
           positionUpdates[change.id] = { x: change.position.x, y: change.position.y }
@@ -1076,6 +1148,9 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
           height: change.dimensions.height,
         })
       } else if (change.type === 'select') {
+        // Fork markers are not cards: their highlight comes from the drawer's
+        // setup being open, never from React Flow's selection set.
+        if (change.id.startsWith('fork-')) continue
         setSelectedIds((previous) => {
           const next = new Set(previous)
           if (change.selected) next.add(change.id)
@@ -1088,6 +1163,8 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
         // removal takes its member cards with it — same as the context menu.
         if (change.id.startsWith('frame-')) {
           removeGroup(change.id.slice('frame-'.length))
+        } else if (change.id.startsWith('fork-')) {
+          removeForkBox(change.id)
         } else if (change.id !== 'draft') {
           canvas.removeCard(change.id)
         }
@@ -1194,16 +1271,6 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
     toastTimer.current = setTimeout(() => { setToast(null) }, durationMs)
   }
 
-  /** Pick edge anchor sides from the cards' relative placement. */
-  const sideHandles = (from: Card, to: Card): { fromHandle: string; toHandle: string } => {
-    const dx = to.x - from.x
-    const dy = to.y - from.y
-    if (Math.abs(dx) >= Math.abs(dy)) {
-      return dx >= 0 ? { fromHandle: 'r', toHandle: 'l' } : { fromHandle: 'l', toHandle: 'r' }
-    }
-    return dy >= 0 ? { fromHandle: 'b', toHandle: 't' } : { fromHandle: 't', toHandle: 'b' }
-  }
-
   /** A plain association between two existing cards. One edge per pair —
    * a second draw over an already-connected pair is silently a no-op. */
   const createLinkEdge = (
@@ -1242,8 +1309,8 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
     // flag is reset there).
     if (connectCancelledRef.current) return
     createLinkEdge(connection.source, connection.target, {
-      fromHandle: connection.sourceHandle,
-      toHandle: connection.targetHandle,
+      fromHandle: drawnHandle(connection.sourceHandle),
+      toHandle: drawnHandle(connection.targetHandle),
     })
   }
 
@@ -1283,6 +1350,10 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
     if (fromNodeId === undefined) return
     const card = canvasState.cards[fromNodeId]
     if (card === undefined) return
+    // The handle the user actually grabbed: a box opened by dropping this
+    // gesture keeps it, so the stored edge leaves the same side it was drawn
+    // from (bottom stays bottom instead of snapping to the right edge).
+    const fromHandle = drawnHandle(connectionState.fromHandle?.id)
     const client = 'clientX' in event
       ? { x: event.clientX, y: event.clientY }
       : event.changedTouches[0] !== undefined
@@ -1304,21 +1375,28 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
       .find(el => el !== null)
     const hitId = hitNode?.getAttribute('data-id') ?? undefined
     if (hitId !== undefined && visibleCards[hitId] !== undefined) {
-      if (hitId !== fromNodeId) createLinkEdge(fromNodeId, hitId)
+      if (hitId !== fromNodeId) createLinkEdge(fromNodeId, hitId, { fromHandle })
       return
     }
     const summary = sessions.byId[card.sessionId]
     if (summary === undefined) return
     const parentWorkspaceId = sessionWs.get(card.sessionId)
-    // The fork box appears exactly where the connection was dropped — the
-    // same in-place draft the right-click "new conversation" opens, but
-    // carrying the source's summary and the three inheritance modes.
-    openDraftAt(position.x, position.y, {
-      cardId: fromNodeId,
-      sessionId: card.sessionId,
-      title: summary.displayTitle,
-      ...(parentWorkspaceId !== undefined ? { workspaceId: parentWorkspaceId } : {}),
-    }, true)
+    // A fork marker lands exactly where the connection was dropped. Its setup
+    // (inheritance mode, digest, workspace, first message) opens in the
+    // drawer, and nothing is created until 开新对话 is pressed there.
+    const box = {
+      id: newForkBoxId(),
+      parentCardId: fromNodeId,
+      parentSessionId: card.sessionId,
+      parentTitle: summary.displayTitle,
+      ...(parentWorkspaceId !== undefined ? { parentWorkspaceId } : {}),
+      ...(fromHandle !== undefined ? { fromHandle } : {}),
+      x: snap(position.x),
+      y: snap(position.y - 40),
+    }
+    addForkBox(box)
+    setSelectedIds(new Set())
+    props.onOpenForkSetup?.(box.id)
   }
 
   const openSession = (sessionId: string): void => {
@@ -1409,9 +1487,15 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
       const position = newChatCardPosition(flowX, flowY)
       addSessionCard(sessionId, position.x, position.y, targetWorkspaceId)
       ensureWorkspaceFrame(targetWorkspaceId, draftWorkspaceOptions, position.x, position.y)
+      // Blank Sessions stay off the board, but this one is the conversation
+      // the user just started: draw it as a temporary box until it runs.
+      markPendingChat(sessionId)
       if (props.onOpenChat !== undefined) {
         props.onOpenChat(sessionId)
       } else {
+        // No drawer on this host: the main view takes the conversation over,
+        // so the placeholder must not linger behind on the board.
+        clearPendingChat(sessionId)
         mapUi.setOpen(false)
         openSessionInMain(sessionId)
       }
@@ -1574,13 +1658,17 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
       const card = canvasState.cards[cardId]
       if (card === undefined) return null
       const summary = sessions.byId[card.sessionId]
-      const current = card.title ?? summary?.displayTitle ?? card.sessionId
+      // The card reads as its custom title when it has one; that title is what
+      // the input edits. With no custom title it shows the Session's own title
+      // as the dim placeholder and the input stays empty.
+      const displayTitle = summary?.displayTitle ?? card.sessionId
       return {
         left: menu.left,
         top: menu.top,
         title: t('menu.editTitle'),
         prompt: {
-          placeholder: current,
+          placeholder: displayTitle,
+          ...(card.title !== undefined ? { initialValue: card.title } : {}),
           submitLabel: t('menu.saveTitle'),
           onSubmit: async (value: string) => {
             canvas.setCardTitle(cardId, value)
@@ -1720,7 +1808,7 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
         })
       }
       // Discoverable alternative to dragging from a tiny connection dot:
-      // opens the same fork panel with the newborn card placed to the right.
+      // drops the same fork marker to the right and opens its setup.
       if (card !== undefined && sessions.byId[card.sessionId] !== undefined) {
         const summary = sessions.byId[card.sessionId]
         if (summary !== undefined) {
@@ -1730,12 +1818,18 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
             onPick: () => {
               close()
               const parentWorkspaceId = sessionWs.get(card.sessionId)
-              openDraftAt(card.x + CARD_W + GAP_X + CARD_W / 2, card.y + CARD_H / 2 + 40, {
-                cardId,
-                sessionId: card.sessionId,
-                title: summary.displayTitle,
-                ...(parentWorkspaceId !== undefined ? { workspaceId: parentWorkspaceId } : {}),
-              })
+              const box = {
+                id: newForkBoxId(),
+                parentCardId: cardId,
+                parentSessionId: card.sessionId,
+                parentTitle: summary.displayTitle,
+                ...(parentWorkspaceId !== undefined ? { parentWorkspaceId } : {}),
+                x: snap(card.x + CARD_W + GAP_X),
+                y: snap(card.y),
+              }
+              addForkBox(box)
+              setSelectedIds(new Set())
+              props.onOpenForkSetup?.(box.id)
             },
           })
         }
@@ -1954,6 +2048,12 @@ function CanvasInner(props: MapCanvasProps): React.JSX.Element {  const dark = u
             : undefined)
         }}
         onNodeClick={(event, node) => {
+          // A fork marker: the drawer opens its setup (nothing exists yet).
+          if (node.type === 'forkBox') {
+            cancelChatSoon()
+            props.onOpenForkSetup?.((node as ForkBoxNodeType).id)
+            return
+          }
           // Click a card: open its conversation in the right-hand drawer.
           // Deferred by the double-click window so a double-click keeps its
           // original "open the Session full screen" meaning (and never turns

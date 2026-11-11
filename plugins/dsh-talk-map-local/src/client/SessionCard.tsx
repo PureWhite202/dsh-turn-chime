@@ -25,6 +25,9 @@ export interface SessionCardData extends Record<string, unknown> {
   waiting?: boolean
   /** Finished while unwatched and not yet opened. */
   done?: boolean
+  /** Temporary new-conversation box: no card menu, no pin, no edge handles.
+   *  Cleared the moment the conversation takes its first turn. */
+  pending?: boolean
   /** Set when this card sits inside another workspace's frame: the real
    * workspace it belongs to (membership never changes — only the position). */
   foreignLabel?: string
@@ -75,6 +78,7 @@ function SessionCard(props: NodeProps<SessionCardNodeType>): React.JSX.Element {
   const classNames = [styles['card']]
   if (data.ghost) classNames.push(styles['cardGhost'])
   if (selected === true) classNames.push(styles['cardSelected'])
+  if (data.pending === true) classNames.push(styles['cardPending'])
   if (data.foreignLabel !== undefined) classNames.push(styles['cardForeign'])
   if (data.foreignTouch === true) classNames.push(styles['cardForeignTouch'])
 
@@ -91,14 +95,19 @@ function SessionCard(props: NodeProps<SessionCardNodeType>): React.JSX.Element {
         * canvas runs ConnectionMode.Loose, so each also accepts incoming
         * edges. Hidden until the card is hovered or a drag is in flight
         * (CSS); legacy edges without stored handles anchor r→l. */}
-      <Handle id="t" type="source" position={Position.Top} className={styles['cardHandle'] ?? ''} />
-      <Handle id="l" type="source" position={Position.Left} className={styles['cardHandle'] ?? ''} />
+      {/* A temporary box has no edges yet: handles appear with the card. */}
+      {data.pending === true
+        ? null
+        : <Handle id="t" type="source" position={Position.Top} className={styles['cardHandle'] ?? ''} />}
+      {data.pending === true
+        ? null
+        : <Handle id="l" type="source" position={Position.Left} className={styles['cardHandle'] ?? ''} />}
       <div className={styles['cardTop']}>
         {data.done === true && data.ghost !== true
           ? <span className={styles['cardDoneDot']} title={t('card.done')} aria-label={t('card.done')} />
           : null}
         <span className={styles['cardTitle']}>{data.ghost ? t('card.ghostTitle') : data.title}</span>
-        {data.ghost !== true && !archived
+        {data.ghost !== true && !archived && data.pending !== true
           ? (
               <button
                 type="button"
@@ -134,17 +143,27 @@ function SessionCard(props: NodeProps<SessionCardNodeType>): React.JSX.Element {
         : null}
       <div className={styles['cardFooter']}>
         <span className={styles['cardFooterLeft']}>
-          {data.foreignLabel !== undefined
+          {data.pending === true
             ? (
-                <span
-                  className={styles['cardForeignChip']}
-                  title={t('card.foreignHint', { name: data.foreignLabel })}
-                >
-                  {t('card.foreign')} · {data.foreignLabel}
+                <span className={styles['cardPendingHint']} title={t('card.pendingHintLong')}>
+                  {t('card.pendingHint')}
                 </span>
               )
-            : null}
-          <span className={styles['cardTime']}>{data.timeLabel ?? ''}</span>
+            : (
+                <>
+                  {data.foreignLabel !== undefined
+                    ? (
+                        <span
+                          className={styles['cardForeignChip']}
+                          title={t('card.foreignHint', { name: data.foreignLabel })}
+                        >
+                          {t('card.foreign')} · {data.foreignLabel}
+                        </span>
+                      )
+                    : null}
+                  <span className={styles['cardTime']}>{data.timeLabel ?? ''}</span>
+                </>
+              )}
         </span>
         {data.waiting === true
           ? (
@@ -173,8 +192,12 @@ function SessionCard(props: NodeProps<SessionCardNodeType>): React.JSX.Element {
             ? <span className={styles['cardBadgeRunning']}><span className={styles['runningDot']} />{t('card.running')}</span>
             : null}
       </div>
-      <Handle id="r" type="source" position={Position.Right} className={styles['cardHandle'] ?? ''} />
-      <Handle id="b" type="source" position={Position.Bottom} className={styles['cardHandle'] ?? ''} />
+      {data.pending === true
+        ? null
+        : <Handle id="r" type="source" position={Position.Right} className={styles['cardHandle'] ?? ''} />}
+      {data.pending === true
+        ? null
+        : <Handle id="b" type="source" position={Position.Bottom} className={styles['cardHandle'] ?? ''} />}
     </div>
   )
 }

@@ -163,6 +163,9 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			"map.crashRetry": "重试渲染",
 			"card.running": "正在运行",
 			"card.ghostTitle": "会话已不存在",
+			"card.pendingTitle": "新对话",
+			"card.pendingHint": "未开始",
+			"card.pendingHintLong": "发出第一条消息后转为正式卡片",
 			"card.remove": "移除卡片",
 			"card.pin": "置顶会话",
 			"card.unpin": "取消置顶",
@@ -172,6 +175,12 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			"time.d": " 天前",
 			"edge.injected": "注入",
 			"spawn.heading": "连线分叉：开一个带上下文的新对话",
+			"fork.title": "分叉设置",
+			"fork.close": "关闭分叉设置（占位框保留）",
+			"fork.boxTitle": "分叉对话",
+			"fork.boxHint": "点击设置并开始",
+			"fork.from": "来自「{name}」",
+			"fork.remove": "删除占位框",
 			"spawn.from": "来源",
 			"spawn.hint": "以下内容将注入新对话作为背景，可以编辑：",
 			"spawn.generating": "正在生成摘要……",
@@ -218,6 +227,12 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			"preset.ptc": "PTC 模式",
 			"preset.minimal": "极简模式",
 			"preset.cordis": "创造模式",
+			"mode.title": "模式",
+			"mode.choose": "选择模式",
+			"mode.switching": "切换中…",
+			"mode.lockedHint": "会话开始后模式不能再切换；新对话可以重新选择",
+			"mode.lockedError": "这个会话已经发过消息，模式不能再切换；新对话可以重新选。",
+			"mode.failedUnknown": "切换模式失败，请重试",
 			"color.toolbar": "颜色",
 			"color.clear": "清除颜色",
 			"card.waiting": "等你回复",
@@ -311,6 +326,9 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			"map.crashRetry": "Retry",
 			"card.running": "running",
 			"card.ghostTitle": "Session no longer exists",
+			"card.pendingTitle": "New conversation",
+			"card.pendingHint": "Not started",
+			"card.pendingHintLong": "Becomes a card after the first message",
 			"card.remove": "Remove card",
 			"card.pin": "Pin session",
 			"card.unpin": "Unpin session",
@@ -320,6 +338,12 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			"time.d": "d ago",
 			"edge.injected": "injected",
 			"spawn.heading": "Fork with context",
+			"fork.title": "Fork setup",
+			"fork.close": "Close the setup (the marker stays)",
+			"fork.boxTitle": "Fork conversation",
+			"fork.boxHint": "Click to set up and start",
+			"fork.from": "From \"{name}\"",
+			"fork.remove": "Remove the marker",
 			"spawn.from": "From",
 			"spawn.hint": "This text will be injected into the new session as background — edit freely:",
 			"spawn.generating": "Generating summary…",
@@ -366,6 +390,12 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			"preset.ptc": "PTC mode",
 			"preset.minimal": "Minimal mode",
 			"preset.cordis": "Creator mode",
+			"mode.title": "Mode",
+			"mode.choose": "Choose a mode",
+			"mode.switching": "Switching…",
+			"mode.lockedHint": "A started conversation keeps its mode; a new conversation can pick another.",
+			"mode.lockedError": "This conversation has already started, so its mode can no longer change. A new conversation can pick another mode.",
+			"mode.failedUnknown": "Could not switch the mode — try again",
 			"color.toolbar": "Color",
 			"color.clear": "Clear color",
 			"card.waiting": "needs you",
@@ -492,7 +522,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 		*/
 		const FLUSH_DELAY_MS = 800;
 		const CAMERA_DELAY_MS = 800;
-		let state$1 = {
+		let state$2 = {
 			phase: "idle",
 			cards: {},
 			edges: {},
@@ -500,14 +530,14 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			images: {},
 			global: null
 		};
-		const listeners$2 = /* @__PURE__ */ new Set();
+		const listeners$5 = /* @__PURE__ */ new Set();
 		function setState(next) {
-			state$1 = {
-				...state$1,
+			state$2 = {
+				...state$2,
 				...next
 			};
-			setLocalePref(state$1.global?.locale ?? "auto");
-			for (const listener of listeners$2) listener();
+			setLocalePref(state$2.global?.locale ?? "auto");
+			for (const listener of listeners$5) listener();
 		}
 		/**
 		* Update the module state without waking subscribers. The camera is only read
@@ -515,8 +545,8 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 		* map re-render on every pan/zoom end.
 		*/
 		function setStateSilent(next) {
-			state$1 = {
-				...state$1,
+			state$2 = {
+				...state$2,
 				...next
 			};
 		}
@@ -544,9 +574,9 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 		let lastUndoPush = 0;
 		function takeSnapshot() {
 			return {
-				cards: state$1.cards,
-				edges: state$1.edges,
-				global: state$1.global
+				cards: state$2.cards,
+				edges: state$2.edges,
+				global: state$2.global
 			};
 		}
 		function pushUndo() {
@@ -558,10 +588,10 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			redoStack.length = 0;
 		}
 		function restoreSnapshot(snapshot) {
-			const previousCards = state$1.cards;
-			const previousEdges = state$1.edges;
-			const currentCamera = state$1.global?.cameraByBoard;
-			const global = snapshot.global === null ? state$1.global : {
+			const previousCards = state$2.cards;
+			const previousEdges = state$2.edges;
+			const currentCamera = state$2.global?.cameraByBoard;
+			const global = snapshot.global === null ? state$2.global : {
 				...snapshot.global,
 				cameraByBoard: currentCamera ?? snapshot.global.cameraByBoard
 			};
@@ -603,7 +633,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			if (globalPersistTimer !== void 0) clearTimeout(globalPersistTimer);
 			globalPersistTimer = setTimeout(() => {
 				globalPersistTimer = void 0;
-				const current = state$1.global;
+				const current = state$2.global;
 				if (current === null) return;
 				persistGlobal(current, "layout-memory");
 			}, 800);
@@ -619,7 +649,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			if (dirtyCards.size === 0) return;
 			const payload = {};
 			for (const id of dirtyCards) {
-				const card = state$1.cards[id];
+				const card = state$2.cards[id];
 				if (card !== void 0) payload[id] = card;
 			}
 			dirtyCards.clear();
@@ -633,16 +663,16 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 		}
 		const canvas = {
 			get() {
-				return state$1;
+				return state$2;
 			},
 			subscribe(listener) {
-				listeners$2.add(listener);
+				listeners$5.add(listener);
 				return () => {
-					listeners$2.delete(listener);
+					listeners$5.delete(listener);
 				};
 			},
 			ensureLoaded() {
-				if (state$1.phase === "loading" || state$1.phase === "ready") return;
+				if (state$2.phase === "loading" || state$2.phase === "ready") return;
 				setState({
 					phase: "loading",
 					error: void 0
@@ -669,85 +699,85 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					if (change.table === "cards") {
 						if (dirtyCards.has(change.key)) return;
 						if (change.operation === "deleted") {
-							if (state$1.cards[change.key] === void 0) return;
-							const cards = { ...state$1.cards };
+							if (state$2.cards[change.key] === void 0) return;
+							const cards = { ...state$2.cards };
 							delete cards[change.key];
 							setState({ cards });
 							return;
 						}
 						const incoming = change.value;
-						const current = state$1.cards[change.key];
+						const current = state$2.cards[change.key];
 						if (current !== void 0 && sameCard(current, incoming)) return;
 						setState({ cards: {
-							...state$1.cards,
+							...state$2.cards,
 							[change.key]: incoming
 						} });
 						return;
 					}
 					if (change.table === "edges") {
 						if (change.operation === "deleted") {
-							if (state$1.edges[change.key] === void 0) return;
-							const edges = { ...state$1.edges };
+							if (state$2.edges[change.key] === void 0) return;
+							const edges = { ...state$2.edges };
 							delete edges[change.key];
 							setState({ edges });
 							return;
 						}
 						const incoming = change.value;
-						const current = state$1.edges[change.key];
+						const current = state$2.edges[change.key];
 						if (current !== void 0 && sameEdge(current, incoming)) return;
 						setState({ edges: {
-							...state$1.edges,
+							...state$2.edges,
 							[change.key]: incoming
 						} });
 						return;
 					}
 					if (change.table === "images") {
 						if (change.operation === "deleted") {
-							if (state$1.images[change.key] === void 0) return;
-							const images = { ...state$1.images };
+							if (state$2.images[change.key] === void 0) return;
+							const images = { ...state$2.images };
 							delete images[change.key];
 							setState({ images });
 							return;
 						}
 						const incoming = change.value;
-						const current = state$1.images[change.key];
+						const current = state$2.images[change.key];
 						if (current !== void 0 && current.x === incoming.x && current.y === incoming.y && current.width === incoming.width && current.height === incoming.height && current.src === incoming.src) return;
 						setState({ images: {
-							...state$1.images,
+							...state$2.images,
 							[change.key]: incoming
 						} });
 						return;
 					}
 					if (change.table === "digests") {
 						let referenced = false;
-						for (const card of Object.values(state$1.cards)) if (card.sessionId === change.key) {
+						for (const card of Object.values(state$2.cards)) if (card.sessionId === change.key) {
 							referenced = true;
 							break;
 						}
 						if (!referenced) return;
 						if (change.operation === "deleted") {
-							if (state$1.digests[change.key] === void 0) return;
-							const digests = { ...state$1.digests };
+							if (state$2.digests[change.key] === void 0) return;
+							const digests = { ...state$2.digests };
 							delete digests[change.key];
 							setState({ digests });
 							return;
 						}
 						const incoming = change.value;
-						const current = state$1.digests[change.key];
+						const current = state$2.digests[change.key];
 						if (current !== void 0 && sameDigest(current, incoming)) return;
 						setState({ digests: {
-							...state$1.digests,
+							...state$2.digests,
 							[change.key]: incoming
 						} });
 					}
 				});
 			},
 			moveCard(id, x, y) {
-				const card = state$1.cards[id];
+				const card = state$2.cards[id];
 				if (card === void 0) return;
 				pushUndo();
 				setState({ cards: {
-					...state$1.cards,
+					...state$2.cards,
 					[id]: {
 						...card,
 						x,
@@ -760,7 +790,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			/** Batch position commit: one state update per React Flow change batch. */
 			moveCards(updates) {
 				const moved = [];
-				const cards = { ...state$1.cards };
+				const cards = { ...state$2.cards };
 				for (const [id, position] of Object.entries(updates)) {
 					const card = cards[id];
 					if (card === void 0) continue;
@@ -782,7 +812,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			addCards(entries) {
 				pushUndo();
 				setState({ cards: {
-					...state$1.cards,
+					...state$2.cards,
 					...entries
 				} });
 				talkMapApi.upsertCards(entries).catch((error) => {
@@ -793,7 +823,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			addEdges(entries) {
 				pushUndo();
 				setState({ edges: {
-					...state$1.edges,
+					...state$2.edges,
 					...entries
 				} });
 				talkMapApi.upsertEdges(entries).catch((error) => {
@@ -801,10 +831,10 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				});
 			},
 			removeEdges(ids) {
-				const present = ids.filter((id) => state$1.edges[id] !== void 0);
+				const present = ids.filter((id) => state$2.edges[id] !== void 0);
 				if (present.length === 0) return;
 				pushUndo();
-				const edges = { ...state$1.edges };
+				const edges = { ...state$2.edges };
 				for (const id of present) delete edges[id];
 				setState({ edges });
 				talkMapApi.deleteEdges(present).catch((error) => {
@@ -815,9 +845,9 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			* closed or the server restarted). Skipped while local writes — card
 			* positions or a global patch — are still in flight. */
 			refresh() {
-				if (state$1.phase !== "ready" || dirtyCards.size > 0 || globalWritesInFlight > 0) return;
+				if (state$2.phase !== "ready" || dirtyCards.size > 0 || globalWritesInFlight > 0) return;
 				talkMapApi.getState().then((payload) => {
-					if (state$1.phase !== "ready" || dirtyCards.size > 0 || globalWritesInFlight > 0) return;
+					if (state$2.phase !== "ready" || dirtyCards.size > 0 || globalWritesInFlight > 0) return;
 					setState({
 						cards: payload.cards,
 						edges: payload.edges,
@@ -832,24 +862,24 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				pushUndo();
 				setState({
 					cards: {
-						...state$1.cards,
+						...state$2.cards,
 						[result.cardId]: result.card
 					},
 					edges: {
-						...state$1.edges,
+						...state$2.edges,
 						...result.edges
 					}
 				});
 			},
 			removeCard(id) {
-				const card = state$1.cards[id];
+				const card = state$2.cards[id];
 				if (card === void 0) return;
 				pushUndo();
-				const cards = { ...state$1.cards };
+				const cards = { ...state$2.cards };
 				delete cards[id];
-				if (state$1.global !== null) {
+				if (state$2.global !== null) {
 					const layoutMemory = {
-						...state$1.global.layoutMemory,
+						...state$2.global.layoutMemory,
 						[card.sessionId]: {
 							x: card.x,
 							y: card.y,
@@ -859,7 +889,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					setState({
 						cards,
 						global: {
-							...state$1.global,
+							...state$2.global,
 							layoutMemory
 						}
 					});
@@ -872,7 +902,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			/** Recolor cards (undefined clears); persists immediately. */
 			setCardsColor(ids, colorTag) {
 				const payload = {};
-				const cards = { ...state$1.cards };
+				const cards = { ...state$2.cards };
 				for (const id of ids) {
 					const card = cards[id];
 					if (card === void 0) continue;
@@ -892,7 +922,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			/** Rename one card without touching its Session; undefined clears the
 			*  override so the card shows the Session's own title again. */
 			setCardTitle(id, title) {
-				const card = state$1.cards[id];
+				const card = state$2.cards[id];
 				if (card === void 0) return;
 				const trimmed = title?.trim();
 				if ((card.title ?? "") === (trimmed ?? "")) return;
@@ -901,7 +931,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				if (trimmed === void 0 || trimmed === "") delete next.title;
 				else next.title = trimmed;
 				setState({ cards: {
-					...state$1.cards,
+					...state$2.cards,
 					[id]: next
 				} });
 				talkMapApi.upsertCards({ [id]: next }).catch((error) => {
@@ -910,14 +940,14 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			},
 			/** Adopt a card into another workspace's frame (map-level membership). */
 			setCardWorkspaceOverride(id, wsOverride) {
-				const card = state$1.cards[id];
+				const card = state$2.cards[id];
 				if (card === void 0) return;
 				pushUndo();
 				const next = { ...card };
 				if (wsOverride === void 0) delete next.wsOverride;
 				else next.wsOverride = wsOverride;
 				setState({ cards: {
-					...state$1.cards,
+					...state$2.cards,
 					[id]: next
 				} });
 				talkMapApi.upsertCards({ [id]: next }).catch((error) => {
@@ -926,75 +956,75 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			},
 			/** Manual frame geometry (drag/resize); local now, persisted debounced. */
 			setWsFrameRect(workspaceId, rect) {
-				if (state$1.global === null) return;
+				if (state$2.global === null) return;
 				pushUndo();
 				setState({ global: {
-					...state$1.global,
+					...state$2.global,
 					wsFrames: {
-						...state$1.global.wsFrames,
+						...state$2.global.wsFrames,
 						[workspaceId]: rect
 					}
 				} });
 				if (frameTimer !== void 0) clearTimeout(frameTimer);
 				frameTimer = setTimeout(() => {
 					frameTimer = void 0;
-					const current = state$1.global;
+					const current = state$2.global;
 					if (current === null) return;
 					persistGlobal(current, "frame");
 				}, 800);
 			},
 			/** Drop one workspace frame; its cards fall back to bare canvas cards. */
 			removeWsFrame(workspaceId) {
-				if (state$1.global === null) return;
-				const frames = state$1.global.wsFrames;
+				if (state$2.global === null) return;
+				const frames = state$2.global.wsFrames;
 				if (frames === void 0 || frames[workspaceId] === void 0) return;
 				pushUndo();
 				const nextFrames = { ...frames };
 				delete nextFrames[workspaceId];
 				setState({ global: {
-					...state$1.global,
+					...state$2.global,
 					wsFrames: nextFrames
 				} });
 				if (frameTimer !== void 0) clearTimeout(frameTimer);
 				frameTimer = setTimeout(() => {
 					frameTimer = void 0;
-					const current = state$1.global;
+					const current = state$2.global;
 					if (current === null) return;
 					persistGlobal(current, "frame");
 				}, 800);
 			},
 			/** Recolor a workspace frame (undefined clears); persists immediately. */
 			setWorkspaceColor(workspaceId, colorTag) {
-				if (state$1.global === null) return;
+				if (state$2.global === null) return;
 				pushUndo();
-				const wsColors = { ...state$1.global.wsColors };
+				const wsColors = { ...state$2.global.wsColors };
 				if (colorTag === void 0) delete wsColors[workspaceId];
 				else wsColors[workspaceId] = colorTag;
 				canvas.patchGlobalNow({ wsColors });
 			},
 			/** Immediate global patch (layout-version stamp etc.) — no debounce. */
 			patchGlobalNow(patch) {
-				if (state$1.global === null) return;
+				if (state$2.global === null) return;
 				const global = {
-					...state$1.global,
+					...state$2.global,
 					...patch
 				};
 				setState({ global });
 				persistGlobal(global, "global");
 			},
 			setCamera(boardId, camera) {
-				if (state$1.global === null) return;
+				if (state$2.global === null) return;
 				setStateSilent({ global: {
-					...state$1.global,
+					...state$2.global,
 					cameraByBoard: {
-						...state$1.global.cameraByBoard,
+						...state$2.global.cameraByBoard,
 						[boardId]: camera
 					}
 				} });
 				if (cameraTimer !== void 0) clearTimeout(cameraTimer);
 				cameraTimer = setTimeout(() => {
 					cameraTimer = void 0;
-					const current = state$1.global;
+					const current = state$2.global;
 					if (current === null) return;
 					persistGlobal(current, "camera");
 				}, CAMERA_DELAY_MS);
@@ -1002,7 +1032,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			addImages(entries) {
 				pushUndo();
 				setState({ images: {
-					...state$1.images,
+					...state$2.images,
 					...entries
 				} });
 				talkMapApi.upsertImages(entries).catch((error) => {
@@ -1011,7 +1041,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			},
 			moveImages(updates) {
 				const moved = [];
-				const images = { ...state$1.images };
+				const images = { ...state$2.images };
 				for (const [id, position] of Object.entries(updates)) {
 					const image = images[id];
 					if (image === void 0) continue;
@@ -1036,11 +1066,11 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				});
 			},
 			resizeImage(id, width, height) {
-				const image = state$1.images[id];
+				const image = state$2.images[id];
 				if (image === void 0) return;
 				if (image.width === width && image.height === height) return;
 				setState({ images: {
-					...state$1.images,
+					...state$2.images,
 					[id]: {
 						...image,
 						width,
@@ -1056,10 +1086,10 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				});
 			},
 			removeImages(ids) {
-				const present = ids.filter((id) => state$1.images[id] !== void 0);
+				const present = ids.filter((id) => state$2.images[id] !== void 0);
 				if (present.length === 0) return;
 				pushUndo();
-				const images = { ...state$1.images };
+				const images = { ...state$2.images };
 				for (const id of present) delete images[id];
 				setState({ images });
 				talkMapApi.deleteImages(present).catch((error) => {
@@ -1080,11 +1110,11 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				restoreSnapshot(snapshot);
 			},
 			savedCamera(boardId) {
-				return state$1.global?.cameraByBoard[boardId];
+				return state$2.global?.cameraByBoard[boardId];
 			},
 			/** First card found for a session (M1: one board, at most one card each). */
 			cardIdForSession(sessionId) {
-				for (const [id, card] of Object.entries(state$1.cards)) if (card.sessionId === sessionId) return id;
+				for (const [id, card] of Object.entries(state$2.cards)) if (card.sessionId === sessionId) return id;
 			}
 		};
 		function newCardId() {
@@ -1130,8 +1160,8 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 		* two components registered into unrelated slots, so they meet through this
 		* module-level external store (useSyncExternalStore on the React side).
 		*/
-		const listeners$1 = /* @__PURE__ */ new Set();
-		let state = { open: false };
+		const listeners$4 = /* @__PURE__ */ new Set();
+		let state$1 = { open: false };
 		/** The map is a long-lived surface: remember whether it was open so a page
 		* reload or desktop-app restart brings it back instead of dropping the user
 		* into the main view. Purely a local preference — the map DATA lives on the
@@ -1154,19 +1184,41 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				return;
 			}
 		}
+		/**
+		* Drawer identity as a reactive source. Several surfaces inside the drawer
+		* need to know whether the Conversation they render is the one the drawer
+		* owns: the mode chip only belongs beside the workspace picker of THAT
+		* conversation, never in a main-view occurrence (the host renders its own
+		* picker there).
+		*/
+		const drawerSessionListeners = /* @__PURE__ */ new Set();
+		let drawerSession;
+		function subscribeDrawerSession(listener) {
+			drawerSessionListeners.add(listener);
+			return () => {
+				drawerSessionListeners.delete(listener);
+			};
+		}
+		/** The Session the drawer currently shows (undefined while it is closed). */
+		function useDrawerSessionId() {
+			return (0, react.useSyncExternalStore)(subscribeDrawerSession, () => drawerSession);
+		}
 		function persistDrawer(sessionId) {
 			try {
 				if (sessionId === void 0) window.localStorage.removeItem(DRAWER_KEY);
 				else window.localStorage.setItem(DRAWER_KEY, sessionId);
 			} catch {}
+			if (drawerSession === sessionId) return;
+			drawerSession = sessionId;
+			for (const listener of drawerSessionListeners) listener();
 		}
 		function persistMapOpen(open) {
 			try {
 				window.localStorage.setItem(OPEN_KEY, open ? "1" : "0");
 			} catch {}
 		}
-		function emit$1() {
-			for (const listener of listeners$1) listener();
+		function emit$4() {
+			for (const listener of listeners$4) listener();
 		}
 		/**
 		* Escape routing: inner surfaces (draft card, spawn preview) claim Esc so
@@ -1175,25 +1227,25 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 		const escGuards = /* @__PURE__ */ new Set();
 		const mapUi = {
 			get() {
-				return state;
+				return state$1;
 			},
 			subscribe(listener) {
-				listeners$1.add(listener);
+				listeners$4.add(listener);
 				return () => {
-					listeners$1.delete(listener);
+					listeners$4.delete(listener);
 				};
 			},
 			setOpen(open) {
-				if (state.open === open) return;
-				state = {
-					...state,
+				if (state$1.open === open) return;
+				state$1 = {
+					...state$1,
 					open
 				};
 				persistMapOpen(open);
-				emit$1();
+				emit$4();
 			},
 			toggle() {
-				mapUi.setOpen(!state.open);
+				mapUi.setOpen(!state$1.open);
 			},
 			claimEscape(id) {
 				escGuards.add(id);
@@ -1314,13 +1366,13 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 		//#region src/client/interactions.ts
 		let source;
 		let detachSource;
-		let snapshot = /* @__PURE__ */ new Map();
-		const listeners = /* @__PURE__ */ new Set();
+		let snapshot$1 = /* @__PURE__ */ new Map();
+		const listeners$3 = /* @__PURE__ */ new Set();
 		/** Session ids the host reports as finished-but-unread (the sidebar's dot). */
 		let completedSnapshot = /* @__PURE__ */ new Set();
 		const completedListeners = /* @__PURE__ */ new Set();
-		function emit() {
-			for (const listener of listeners) listener();
+		function emit$3() {
+			for (const listener of listeners$3) listener();
 		}
 		function emitCompleted() {
 			for (const listener of completedListeners) listener();
@@ -1340,9 +1392,9 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				emitCompleted();
 			}
 			if (source === void 0) {
-				if (snapshot.size === 0) return;
-				snapshot = /* @__PURE__ */ new Map();
-				emit();
+				if (snapshot$1.size === 0) return;
+				snapshot$1 = /* @__PURE__ */ new Map();
+				emit$3();
 				return;
 			}
 			const next = /* @__PURE__ */ new Map();
@@ -1350,25 +1402,25 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				const interaction = status?.pendingInteraction;
 				if (interaction !== void 0 && interaction !== null) next.set(sessionId, interaction);
 			}
-			if (next.size === snapshot.size) {
+			if (next.size === snapshot$1.size) {
 				let same = true;
-				for (const [sessionId, interaction] of next) if (snapshot.get(sessionId) !== interaction) {
+				for (const [sessionId, interaction] of next) if (snapshot$1.get(sessionId) !== interaction) {
 					same = false;
 					break;
 				}
 				if (same) return;
 			}
-			snapshot = next;
-			emit();
+			snapshot$1 = next;
+			emit$3();
 		}
 		const interactions = {
 			getSnapshot() {
-				return snapshot;
+				return snapshot$1;
 			},
 			subscribe(listener) {
-				listeners.add(listener);
+				listeners$3.add(listener);
 				return () => {
-					listeners.delete(listener);
+					listeners$3.delete(listener);
 				};
 			},
 			/** Point the store at a host status source (undefined detaches). */
@@ -1422,7 +1474,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 		};
 		//#endregion
 		//#region \0dsh-css:module:src/client/talk-map.module.css.mjs
-		const css$1 = ".AxLS7q_toggleButton{width:32px;height:32px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:8px;justify-content:center;align-items:center;gap:6px;padding:0;display:flex}.AxLS7q_toggleButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_toggleButtonActive{background:var(--dsw-alias-interactive-bg-active);color:var(--dsw-alias-brand-primary)}.AxLS7q_toggleRow{width:100%;color:var(--dsw-alias-label-secondary);cursor:pointer;text-align:left;background:0 0;border:none;border-radius:8px;align-items:center;gap:8px;padding:6px 10px;font-size:13px;display:flex}.AxLS7q_toggleRow:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_toggleLabel{white-space:nowrap}.AxLS7q_toggleIcon{flex:none;width:18px;height:18px}.AxLS7q_overlay{background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);pointer-events:auto;flex-direction:column;display:flex;position:absolute;top:0;bottom:0;left:0;right:0}[data-windows-titlebar] .AxLS7q_overlay{padding-top:var(--dsh-windows-titlebar-height,40px)}html[data-platform=darwin]:not([data-fullscreen]) .AxLS7q_overlay{padding-top:var(--dsh-frame-top-clearance,48px)}html[data-platform=darwin]:not([data-fullscreen]) .AxLS7q_overlay:before{content:\"\";height:var(--dsh-frame-top-clearance,48px);-webkit-app-region:drag;position:absolute;top:0;left:0;right:0}.AxLS7q_header{border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);flex:none;align-items:center;gap:10px;padding:8px 14px;display:flex}.AxLS7q_headerTitle{color:var(--dsw-alias-label-primary);font-size:14px;font-weight:600}.AxLS7q_headerBadge{color:var(--dsw-alias-label-tertiary);font-size:12px}.AxLS7q_headerSpace{flex:1}.AxLS7q_hotkeyButton{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;background:0 0;border-radius:999px;flex:none;padding:3px 10px;font-size:12px}.AxLS7q_hotkeyButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_langButton{border:1px solid var(--dsw-alias-border-l2);min-width:58px;color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;background:0 0;border-radius:999px;flex:none;padding:3px 10px;font-size:12px}.AxLS7q_langButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_zoomResetLabel{letter-spacing:-.5px;font-size:9px;font-weight:700}.AxLS7q_closeButton{width:28px;height:28px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:6px;justify-content:center;align-items:center;padding:0;display:flex}.AxLS7q_closeButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_canvas{flex:1;min-height:0;position:relative}.AxLS7q_canvas .react-flow__nodesselection{pointer-events:none!important;display:none!important}.AxLS7q_canvas .react-flow__nodesselection-rect{pointer-events:none!important;display:none!important}.AxLS7q_card{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);width:224px;min-height:104px;color:var(--dsw-alias-label-primary);box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1);border-radius:10px;flex-direction:column;gap:6px;padding:10px 12px;font-size:13px;display:flex}.AxLS7q_cardSelected{border-color:var(--dsw-alias-brand-primary)}.AxLS7q_cardGhost{opacity:.55;border-style:dashed}.AxLS7q_cardTop{align-items:center;gap:6px;min-width:0;display:flex}.AxLS7q_cardTitle{-webkit-line-clamp:2;word-break:break-word;-webkit-box-orient:vertical;flex:auto;min-width:0;font-size:13px;font-weight:600;line-height:1.3;display:-webkit-box;overflow:hidden}.AxLS7q_cardPin{width:22px;height:22px;color:var(--dsw-alias-label-tertiary);cursor:pointer;opacity:.55;background:0 0;border:none;border-radius:6px;flex:none;justify-content:center;align-items:center;margin-left:auto;padding:0;transition:opacity .12s,background-color .12s,color .12s;display:flex;transform:translate(6px,-6px)}.AxLS7q_card:hover .AxLS7q_cardPin{opacity:1}.AxLS7q_cardPin:focus-visible{opacity:1}.AxLS7q_cardPin:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_cardPinActive{opacity:1;color:var(--dsw-alias-brand-primary)}.AxLS7q_cardPinActive:hover{color:var(--dsw-alias-brand-primary)}.AxLS7q_runningDot{background:var(--dsw-alias-state-success-primary);border-radius:50%;flex:none;width:8px;height:8px;animation:1.6s ease-in-out infinite AxLS7q_talkmap-pulse}@keyframes AxLS7q_talkmap-pulse{50%{opacity:.35}}.AxLS7q_cardDoneDot{width:12px;height:12px;color:var(--dsw-alias-state-success-primary,#22c55e);flex:none;display:inline-block;position:relative}.AxLS7q_cardDoneDot:after{content:\"\";background:currentColor;border-radius:50%;position:absolute;top:20%;bottom:20%;left:20%;right:20%}.AxLS7q_cardFooter{color:var(--dsw-alias-label-tertiary);justify-content:space-between;align-items:center;gap:8px;margin-top:auto;font-size:11px;display:flex}.AxLS7q_cardTime{flex:none}.AxLS7q_cardForeign{outline-offset:2px;outline:2px dashed #e0a33a}.AxLS7q_cardFooterLeft{align-items:center;gap:6px;min-width:0;display:flex}.AxLS7q_cardForeignTouch{animation:1.3s ease-in-out infinite AxLS7q_cardForeignPulse}@keyframes AxLS7q_cardForeignPulse{0%,to{box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1), 0 0 0 0 #e0a33a00}50%{box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1), 0 0 0 7px #e0a33a59}}.AxLS7q_cardForeignChip{text-overflow:ellipsis;white-space:nowrap;min-width:0;max-width:118px;color:color-mix(in oklab, #e0a33a 78%, var(--dsw-alias-label-primary));background:#e0a33a29;background:color(display-p3 .842337 .649058 .309/.16);background:lab(71.621% 16.4145 60.6886/.16);border:1px solid #e0a33a8c;border:1px solid color(display-p3 .842337 .649058 .309/.55);border:1px solid lab(71.621% 16.4145 60.6886/.55);border-radius:999px;padding:1px 7px;font-size:10px;font-weight:600;overflow:hidden}.AxLS7q_wsFrameForeign{color:color-mix(in oklab, #e0a33a 78%, var(--dsw-alias-label-primary));border:1px dashed #e0a33a8c;border:1px dashed color(display-p3 .842337 .649058 .309/.55);border:1px dashed lab(71.621% 16.4145 60.6886/.55);border-radius:999px;margin-left:6px;padding:1px 7px;font-size:10px;font-weight:600}.AxLS7q_cardBadgeRunning{color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-state-success-tertiary);border-radius:999px;align-items:center;gap:5px;padding:1px 7px;font-size:10px;display:inline-flex}.AxLS7q_cardBadgeWaiting{color:var(--dsw-alias-state-warn-label);background:var(--dsw-alias-state-warn-tertiary);border-radius:999px;padding:1px 7px;font-size:10px}.AxLS7q_cardBadgeDone{color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-state-success-tertiary);border-radius:999px;padding:1px 7px;font-size:10px}.AxLS7q_cardRemove{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:6px;align-self:flex-start;padding:3px 8px;font-size:12px}.AxLS7q_cardRemove:hover{background:var(--dsw-alias-interactive-bg-hover-danger);color:var(--dsw-alias-state-error-primary)}.AxLS7q_card .AxLS7q_cardHandle{opacity:.55;background:0 0;border:none;width:18px;height:18px}.AxLS7q_cardHandle:after{content:\"\";background:var(--dsw-alias-label-tertiary);border:2px solid var(--dsw-alias-bg-layer-1);border-radius:50%;position:absolute;top:5px;bottom:5px;left:5px;right:5px}.AxLS7q_card:hover .AxLS7q_cardHandle,.AxLS7q_canvasConnecting .AxLS7q_cardHandle,.AxLS7q_cardHandle:hover{opacity:1}.AxLS7q_cardHandle:hover:after{background:var(--dsw-alias-brand-primary)}.AxLS7q_spawnFrom{color:var(--dsw-alias-label-secondary);font-size:12px}.AxLS7q_spawnModes{gap:6px;display:flex}.AxLS7q_spawnModeBtn{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:8px;flex:1;padding:5px 0;font-size:12px}.AxLS7q_spawnModeBtn:hover{background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_spawnModeActive{border-color:var(--dsw-alias-brand-primary);color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-interactive-bg-active)}.AxLS7q_spawnHint{color:var(--dsw-alias-label-tertiary);font-size:12px}.AxLS7q_spawnTextarea{box-sizing:border-box;resize:vertical;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;min-height:140px;color:var(--dsw-alias-label-primary);border-radius:8px;padding:10px;font-family:inherit;font-size:13px;line-height:1.5}.AxLS7q_spawnError{color:var(--dsw-alias-state-error-primary);word-break:break-all;font-size:12px}.AxLS7q_spawnActions{justify-content:flex-end;gap:8px;display:flex}.AxLS7q_spawnBtnPrimary{background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground);cursor:pointer;border:none;border-radius:8px;padding:6px 16px;font-size:13px}.AxLS7q_spawnBtnPrimary:hover{background:var(--dsw-alias-button-primary-hover)}.AxLS7q_spawnBtnPrimary:disabled{background:var(--dsw-alias-button-primary-dimmed);cursor:default}.AxLS7q_spawnBtnGhost{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:8px;padding:6px 16px;font-size:13px}.AxLS7q_spawnBtnGhost:hover{background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_wsFrame{border:2px dashed color-mix(in oklab, var(--dsw-alias-label-primary) 32%, transparent);background:color-mix(in oklab, var(--dsw-alias-bg-layer-1) 55%, transparent);border-radius:16px;position:relative}.AxLS7q_wsFrameSelected{border-style:solid;border-color:var(--dsw-alias-brand-primary);background:color-mix(in oklab, var(--dsw-alias-brand-primary) 8%, transparent)}.AxLS7q_wsFrameLabel{border:1px solid color-mix(in oklab, var(--dsw-alias-label-primary) 22%, transparent);background:var(--dsw-alias-bg-layer-1);box-shadow:0 2px 10px color-mix(in oklab, var(--dsw-alias-bg-mask-2) 55%, transparent);color:var(--dsw-alias-label-primary);white-space:nowrap;pointer-events:auto;cursor:grab;border-radius:999px;align-items:center;gap:6px;padding:3px 12px;font-size:12px;font-weight:600;display:flex;position:absolute;top:-12px;left:14px}.AxLS7q_wsFrameLabel:active{cursor:grabbing}.AxLS7q_wsFrameEdge{pointer-events:auto;cursor:grab;position:absolute}.AxLS7q_wsFrameEdge:active{cursor:grabbing}.AxLS7q_wsFrameResize{pointer-events:auto;cursor:nwse-resize;border-right:3px solid var(--dsw-alias-border-l3);border-bottom:3px solid var(--dsw-alias-border-l3);opacity:.7;border-bottom-right-radius:14px;width:16px;height:16px;position:absolute;bottom:-2px;right:-2px}.AxLS7q_wsFrameResize:hover{border-color:var(--dsw-alias-brand-primary);opacity:1}.AxLS7q_wsFrameCount{color:var(--dsw-alias-label-tertiary);font-weight:400}.AxLS7q_draftCard{box-sizing:border-box;border:1.5px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);width:360px;box-shadow:0 8px 30px var(--dsw-alias-bg-mask-2);border-radius:12px;flex-direction:column;gap:8px;padding:14px;font-size:13px;display:flex}.AxLS7q_draftHeading{color:var(--dsw-alias-label-primary);font-size:13px;font-weight:600}.AxLS7q_draftRow{align-items:center;gap:8px;display:flex}.AxLS7q_draftLabel{width:52px;color:var(--dsw-alias-label-tertiary);flex:none;font-size:12px}.AxLS7q_draftSelect{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);min-width:0;color:var(--dsw-alias-label-primary);border-radius:7px;flex:1;padding:5px 8px;font-size:12px}.AxLS7q_draftGrow{flex-direction:column;flex:1;gap:3px;min-width:0;display:flex}.AxLS7q_draftInput{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;color:var(--dsw-alias-label-primary);border-radius:7px;padding:5px 8px;font-family:inherit;font-size:12px}.AxLS7q_draftPathPreview{color:var(--dsw-alias-label-tertiary);word-break:break-all;font-size:11px}.AxLS7q_draftTextarea{box-sizing:border-box;resize:vertical;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;min-height:88px;color:var(--dsw-alias-label-primary);border-radius:8px;padding:9px;font-family:inherit;font-size:13px;line-height:1.5}.AxLS7q_draftAttachments{scrollbar-width:thin;gap:8px;max-height:72px;padding:2px 2px 4px;display:flex;overflow-x:auto;overflow-y:hidden}.AxLS7q_draftAttachmentImage{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);border-radius:10px;flex:none;width:64px;height:64px;position:relative;overflow:hidden}.AxLS7q_draftAttachmentImage img{object-fit:cover;width:100%;height:100%;display:block}.AxLS7q_draftAttachmentFile{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:190px;height:64px;color:var(--dsw-alias-label-primary);border-radius:10px;flex:none;align-items:center;gap:8px;padding:8px 10px;display:flex;position:relative}.AxLS7q_draftAttachmentFileIcon{width:24px;height:24px;color:var(--dsw-alias-brand-primary);flex:none}.AxLS7q_draftAttachmentFileText{flex-direction:column;gap:2px;min-width:0;display:flex}.AxLS7q_draftAttachmentFileName{text-overflow:ellipsis;white-space:nowrap;font-size:12px;overflow:hidden}.AxLS7q_draftAttachmentFileMeta{color:var(--dsw-alias-label-tertiary);font-size:11px}.AxLS7q_draftAttachmentRemove{background:var(--dsw-alias-button-contrast-fill,#0000008c);width:18px;height:18px;color:var(--dsw-alias-label-primary-inverted,#fff);cursor:pointer;opacity:0;border:none;border-radius:50%;place-items:center;padding:0;font-size:12px;line-height:1;transition:opacity .12s ease-in-out;display:grid;position:absolute;top:2px;right:2px}.AxLS7q_draftAttachmentImage:hover .AxLS7q_draftAttachmentRemove,.AxLS7q_draftAttachmentFile:hover .AxLS7q_draftAttachmentRemove{opacity:1}.AxLS7q_draftAttachmentRemove:focus-visible{opacity:1}@media (hover:none),(pointer:coarse){.AxLS7q_draftAttachmentRemove{opacity:1}}.AxLS7q_draftAttachmentProgress{background:var(--dsw-alias-fill-tertiary,#0000001f);border-radius:1px;height:2px;position:absolute;bottom:4px;left:6px;right:6px;overflow:hidden}.AxLS7q_draftAttachmentProgressBar{background:var(--dsw-alias-brand-primary);height:100%;transition:width .15s ease-out}.AxLS7q_draftCardDrop{background:color-mix(in oklab, var(--dsw-alias-brand-primary) 6%, var(--dsw-alias-bg-layer-1))}.AxLS7q_draftDropHint{color:var(--dsw-alias-brand-primary);font-size:12px}.AxLS7q_colorToolbar{z-index:7;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);box-shadow:0 2px 10px var(--dsw-alias-bg-mask-1);border-radius:10px;align-items:center;gap:6px;padding:6px 10px;display:flex;position:absolute;top:12px;left:12px}.AxLS7q_colorToolbarLabel{color:var(--dsw-alias-label-tertiary);margin-right:2px;font-size:12px}.AxLS7q_colorSwatch{border:1px solid var(--dsw-alias-border-l2);cursor:pointer;width:18px;height:18px;color:var(--dsw-alias-label-secondary);border-radius:50%;justify-content:center;align-items:center;padding:0;font-size:11px;line-height:1;display:flex}.AxLS7q_colorSwatch:hover{transform:scale(1.15)}.AxLS7q_colorSwatchClear{background:0 0}.AxLS7q_menu{z-index:9;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);min-width:200px;max-width:280px;max-height:380px;box-shadow:0 8px 30px var(--dsw-alias-bg-mask-2);border-radius:10px;flex-direction:column;padding:6px;display:flex;position:absolute;overflow-y:auto}.AxLS7q_menuTitle{color:var(--dsw-alias-label-tertiary);flex:none;padding:4px 10px 6px;font-size:11px}.AxLS7q_menuSearch{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:calc(100% - 8px);color:var(--dsw-alias-label-primary);border-radius:7px;flex:none;margin:2px 4px 6px;padding:5px 8px;font-family:inherit;font-size:12px}.AxLS7q_menuHint{color:var(--dsw-alias-label-dimmed);font-size:11px}.AxLS7q_menuPreview{color:var(--dsw-alias-label-tertiary);word-break:break-all;flex:none;padding:0 10px 4px;font-size:11px}.AxLS7q_menuError{color:var(--dsw-alias-state-error-primary);word-break:break-all;flex:none;padding:0 10px 4px;font-size:11px}.AxLS7q_menuEmpty{color:var(--dsw-alias-label-tertiary);padding:8px 10px;font-size:12px}.AxLS7q_menuItem{text-align:left;width:100%;color:var(--dsw-alias-label-primary);cursor:pointer;white-space:nowrap;text-overflow:ellipsis;background:0 0;border:none;border-radius:7px;flex:none;padding:6px 10px;font-size:13px;display:block;overflow:hidden}.AxLS7q_menuItem:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_menuItem:disabled{color:var(--dsw-alias-label-dimmed);cursor:default}.AxLS7q_wsFrameHidden{color:var(--dsw-alias-state-warn-primary);font-weight:400}.AxLS7q_emptyHint{color:var(--dsw-alias-label-tertiary);pointer-events:none;z-index:4;font-size:13px;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}.AxLS7q_toast{z-index:8;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);max-width:70%;box-shadow:0 4px 16px var(--dsw-alias-bg-mask-2);color:var(--dsw-alias-label-primary);pointer-events:none;white-space:nowrap;text-overflow:ellipsis;border-radius:999px;padding:7px 16px;font-size:12px;position:absolute;bottom:28px;left:50%;overflow:hidden;transform:translate(-50%)}.AxLS7q_toastActionable{pointer-events:auto;align-items:center;gap:10px;padding-right:8px;display:inline-flex}.AxLS7q_toastText{text-overflow:ellipsis;min-width:0;overflow:hidden}.AxLS7q_toastAction{background:var(--dsw-alias-bg-layer-2,#7f7f7f29);color:var(--dsw-alias-label-primary);font:inherit;cursor:pointer;border:0;border-radius:999px;flex:none;padding:2px 8px;font-weight:600}.AxLS7q_toastAction:hover{background:var(--dsw-alias-bg-layer-3,#7f7f7f3d)}.AxLS7q_body{flex:1;min-height:0;display:flex;position:relative}.AxLS7q_chatDrawer{z-index:6;background:var(--dsw-alias-bg-base);border-left:1px solid var(--dsw-alias-border-l1);width:max(360px,min(42%,720px));max-width:calc(100vw - 280px);box-shadow:-12px 0 28px -18px var(--dsw-alias-bg-mask-2);flex-direction:column;display:flex;position:absolute;top:0;bottom:0;right:0;container:AxLS7q_talk-map-drawer/inline-size}.AxLS7q_chatDrawerResize{z-index:1;cursor:col-resize;touch-action:none;background:0 0;border:0;width:10px;padding:0;position:absolute;top:0;bottom:0;left:-4px}.AxLS7q_chatDrawerResize:after{content:\"\";background:0 0;width:2px;transition:background-color .12s;position:absolute;top:0;bottom:0;left:4px}.AxLS7q_chatDrawerResize:hover:after,.AxLS7q_chatDrawerResize[data-resizing=true]:after{background:var(--dsw-alias-border-l2)}.AxLS7q_chatDrawerResize:focus-visible:after{background:var(--dsw-alias-border-l2)}.AxLS7q_chatDrawerResize:focus-visible{outline:none}.AxLS7q_chatDrawerHeader{border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);flex:none;align-items:center;gap:8px;padding:6px 10px;display:flex}.AxLS7q_chatDrawerTitle{text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--dsw-alias-label-primary);font-size:12px;font-weight:600;overflow:hidden}.AxLS7q_chatDrawerSpace{flex:1}.AxLS7q_chatDrawerClose{width:26px;height:26px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:6px;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.AxLS7q_chatDrawerClose:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_chatDrawerLock{width:26px;height:26px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:6px;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.AxLS7q_chatDrawerLock:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_chatDrawerLockActive,.AxLS7q_chatDrawerLockActive:hover{background:var(--dsw-alias-interactive-bg-active);color:var(--dsw-alias-brand-primary)}.AxLS7q_chatDrawerArchived{color:var(--dsw-alias-label-primary);background:#e0a33a1f;background:color(display-p3 .842337 .649058 .309/.12);background:lab(71.621% 16.4145 60.6886/.12);border-bottom:1px solid #e0a33a59;border-bottom:1px solid color(display-p3 .842337 .649058 .309/.35);border-bottom:1px solid lab(71.621% 16.4145 60.6886/.35);align-items:center;gap:10px;padding:8px 12px;font-size:12px;display:flex}.AxLS7q_chatDrawerArchivedText{flex:1;min-width:0}.AxLS7q_chatDrawerArchivedButton{color:inherit;cursor:pointer;background:0 0;border:1px solid #e0a33a8c;border:1px solid color(display-p3 .842337 .649058 .309/.55);border:1px solid lab(71.621% 16.4145 60.6886/.55);border-radius:999px;flex:none;padding:2px 10px;font-size:12px}.AxLS7q_chatDrawerArchivedButton:hover{background:#e0a33a2e;background:color(display-p3 .842337 .649058 .309/.18);background:lab(71.621% 16.4145 60.6886/.18)}.AxLS7q_chatDrawerBody{flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}@container AxLS7q_talk-map-drawer (width>=560px){.AxLS7q_chatDrawer nav[aria-label]{display:block}}.AxLS7q_chatDrawerNotice{flex-direction:column;flex:1;align-items:flex-start;gap:14px;padding:22px 20px;display:flex}.AxLS7q_chatDrawerNoticeText{color:var(--dsw-alias-label-secondary);margin:0;font-size:13px;line-height:1.7}.AxLS7q_chatDrawerNoticeActions{flex-wrap:wrap;gap:8px;display:flex}.AxLS7q_chatDrawerNoticeButton{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);cursor:pointer;border-radius:8px;padding:6px 14px;font-size:13px}.AxLS7q_chatDrawerNoticeButton:hover{background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_chatDrawerNoticeButton:disabled{opacity:.55;cursor:default}.AxLS7q_chatPanel{flex-direction:column;flex:1;min-height:0;display:flex}.AxLS7q_cardWaitingButton{color:var(--dsw-alias-state-warn-label);background:var(--dsw-alias-state-warn-tertiary);cursor:pointer;border:none;border-radius:999px;padding:1px 7px;font-size:10px}.AxLS7q_cardWaitingButton:hover{filter:brightness(1.15)}.AxLS7q_interactMenu{gap:4px;max-height:min(420px,70vh)}.AxLS7q_interactTitle{color:var(--dsw-alias-label-primary);padding:4px 6px 0;font-size:12px;font-weight:600}.AxLS7q_interactText{color:var(--dsw-alias-label-secondary);white-space:pre-wrap;word-break:break-word;padding:2px 6px 4px;font-size:12px;line-height:1.45}.AxLS7q_interactNote{color:var(--dsw-alias-label-tertiary);padding:0 6px 4px;font-size:11px}.AxLS7q_interactScroll{flex-direction:column;gap:6px;max-height:260px;display:flex;overflow-y:auto}.AxLS7q_interactGroup{flex-direction:column;gap:4px;display:flex}.AxLS7q_interactOptions{flex-wrap:wrap;gap:6px;padding:2px 6px 4px;display:flex}.AxLS7q_interactOption{text-align:left;border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;flex:100%;padding:7px 10px;font-size:12px}.AxLS7q_interactOption:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_interactOptionActive{border-color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-interactive-bg-active)}.AxLS7q_interactActions{gap:6px;padding:4px 6px 6px;display:flex}.AxLS7q_interactAllow{background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground);cursor:pointer;border:none;border-radius:8px;flex:1;padding:7px 10px;font-size:12px}.AxLS7q_interactAllow:hover:not(:disabled){background:var(--dsw-alias-button-primary-hover)}.AxLS7q_interactDanger{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-state-error-primary);cursor:pointer;background:0 0;border-radius:8px;flex:1;padding:7px 10px;font-size:12px}.AxLS7q_interactDanger:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover-danger)}.AxLS7q_interactSubmit,.AxLS7q_interactOpen{border:1px solid var(--dsw-alias-border-l2);width:100%;color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;margin-top:4px;padding:7px 10px;font-size:12px}.AxLS7q_interactSubmit:hover:not(:disabled),.AxLS7q_interactOpen:hover{background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_interactSubmit:disabled{color:var(--dsw-alias-label-dimmed);cursor:default}.AxLS7q_interactError{color:var(--dsw-alias-state-error-primary);word-break:break-word;padding:2px 6px 4px;font-size:11px}.AxLS7q_mapFallback{background:var(--dsw-alias-bg-base);min-height:0;color:var(--dsw-alias-label-primary);flex-direction:column;flex:1;justify-content:center;align-items:center;gap:10px;padding:24px;display:flex}.AxLS7q_mapFallbackTitle{font-size:14px;font-weight:600}.AxLS7q_mapFallbackText{text-align:center;max-width:420px;color:var(--dsw-alias-label-secondary);font-size:12px}.AxLS7q_mapFallbackButton{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;padding:6px 14px;font-size:12px}.AxLS7q_mapFallbackButton:hover{background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_imageCard{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);width:100%;height:100%;box-shadow:0 10px 26px -18px var(--dsw-alias-bg-mask-2);border-radius:10px;overflow:hidden}.AxLS7q_imageCardSelected{border-color:var(--dsw-alias-brand-primary);box-shadow:0 0 0 2px var(--dsw-alias-brand-primary)}.AxLS7q_imageCardImg{object-fit:contain;background:var(--dsw-alias-bg-base);width:100%;height:100%;display:block}[data-composer-input]:has([data-lexical-text])+[data-composer-placeholder]{display:none}";
+		const css$1 = ".AxLS7q_toggleButton{width:32px;height:32px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:8px;justify-content:center;align-items:center;gap:6px;padding:0;display:flex}.AxLS7q_toggleButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_toggleButtonActive{background:var(--dsw-alias-interactive-bg-active);color:var(--dsw-alias-brand-primary)}.AxLS7q_toggleRow{width:100%;color:var(--dsw-alias-label-secondary);cursor:pointer;text-align:left;background:0 0;border:none;border-radius:8px;align-items:center;gap:8px;padding:6px 10px;font-size:13px;display:flex}.AxLS7q_toggleRow:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_toggleLabel{white-space:nowrap}.AxLS7q_toggleIcon{flex:none;width:18px;height:18px}.AxLS7q_overlay{background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);pointer-events:auto;flex-direction:column;display:flex;position:absolute;top:0;bottom:0;left:0;right:0}[data-windows-titlebar] .AxLS7q_overlay{padding-top:var(--dsh-windows-titlebar-height,40px)}html[data-platform=darwin]:not([data-fullscreen]) .AxLS7q_overlay{padding-top:var(--dsh-frame-top-clearance,48px)}html[data-platform=darwin]:not([data-fullscreen]) .AxLS7q_overlay:before{content:\"\";height:var(--dsh-frame-top-clearance,48px);-webkit-app-region:drag;position:absolute;top:0;left:0;right:0}.AxLS7q_header{border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);flex:none;align-items:center;gap:10px;padding:8px 14px;display:flex}.AxLS7q_headerTitle{color:var(--dsw-alias-label-primary);font-size:14px;font-weight:600}.AxLS7q_headerBadge{color:var(--dsw-alias-label-tertiary);font-size:12px}.AxLS7q_headerSpace{flex:1}.AxLS7q_hotkeyButton{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;background:0 0;border-radius:999px;flex:none;padding:3px 10px;font-size:12px}.AxLS7q_hotkeyButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_langButton{border:1px solid var(--dsw-alias-border-l2);min-width:58px;color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;background:0 0;border-radius:999px;flex:none;padding:3px 10px;font-size:12px}.AxLS7q_langButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_zoomResetLabel{letter-spacing:-.5px;font-size:9px;font-weight:700}.AxLS7q_closeButton{width:28px;height:28px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:6px;justify-content:center;align-items:center;padding:0;display:flex}.AxLS7q_closeButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_canvas{flex:1;min-height:0;position:relative}.AxLS7q_canvas .react-flow__nodesselection{pointer-events:none!important;display:none!important}.AxLS7q_canvas .react-flow__nodesselection-rect{pointer-events:none!important;display:none!important}.AxLS7q_card{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);width:224px;min-height:104px;color:var(--dsw-alias-label-primary);box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1);border-radius:10px;flex-direction:column;gap:6px;padding:10px 12px;font-size:13px;display:flex}.AxLS7q_cardSelected{border-color:var(--dsw-alias-brand-primary)}.AxLS7q_cardGhost{opacity:.55;border-style:dashed}.AxLS7q_cardPending{border-style:dashed}.AxLS7q_cardTop{align-items:center;gap:6px;min-width:0;display:flex}.AxLS7q_cardTitle{-webkit-line-clamp:2;word-break:break-word;-webkit-box-orient:vertical;flex:auto;min-width:0;font-size:13px;font-weight:600;line-height:1.3;display:-webkit-box;overflow:hidden}.AxLS7q_cardPin{width:22px;height:22px;color:var(--dsw-alias-label-tertiary);cursor:pointer;opacity:.55;background:0 0;border:none;border-radius:6px;flex:none;justify-content:center;align-items:center;margin-left:auto;padding:0;transition:opacity .12s,background-color .12s,color .12s;display:flex;transform:translate(6px,-6px)}.AxLS7q_card:hover .AxLS7q_cardPin{opacity:1}.AxLS7q_cardPin:focus-visible{opacity:1}.AxLS7q_cardPin:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_cardPinActive{opacity:1;color:var(--dsw-alias-brand-primary)}.AxLS7q_cardPinActive:hover{color:var(--dsw-alias-brand-primary)}.AxLS7q_runningDot{background:var(--dsw-alias-state-success-primary);border-radius:50%;flex:none;width:8px;height:8px;animation:1.6s ease-in-out infinite AxLS7q_talkmap-pulse}@keyframes AxLS7q_talkmap-pulse{50%{opacity:.35}}.AxLS7q_cardDoneDot{width:12px;height:12px;color:var(--dsw-alias-state-success-primary,#22c55e);flex:none;display:inline-block;position:relative}.AxLS7q_cardDoneDot:after{content:\"\";background:currentColor;border-radius:50%;position:absolute;top:20%;bottom:20%;left:20%;right:20%}.AxLS7q_cardFooter{color:var(--dsw-alias-label-tertiary);justify-content:space-between;align-items:center;gap:8px;margin-top:auto;font-size:11px;display:flex}.AxLS7q_cardTime{flex:none}.AxLS7q_cardPendingHint{color:var(--dsw-alias-label-tertiary);font-size:11px}.AxLS7q_cardForeign{outline-offset:2px;outline:2px dashed #e0a33a}.AxLS7q_cardFooterLeft{align-items:center;gap:6px;min-width:0;display:flex}.AxLS7q_cardForeignTouch{animation:1.3s ease-in-out infinite AxLS7q_cardForeignPulse}@keyframes AxLS7q_cardForeignPulse{0%,to{box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1), 0 0 0 0 #e0a33a00}50%{box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1), 0 0 0 7px #e0a33a59}}.AxLS7q_cardForeignChip{text-overflow:ellipsis;white-space:nowrap;min-width:0;max-width:118px;color:color-mix(in oklab, #e0a33a 78%, var(--dsw-alias-label-primary));background:#e0a33a29;background:color(display-p3 .842337 .649058 .309/.16);background:lab(71.621% 16.4145 60.6886/.16);border:1px solid #e0a33a8c;border:1px solid color(display-p3 .842337 .649058 .309/.55);border:1px solid lab(71.621% 16.4145 60.6886/.55);border-radius:999px;padding:1px 7px;font-size:10px;font-weight:600;overflow:hidden}.AxLS7q_wsFrameForeign{color:color-mix(in oklab, #e0a33a 78%, var(--dsw-alias-label-primary));border:1px dashed #e0a33a8c;border:1px dashed color(display-p3 .842337 .649058 .309/.55);border:1px dashed lab(71.621% 16.4145 60.6886/.55);border-radius:999px;margin-left:6px;padding:1px 7px;font-size:10px;font-weight:600}.AxLS7q_cardBadgeRunning{color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-state-success-tertiary);border-radius:999px;align-items:center;gap:5px;padding:1px 7px;font-size:10px;display:inline-flex}.AxLS7q_cardBadgeWaiting{color:var(--dsw-alias-state-warn-label);background:var(--dsw-alias-state-warn-tertiary);border-radius:999px;padding:1px 7px;font-size:10px}.AxLS7q_cardBadgeDone{color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-state-success-tertiary);border-radius:999px;padding:1px 7px;font-size:10px}.AxLS7q_cardRemove{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:6px;align-self:flex-start;padding:3px 8px;font-size:12px}.AxLS7q_cardRemove:hover{background:var(--dsw-alias-interactive-bg-hover-danger);color:var(--dsw-alias-state-error-primary)}.AxLS7q_card .AxLS7q_cardHandle{opacity:.55;background:0 0;border:none;width:18px;height:18px}.AxLS7q_cardHandle:after{content:\"\";background:var(--dsw-alias-label-tertiary);border:2px solid var(--dsw-alias-bg-layer-1);border-radius:50%;position:absolute;top:5px;bottom:5px;left:5px;right:5px}.AxLS7q_card:hover .AxLS7q_cardHandle,.AxLS7q_canvasConnecting .AxLS7q_cardHandle,.AxLS7q_cardHandle:hover{opacity:1}.AxLS7q_cardHandle:hover:after{background:var(--dsw-alias-brand-primary)}.AxLS7q_spawnFrom{color:var(--dsw-alias-label-secondary);font-size:12px}.AxLS7q_spawnModes{gap:6px;display:flex}.AxLS7q_spawnModeBtn{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:8px;flex:1;padding:5px 0;font-size:12px}.AxLS7q_spawnModeBtn:hover{background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_spawnModeActive{border-color:var(--dsw-alias-brand-primary);color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-interactive-bg-active)}.AxLS7q_spawnHint{color:var(--dsw-alias-label-tertiary);font-size:12px}.AxLS7q_spawnTextarea{box-sizing:border-box;resize:vertical;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;min-height:140px;color:var(--dsw-alias-label-primary);border-radius:8px;padding:10px;font-family:inherit;font-size:13px;line-height:1.5}.AxLS7q_spawnError{color:var(--dsw-alias-state-error-primary);word-break:break-all;font-size:12px}.AxLS7q_spawnActions{justify-content:flex-end;gap:8px;display:flex}.AxLS7q_spawnBtnPrimary{background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground);cursor:pointer;border:none;border-radius:8px;padding:6px 16px;font-size:13px}.AxLS7q_spawnBtnPrimary:hover{background:var(--dsw-alias-button-primary-hover)}.AxLS7q_spawnBtnPrimary:disabled{background:var(--dsw-alias-button-primary-dimmed);cursor:default}.AxLS7q_spawnBtnGhost{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:8px;padding:6px 16px;font-size:13px}.AxLS7q_spawnBtnGhost:hover{background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_forkBox{box-sizing:border-box;border:2px dashed var(--dsw-alias-border-l2);background:color-mix(in oklab, var(--dsw-alias-bg-layer-1) 70%, transparent);width:224px;min-height:88px;color:var(--dsw-alias-label-primary);box-shadow:0 1px 3px var(--dsw-alias-bg-mask-1);border-radius:10px;flex-direction:column;gap:4px;padding:12px 14px;font-size:13px;display:flex;position:relative}.AxLS7q_forkBoxActive{border-color:var(--dsw-alias-brand-primary);box-shadow:0 0 0 2px color-mix(in oklab, var(--dsw-alias-brand-primary) 35%, transparent)}.AxLS7q_forkBoxTitle{font-weight:600}.AxLS7q_forkBoxFrom{text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--dsw-alias-label-tertiary);font-size:11px;overflow:hidden}.AxLS7q_forkBoxHint{color:var(--dsw-alias-label-secondary);font-size:11px}.AxLS7q_forkBoxRemove{width:20px;height:20px;color:var(--dsw-alias-label-tertiary);cursor:pointer;opacity:0;background:0 0;border:none;border-radius:6px;padding:0;font-size:14px;line-height:18px;position:absolute;top:4px;right:4px}.AxLS7q_forkBox:hover .AxLS7q_forkBoxRemove,.AxLS7q_forkBox:focus-within .AxLS7q_forkBoxRemove{opacity:1}.AxLS7q_forkBoxRemove:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_forkPanel{flex-direction:column;flex:1;gap:10px;min-width:0;min-height:0;padding:14px 16px 18px;display:flex;overflow-y:auto}.AxLS7q_forkPanelDrop{outline:2px dashed var(--dsw-alias-brand-primary);outline-offset:-6px}.AxLS7q_wsFrame{border:2px dashed color-mix(in oklab, var(--dsw-alias-label-primary) 32%, transparent);background:color-mix(in oklab, var(--dsw-alias-bg-layer-1) 55%, transparent);border-radius:16px;position:relative}.AxLS7q_wsFrameSelected{border-style:solid;border-color:var(--dsw-alias-brand-primary);background:color-mix(in oklab, var(--dsw-alias-brand-primary) 8%, transparent)}.AxLS7q_wsFrameLabel{border:1px solid color-mix(in oklab, var(--dsw-alias-label-primary) 22%, transparent);background:var(--dsw-alias-bg-layer-1);box-shadow:0 2px 10px color-mix(in oklab, var(--dsw-alias-bg-mask-2) 55%, transparent);color:var(--dsw-alias-label-primary);white-space:nowrap;pointer-events:auto;cursor:grab;border-radius:999px;align-items:center;gap:6px;padding:3px 12px;font-size:12px;font-weight:600;display:flex;position:absolute;top:-12px;left:14px}.AxLS7q_wsFrameLabel:active{cursor:grabbing}.AxLS7q_wsFrameEdge{pointer-events:auto;cursor:grab;position:absolute}.AxLS7q_wsFrameEdge:active{cursor:grabbing}.AxLS7q_wsFrameResize{pointer-events:auto;cursor:nwse-resize;border-right:3px solid var(--dsw-alias-border-l3);border-bottom:3px solid var(--dsw-alias-border-l3);opacity:.7;border-bottom-right-radius:14px;width:16px;height:16px;position:absolute;bottom:-2px;right:-2px}.AxLS7q_wsFrameResize:hover{border-color:var(--dsw-alias-brand-primary);opacity:1}.AxLS7q_wsFrameCount{color:var(--dsw-alias-label-tertiary);font-weight:400}.AxLS7q_draftCard{box-sizing:border-box;border:1.5px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);width:360px;box-shadow:0 8px 30px var(--dsw-alias-bg-mask-2);border-radius:12px;flex-direction:column;gap:8px;padding:14px;font-size:13px;display:flex}.AxLS7q_draftHeading{color:var(--dsw-alias-label-primary);font-size:13px;font-weight:600}.AxLS7q_draftRow{align-items:center;gap:8px;display:flex}.AxLS7q_draftLabel{width:52px;color:var(--dsw-alias-label-tertiary);flex:none;font-size:12px}.AxLS7q_draftSelect{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);min-width:0;color:var(--dsw-alias-label-primary);border-radius:7px;flex:1;padding:5px 8px;font-size:12px}.AxLS7q_draftGrow{flex-direction:column;flex:1;gap:3px;min-width:0;display:flex}.AxLS7q_draftInput{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;color:var(--dsw-alias-label-primary);border-radius:7px;padding:5px 8px;font-family:inherit;font-size:12px}.AxLS7q_draftPathPreview{color:var(--dsw-alias-label-tertiary);word-break:break-all;font-size:11px}.AxLS7q_draftTextarea{box-sizing:border-box;resize:vertical;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:100%;min-height:88px;color:var(--dsw-alias-label-primary);border-radius:8px;padding:9px;font-family:inherit;font-size:13px;line-height:1.5}.AxLS7q_draftAttachments{scrollbar-width:thin;gap:8px;max-height:72px;padding:2px 2px 4px;display:flex;overflow-x:auto;overflow-y:hidden}.AxLS7q_draftAttachmentImage{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);border-radius:10px;flex:none;width:64px;height:64px;position:relative;overflow:hidden}.AxLS7q_draftAttachmentImage img{object-fit:cover;width:100%;height:100%;display:block}.AxLS7q_draftAttachmentFile{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:190px;height:64px;color:var(--dsw-alias-label-primary);border-radius:10px;flex:none;align-items:center;gap:8px;padding:8px 10px;display:flex;position:relative}.AxLS7q_draftAttachmentFileIcon{width:24px;height:24px;color:var(--dsw-alias-brand-primary);flex:none}.AxLS7q_draftAttachmentFileText{flex-direction:column;gap:2px;min-width:0;display:flex}.AxLS7q_draftAttachmentFileName{text-overflow:ellipsis;white-space:nowrap;font-size:12px;overflow:hidden}.AxLS7q_draftAttachmentFileMeta{color:var(--dsw-alias-label-tertiary);font-size:11px}.AxLS7q_draftAttachmentRemove{background:var(--dsw-alias-button-contrast-fill,#0000008c);width:18px;height:18px;color:var(--dsw-alias-label-primary-inverted,#fff);cursor:pointer;opacity:0;border:none;border-radius:50%;place-items:center;padding:0;font-size:12px;line-height:1;transition:opacity .12s ease-in-out;display:grid;position:absolute;top:2px;right:2px}.AxLS7q_draftAttachmentImage:hover .AxLS7q_draftAttachmentRemove,.AxLS7q_draftAttachmentFile:hover .AxLS7q_draftAttachmentRemove{opacity:1}.AxLS7q_draftAttachmentRemove:focus-visible{opacity:1}@media (hover:none),(pointer:coarse){.AxLS7q_draftAttachmentRemove{opacity:1}}.AxLS7q_draftAttachmentProgress{background:var(--dsw-alias-fill-tertiary,#0000001f);border-radius:1px;height:2px;position:absolute;bottom:4px;left:6px;right:6px;overflow:hidden}.AxLS7q_draftAttachmentProgressBar{background:var(--dsw-alias-brand-primary);height:100%;transition:width .15s ease-out}.AxLS7q_draftCardDrop{background:color-mix(in oklab, var(--dsw-alias-brand-primary) 6%, var(--dsw-alias-bg-layer-1))}.AxLS7q_draftDropHint{color:var(--dsw-alias-brand-primary);font-size:12px}.AxLS7q_colorToolbar{z-index:7;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);box-shadow:0 2px 10px var(--dsw-alias-bg-mask-1);border-radius:10px;align-items:center;gap:6px;padding:6px 10px;display:flex;position:absolute;top:12px;left:12px}.AxLS7q_colorToolbarLabel{color:var(--dsw-alias-label-tertiary);margin-right:2px;font-size:12px}.AxLS7q_colorSwatch{border:1px solid var(--dsw-alias-border-l2);cursor:pointer;width:18px;height:18px;color:var(--dsw-alias-label-secondary);border-radius:50%;justify-content:center;align-items:center;padding:0;font-size:11px;line-height:1;display:flex}.AxLS7q_colorSwatch:hover{transform:scale(1.15)}.AxLS7q_colorSwatchClear{background:0 0}.AxLS7q_menu{z-index:9;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);min-width:200px;max-width:280px;max-height:380px;box-shadow:0 8px 30px var(--dsw-alias-bg-mask-2);border-radius:10px;flex-direction:column;padding:6px;display:flex;position:absolute;overflow-y:auto}.AxLS7q_menuTitle{color:var(--dsw-alias-label-tertiary);flex:none;padding:4px 10px 6px;font-size:11px}.AxLS7q_menuSearch{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);width:calc(100% - 8px);color:var(--dsw-alias-label-primary);border-radius:7px;flex:none;margin:2px 4px 6px;padding:5px 8px;font-family:inherit;font-size:12px}.AxLS7q_menuHint{color:var(--dsw-alias-label-dimmed);font-size:11px}.AxLS7q_menuPreview{color:var(--dsw-alias-label-tertiary);word-break:break-all;flex:none;padding:0 10px 4px;font-size:11px}.AxLS7q_menuError{color:var(--dsw-alias-state-error-primary);word-break:break-all;flex:none;padding:0 10px 4px;font-size:11px}.AxLS7q_menuEmpty{color:var(--dsw-alias-label-tertiary);padding:8px 10px;font-size:12px}.AxLS7q_menuItem{text-align:left;width:100%;color:var(--dsw-alias-label-primary);cursor:pointer;white-space:nowrap;text-overflow:ellipsis;background:0 0;border:none;border-radius:7px;flex:none;padding:6px 10px;font-size:13px;display:block;overflow:hidden}.AxLS7q_menuItem:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_menuItem:disabled{color:var(--dsw-alias-label-dimmed);cursor:default}.AxLS7q_wsFrameHidden{color:var(--dsw-alias-state-warn-primary);font-weight:400}.AxLS7q_emptyHint{color:var(--dsw-alias-label-tertiary);pointer-events:none;z-index:4;font-size:13px;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}.AxLS7q_toast{z-index:8;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);max-width:70%;box-shadow:0 4px 16px var(--dsw-alias-bg-mask-2);color:var(--dsw-alias-label-primary);pointer-events:none;white-space:nowrap;text-overflow:ellipsis;border-radius:999px;padding:7px 16px;font-size:12px;position:absolute;bottom:28px;left:50%;overflow:hidden;transform:translate(-50%)}.AxLS7q_toastActionable{pointer-events:auto;align-items:center;gap:10px;padding-right:8px;display:inline-flex}.AxLS7q_toastText{text-overflow:ellipsis;min-width:0;overflow:hidden}.AxLS7q_toastAction{background:var(--dsw-alias-bg-layer-2,#7f7f7f29);color:var(--dsw-alias-label-primary);font:inherit;cursor:pointer;border:0;border-radius:999px;flex:none;padding:2px 8px;font-weight:600}.AxLS7q_toastAction:hover{background:var(--dsw-alias-bg-layer-3,#7f7f7f3d)}.AxLS7q_body{flex:1;min-height:0;display:flex;position:relative}.AxLS7q_chatDrawer{z-index:6;background:var(--dsw-alias-bg-base);border-left:1px solid var(--dsw-alias-border-l1);width:max(360px,min(42%,720px));max-width:calc(100vw - 280px);box-shadow:-12px 0 28px -18px var(--dsw-alias-bg-mask-2);flex-direction:column;display:flex;position:absolute;top:0;bottom:0;right:0;container:AxLS7q_talk-map-drawer/inline-size}.AxLS7q_chatDrawerResize{z-index:1;cursor:col-resize;touch-action:none;background:0 0;border:0;width:10px;padding:0;position:absolute;top:0;bottom:0;left:-4px}.AxLS7q_chatDrawerResize:after{content:\"\";background:0 0;width:2px;transition:background-color .12s;position:absolute;top:0;bottom:0;left:4px}.AxLS7q_chatDrawerResize:hover:after,.AxLS7q_chatDrawerResize[data-resizing=true]:after{background:var(--dsw-alias-border-l2)}.AxLS7q_chatDrawerResize:focus-visible:after{background:var(--dsw-alias-border-l2)}.AxLS7q_chatDrawerResize:focus-visible{outline:none}.AxLS7q_chatDrawerHeader{border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);flex:none;align-items:center;gap:8px;padding:6px 10px;display:flex}.AxLS7q_chatDrawerTitle{text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--dsw-alias-label-primary);font-size:12px;font-weight:600;overflow:hidden}.AxLS7q_chatDrawerSpace{flex:1}.AxLS7q_chatDrawerClose{width:26px;height:26px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:6px;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.AxLS7q_chatDrawerClose:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_chatDrawerLock{width:26px;height:26px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:6px;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.AxLS7q_chatDrawerLock:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.AxLS7q_chatDrawerLockActive,.AxLS7q_chatDrawerLockActive:hover{background:var(--dsw-alias-interactive-bg-active);color:var(--dsw-alias-brand-primary)}.AxLS7q_chatDrawerMode{background:var(--dsw-alias-fill-tertiary);max-width:140px;height:22px;color:var(--dsw-alias-label-tertiary);white-space:nowrap;border-radius:6px;flex:none;align-items:center;gap:4px;padding:0 8px 0 6px;font-size:12px;font-weight:500;line-height:22px;display:inline-flex;overflow:hidden}.AxLS7q_chatDrawerModeIcon{flex:none;display:flex}.AxLS7q_chatDrawerModeText{text-overflow:ellipsis;min-width:0;overflow:hidden}.AxLS7q_chatDrawer [class*=heroOptions]{display:contents}.AxLS7q_modeChipWrap{min-width:0;display:inline-flex;position:relative}.AxLS7q_modeChip{max-width:200px;min-height:28px;color:var(--dsw-alias-label-primary);white-space:nowrap;cursor:pointer;background:0 0;border:none;border-radius:6px;align-items:center;gap:4px;padding:0 8px;font-size:13px;font-weight:500;line-height:20px;display:inline-flex}.AxLS7q_modeChip:hover:not(:disabled),.AxLS7q_modeChip[aria-expanded=true]{background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_modeChip:disabled{cursor:default;color:var(--dsw-alias-label-dimmed)}.AxLS7q_modeChipIcon{color:var(--dsw-alias-label-primary);flex:none;display:flex}.AxLS7q_modeChipLabel{text-overflow:ellipsis;min-width:0;overflow:hidden}.AxLS7q_modeChipChevron{color:var(--dsw-alias-label-tertiary);flex:none;display:flex}.AxLS7q_modeMenu{z-index:40;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);min-width:220px;max-width:300px;max-height:320px;box-shadow:0 8px 30px var(--dsw-alias-bg-mask-2);border-radius:10px;flex-direction:column;padding:6px;display:flex;position:absolute;bottom:calc(100% + 6px);left:0;overflow-y:auto}.AxLS7q_modeMenuTitle{color:var(--dsw-alias-label-tertiary);flex:none;padding:4px 10px 6px;font-size:11px}.AxLS7q_modeMenuItem{width:100%;color:var(--dsw-alias-label-primary);text-align:left;cursor:pointer;background:0 0;border:none;border-radius:7px;flex-direction:column;flex:none;gap:2px;padding:6px 10px;display:flex}.AxLS7q_modeMenuItem:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_modeMenuItem:disabled{cursor:default;opacity:.6}.AxLS7q_modeMenuItemActive{background:var(--dsw-alias-interactive-bg-active)}.AxLS7q_modeMenuItemName{align-items:center;gap:6px;font-size:13px;line-height:20px;display:flex}.AxLS7q_modeMenuCheck{color:var(--dsw-alias-brand-primary);font-size:12px}.AxLS7q_modeMenuItemDesc{color:var(--dsw-alias-label-tertiary);white-space:normal;font-size:12px;line-height:16px}.AxLS7q_modeMenuHint{color:var(--dsw-alias-label-tertiary);flex:none;padding:4px 10px;font-size:11px}.AxLS7q_modeMenuError{color:var(--dsw-alias-state-error-primary);word-break:break-all;flex:none;padding:4px 10px;font-size:11px}.AxLS7q_chatDrawerArchived{color:var(--dsw-alias-label-primary);background:#e0a33a1f;background:color(display-p3 .842337 .649058 .309/.12);background:lab(71.621% 16.4145 60.6886/.12);border-bottom:1px solid #e0a33a59;border-bottom:1px solid color(display-p3 .842337 .649058 .309/.35);border-bottom:1px solid lab(71.621% 16.4145 60.6886/.35);align-items:center;gap:10px;padding:8px 12px;font-size:12px;display:flex}.AxLS7q_chatDrawerArchivedText{flex:1;min-width:0}.AxLS7q_chatDrawerArchivedButton{color:inherit;cursor:pointer;background:0 0;border:1px solid #e0a33a8c;border:1px solid color(display-p3 .842337 .649058 .309/.55);border:1px solid lab(71.621% 16.4145 60.6886/.55);border-radius:999px;flex:none;padding:2px 10px;font-size:12px}.AxLS7q_chatDrawerArchivedButton:hover{background:#e0a33a2e;background:color(display-p3 .842337 .649058 .309/.18);background:lab(71.621% 16.4145 60.6886/.18)}.AxLS7q_chatDrawerBody{flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}@container AxLS7q_talk-map-drawer (width>=560px){.AxLS7q_chatDrawer nav[aria-label]{display:block}}.AxLS7q_chatDrawerNotice{flex-direction:column;flex:1;align-items:flex-start;gap:14px;padding:22px 20px;display:flex}.AxLS7q_chatDrawerNoticeText{color:var(--dsw-alias-label-secondary);margin:0;font-size:13px;line-height:1.7}.AxLS7q_chatDrawerNoticeActions{flex-wrap:wrap;gap:8px;display:flex}.AxLS7q_chatDrawerNoticeButton{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);cursor:pointer;border-radius:8px;padding:6px 14px;font-size:13px}.AxLS7q_chatDrawerNoticeButton:hover{background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_chatDrawerNoticeButton:disabled{opacity:.55;cursor:default}.AxLS7q_chatPanel{flex-direction:column;flex:1;min-height:0;display:flex}.AxLS7q_cardWaitingButton{color:var(--dsw-alias-state-warn-label);background:var(--dsw-alias-state-warn-tertiary);cursor:pointer;border:none;border-radius:999px;padding:1px 7px;font-size:10px}.AxLS7q_cardWaitingButton:hover{filter:brightness(1.15)}.AxLS7q_interactMenu{gap:4px;max-height:min(420px,70vh)}.AxLS7q_interactTitle{color:var(--dsw-alias-label-primary);padding:4px 6px 0;font-size:12px;font-weight:600}.AxLS7q_interactText{color:var(--dsw-alias-label-secondary);white-space:pre-wrap;word-break:break-word;padding:2px 6px 4px;font-size:12px;line-height:1.45}.AxLS7q_interactNote{color:var(--dsw-alias-label-tertiary);padding:0 6px 4px;font-size:11px}.AxLS7q_interactScroll{flex-direction:column;gap:6px;max-height:260px;display:flex;overflow-y:auto}.AxLS7q_interactGroup{flex-direction:column;gap:4px;display:flex}.AxLS7q_interactOptions{flex-wrap:wrap;gap:6px;padding:2px 6px 4px;display:flex}.AxLS7q_interactOption{text-align:left;border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;flex:100%;padding:7px 10px;font-size:12px}.AxLS7q_interactOption:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_interactOptionActive{border-color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-interactive-bg-active)}.AxLS7q_interactActions{gap:6px;padding:4px 6px 6px;display:flex}.AxLS7q_interactAllow{background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground);cursor:pointer;border:none;border-radius:8px;flex:1;padding:7px 10px;font-size:12px}.AxLS7q_interactAllow:hover:not(:disabled){background:var(--dsw-alias-button-primary-hover)}.AxLS7q_interactDanger{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-state-error-primary);cursor:pointer;background:0 0;border-radius:8px;flex:1;padding:7px 10px;font-size:12px}.AxLS7q_interactDanger:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover-danger)}.AxLS7q_interactSubmit,.AxLS7q_interactOpen{border:1px solid var(--dsw-alias-border-l2);width:100%;color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;margin-top:4px;padding:7px 10px;font-size:12px}.AxLS7q_interactSubmit:hover:not(:disabled),.AxLS7q_interactOpen:hover{background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_interactSubmit:disabled{color:var(--dsw-alias-label-dimmed);cursor:default}.AxLS7q_interactError{color:var(--dsw-alias-state-error-primary);word-break:break-word;padding:2px 6px 4px;font-size:11px}.AxLS7q_mapFallback{background:var(--dsw-alias-bg-base);min-height:0;color:var(--dsw-alias-label-primary);flex-direction:column;flex:1;justify-content:center;align-items:center;gap:10px;padding:24px;display:flex}.AxLS7q_mapFallbackTitle{font-size:14px;font-weight:600}.AxLS7q_mapFallbackText{text-align:center;max-width:420px;color:var(--dsw-alias-label-secondary);font-size:12px}.AxLS7q_mapFallbackButton{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:8px;padding:6px 14px;font-size:12px}.AxLS7q_mapFallbackButton:hover{background:var(--dsw-alias-interactive-bg-hover)}.AxLS7q_imageCard{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);width:100%;height:100%;box-shadow:0 10px 26px -18px var(--dsw-alias-bg-mask-2);border-radius:10px;overflow:hidden}.AxLS7q_imageCardSelected{border-color:var(--dsw-alias-brand-primary);box-shadow:0 0 0 2px var(--dsw-alias-brand-primary)}.AxLS7q_imageCardImg{object-fit:contain;background:var(--dsw-alias-bg-base);width:100%;height:100%;display:block}[data-composer-input]:has([data-lexical-text])+[data-composer-placeholder]{display:none}";
 		const tagId$1 = "dsh-talk-map-local/talk-map.module.css";
 		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$1) + "]") === null) {
 			const tag = document.createElement("style");
@@ -1432,142 +1484,169 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			document.head.appendChild(tag);
 		}
 		var talk_map_module_css_default = {
-			"zoomResetLabel": "AxLS7q_zoomResetLabel",
-			"interactScroll": "AxLS7q_interactScroll",
-			"draftAttachmentRemove": "AxLS7q_draftAttachmentRemove",
-			"draftCard": "AxLS7q_draftCard",
-			"wsFrameCount": "AxLS7q_wsFrameCount",
-			"menuError": "AxLS7q_menuError",
-			"draftDropHint": "AxLS7q_draftDropHint",
-			"headerTitle": "AxLS7q_headerTitle",
-			"hotkeyButton": "AxLS7q_hotkeyButton",
-			"header": "AxLS7q_header",
-			"draftAttachments": "AxLS7q_draftAttachments",
-			"imageCardSelected": "AxLS7q_imageCardSelected",
-			"menuItem": "AxLS7q_menuItem",
-			"wsFrameEdge": "AxLS7q_wsFrameEdge",
-			"spawnActions": "AxLS7q_spawnActions",
-			"menuTitle": "AxLS7q_menuTitle",
-			"spawnModeActive": "AxLS7q_spawnModeActive",
-			"interactOption": "AxLS7q_interactOption",
-			"menuHint": "AxLS7q_menuHint",
-			"menuEmpty": "AxLS7q_menuEmpty",
-			"cardForeign": "AxLS7q_cardForeign",
-			"draftSelect": "AxLS7q_draftSelect",
-			"toggleRow": "AxLS7q_toggleRow",
-			"cardRemove": "AxLS7q_cardRemove",
-			"spawnError": "AxLS7q_spawnError",
-			"colorSwatch": "AxLS7q_colorSwatch",
-			"wsFrameForeign": "AxLS7q_wsFrameForeign",
-			"emptyHint": "AxLS7q_emptyHint",
-			"chatPanel": "AxLS7q_chatPanel",
-			"talkmap-pulse": "AxLS7q_talkmap-pulse",
-			"draftTextarea": "AxLS7q_draftTextarea",
-			"chatDrawerNoticeText": "AxLS7q_chatDrawerNoticeText",
-			"cardTitle": "AxLS7q_cardTitle",
-			"toggleLabel": "AxLS7q_toggleLabel",
-			"canvasConnecting": "AxLS7q_canvasConnecting",
-			"chatDrawerBody": "AxLS7q_chatDrawerBody",
-			"closeButton": "AxLS7q_closeButton",
-			"chatDrawerLockActive": "AxLS7q_chatDrawerLockActive",
-			"wsFrameHidden": "AxLS7q_wsFrameHidden",
-			"toastActionable": "AxLS7q_toastActionable",
-			"interactSubmit": "AxLS7q_interactSubmit",
-			"draftAttachmentFileMeta": "AxLS7q_draftAttachmentFileMeta",
-			"wsFrameLabel": "AxLS7q_wsFrameLabel",
-			"toggleIcon": "AxLS7q_toggleIcon",
-			"draftAttachmentFileName": "AxLS7q_draftAttachmentFileName",
-			"chatDrawerLock": "AxLS7q_chatDrawerLock",
-			"interactOptionActive": "AxLS7q_interactOptionActive",
-			"mapFallback": "AxLS7q_mapFallback",
-			"wsFrameResize": "AxLS7q_wsFrameResize",
-			"interactMenu": "AxLS7q_interactMenu",
-			"chatDrawerTitle": "AxLS7q_chatDrawerTitle",
-			"interactActions": "AxLS7q_interactActions",
-			"menu": "AxLS7q_menu",
-			"spawnFrom": "AxLS7q_spawnFrom",
-			"draftAttachmentFileIcon": "AxLS7q_draftAttachmentFileIcon",
-			"overlay": "AxLS7q_overlay",
-			"draftAttachmentImage": "AxLS7q_draftAttachmentImage",
-			"chatDrawerHeader": "AxLS7q_chatDrawerHeader",
-			"draftHeading": "AxLS7q_draftHeading",
-			"interactAllow": "AxLS7q_interactAllow",
-			"cardFooterLeft": "AxLS7q_cardFooterLeft",
-			"wsFrameSelected": "AxLS7q_wsFrameSelected",
-			"colorToolbarLabel": "AxLS7q_colorToolbarLabel",
-			"chatDrawerResize": "AxLS7q_chatDrawerResize",
-			"imageCard": "AxLS7q_imageCard",
-			"toggleButtonActive": "AxLS7q_toggleButtonActive",
-			"canvas": "AxLS7q_canvas",
-			"draftAttachmentFile": "AxLS7q_draftAttachmentFile",
-			"cardDoneDot": "AxLS7q_cardDoneDot",
-			"interactText": "AxLS7q_interactText",
-			"draftGrow": "AxLS7q_draftGrow",
-			"runningDot": "AxLS7q_runningDot",
-			"spawnHint": "AxLS7q_spawnHint",
-			"spawnModeBtn": "AxLS7q_spawnModeBtn",
-			"toggleButton": "AxLS7q_toggleButton",
-			"chatDrawer": "AxLS7q_chatDrawer",
-			"langButton": "AxLS7q_langButton",
-			"headerBadge": "AxLS7q_headerBadge",
-			"body": "AxLS7q_body",
-			"toastText": "AxLS7q_toastText",
-			"chatDrawerArchivedText": "AxLS7q_chatDrawerArchivedText",
-			"draftInput": "AxLS7q_draftInput",
-			"menuPreview": "AxLS7q_menuPreview",
-			"colorSwatchClear": "AxLS7q_colorSwatchClear",
-			"imageCardImg": "AxLS7q_imageCardImg",
-			"cardFooter": "AxLS7q_cardFooter",
-			"draftPathPreview": "AxLS7q_draftPathPreview",
-			"cardPinActive": "AxLS7q_cardPinActive",
-			"menuSearch": "AxLS7q_menuSearch",
-			"cardForeignChip": "AxLS7q_cardForeignChip",
-			"wsFrame": "AxLS7q_wsFrame",
-			"cardSelected": "AxLS7q_cardSelected",
-			"cardForeignTouch": "AxLS7q_cardForeignTouch",
-			"cardHandle": "AxLS7q_cardHandle",
-			"chatDrawerSpace": "AxLS7q_chatDrawerSpace",
-			"cardTop": "AxLS7q_cardTop",
-			"toast": "AxLS7q_toast",
-			"draftRow": "AxLS7q_draftRow",
-			"draftAttachmentProgressBar": "AxLS7q_draftAttachmentProgressBar",
-			"cardForeignPulse": "AxLS7q_cardForeignPulse",
-			"cardPin": "AxLS7q_cardPin",
-			"chatDrawerNoticeButton": "AxLS7q_chatDrawerNoticeButton",
 			"headerSpace": "AxLS7q_headerSpace",
-			"chatDrawerArchivedButton": "AxLS7q_chatDrawerArchivedButton",
-			"spawnBtnPrimary": "AxLS7q_spawnBtnPrimary",
-			"interactNote": "AxLS7q_interactNote",
-			"interactOpen": "AxLS7q_interactOpen",
-			"mapFallbackText": "AxLS7q_mapFallbackText",
-			"cardWaitingButton": "AxLS7q_cardWaitingButton",
-			"cardTime": "AxLS7q_cardTime",
-			"chatDrawerClose": "AxLS7q_chatDrawerClose",
-			"mapFallbackTitle": "AxLS7q_mapFallbackTitle",
-			"cardBadgeDone": "AxLS7q_cardBadgeDone",
-			"interactDanger": "AxLS7q_interactDanger",
-			"draftAttachmentFileText": "AxLS7q_draftAttachmentFileText",
-			"cardGhost": "AxLS7q_cardGhost",
-			"interactTitle": "AxLS7q_interactTitle",
-			"chatDrawerArchived": "AxLS7q_chatDrawerArchived",
-			"interactGroup": "AxLS7q_interactGroup",
-			"interactError": "AxLS7q_interactError",
-			"chatDrawerNoticeActions": "AxLS7q_chatDrawerNoticeActions",
-			"spawnModes": "AxLS7q_spawnModes",
+			"talkmap-pulse": "AxLS7q_talkmap-pulse",
+			"modeMenuItem": "AxLS7q_modeMenuItem",
+			"cardTitle": "AxLS7q_cardTitle",
 			"draftCardDrop": "AxLS7q_draftCardDrop",
-			"colorToolbar": "AxLS7q_colorToolbar",
-			"interactOptions": "AxLS7q_interactOptions",
-			"talk-map-drawer": "AxLS7q_talk-map-drawer",
-			"card": "AxLS7q_card",
-			"toastAction": "AxLS7q_toastAction",
-			"chatDrawerNotice": "AxLS7q_chatDrawerNotice",
-			"draftLabel": "AxLS7q_draftLabel",
-			"spawnTextarea": "AxLS7q_spawnTextarea",
-			"cardBadgeRunning": "AxLS7q_cardBadgeRunning",
-			"spawnBtnGhost": "AxLS7q_spawnBtnGhost",
-			"cardBadgeWaiting": "AxLS7q_cardBadgeWaiting",
+			"imageCard": "AxLS7q_imageCard",
+			"draftAttachmentRemove": "AxLS7q_draftAttachmentRemove",
+			"forkBoxHint": "AxLS7q_forkBoxHint",
+			"chatDrawerResize": "AxLS7q_chatDrawerResize",
+			"draftAttachmentFileIcon": "AxLS7q_draftAttachmentFileIcon",
+			"toggleButton": "AxLS7q_toggleButton",
+			"spawnModeBtn": "AxLS7q_spawnModeBtn",
+			"draftAttachmentProgress": "AxLS7q_draftAttachmentProgress",
+			"chatDrawerBody": "AxLS7q_chatDrawerBody",
+			"toastActionable": "AxLS7q_toastActionable",
+			"wsFrameSelected": "AxLS7q_wsFrameSelected",
+			"chatDrawerSpace": "AxLS7q_chatDrawerSpace",
+			"interactMenu": "AxLS7q_interactMenu",
+			"colorToolbarLabel": "AxLS7q_colorToolbarLabel",
+			"chatDrawerModeText": "AxLS7q_chatDrawerModeText",
 			"mapFallbackButton": "AxLS7q_mapFallbackButton",
-			"draftAttachmentProgress": "AxLS7q_draftAttachmentProgress"
+			"forkBoxRemove": "AxLS7q_forkBoxRemove",
+			"draftRow": "AxLS7q_draftRow",
+			"toastText": "AxLS7q_toastText",
+			"interactOption": "AxLS7q_interactOption",
+			"menuItem": "AxLS7q_menuItem",
+			"mapFallback": "AxLS7q_mapFallback",
+			"chatDrawer": "AxLS7q_chatDrawer",
+			"modeMenuTitle": "AxLS7q_modeMenuTitle",
+			"spawnHint": "AxLS7q_spawnHint",
+			"toggleButtonActive": "AxLS7q_toggleButtonActive",
+			"menu": "AxLS7q_menu",
+			"modeChipWrap": "AxLS7q_modeChipWrap",
+			"wsFrameLabel": "AxLS7q_wsFrameLabel",
+			"cardBadgeWaiting": "AxLS7q_cardBadgeWaiting",
+			"toggleIcon": "AxLS7q_toggleIcon",
+			"spawnError": "AxLS7q_spawnError",
+			"toggleRow": "AxLS7q_toggleRow",
+			"runningDot": "AxLS7q_runningDot",
+			"interactText": "AxLS7q_interactText",
+			"draftAttachmentFileText": "AxLS7q_draftAttachmentFileText",
+			"cardForeignTouch": "AxLS7q_cardForeignTouch",
+			"interactScroll": "AxLS7q_interactScroll",
+			"toast": "AxLS7q_toast",
+			"cardDoneDot": "AxLS7q_cardDoneDot",
+			"chatDrawerHeader": "AxLS7q_chatDrawerHeader",
+			"interactAllow": "AxLS7q_interactAllow",
+			"interactDanger": "AxLS7q_interactDanger",
+			"interactOptionActive": "AxLS7q_interactOptionActive",
+			"imageCardSelected": "AxLS7q_imageCardSelected",
+			"chatDrawerNoticeText": "AxLS7q_chatDrawerNoticeText",
+			"forkBoxTitle": "AxLS7q_forkBoxTitle",
+			"canvas": "AxLS7q_canvas",
+			"wsFrameEdge": "AxLS7q_wsFrameEdge",
+			"interactError": "AxLS7q_interactError",
+			"draftAttachments": "AxLS7q_draftAttachments",
+			"toggleLabel": "AxLS7q_toggleLabel",
+			"draftAttachmentFile": "AxLS7q_draftAttachmentFile",
+			"cardTime": "AxLS7q_cardTime",
+			"draftHeading": "AxLS7q_draftHeading",
+			"modeMenuHint": "AxLS7q_modeMenuHint",
+			"zoomResetLabel": "AxLS7q_zoomResetLabel",
+			"headerTitle": "AxLS7q_headerTitle",
+			"modeChip": "AxLS7q_modeChip",
+			"cardGhost": "AxLS7q_cardGhost",
+			"cardPinActive": "AxLS7q_cardPinActive",
+			"modeChipLabel": "AxLS7q_modeChipLabel",
+			"forkBoxActive": "AxLS7q_forkBoxActive",
+			"modeMenu": "AxLS7q_modeMenu",
+			"cardSelected": "AxLS7q_cardSelected",
+			"spawnActions": "AxLS7q_spawnActions",
+			"chatPanel": "AxLS7q_chatPanel",
+			"mapFallbackTitle": "AxLS7q_mapFallbackTitle",
+			"interactSubmit": "AxLS7q_interactSubmit",
+			"cardFooter": "AxLS7q_cardFooter",
+			"closeButton": "AxLS7q_closeButton",
+			"interactActions": "AxLS7q_interactActions",
+			"draftDropHint": "AxLS7q_draftDropHint",
+			"menuSearch": "AxLS7q_menuSearch",
+			"hotkeyButton": "AxLS7q_hotkeyButton",
+			"talk-map-drawer": "AxLS7q_talk-map-drawer",
+			"chatDrawerModeIcon": "AxLS7q_chatDrawerModeIcon",
+			"modeMenuItemName": "AxLS7q_modeMenuItemName",
+			"spawnBtnPrimary": "AxLS7q_spawnBtnPrimary",
+			"spawnBtnGhost": "AxLS7q_spawnBtnGhost",
+			"menuPreview": "AxLS7q_menuPreview",
+			"menuEmpty": "AxLS7q_menuEmpty",
+			"wsFrame": "AxLS7q_wsFrame",
+			"modeChipChevron": "AxLS7q_modeChipChevron",
+			"imageCardImg": "AxLS7q_imageCardImg",
+			"draftSelect": "AxLS7q_draftSelect",
+			"draftAttachmentFileMeta": "AxLS7q_draftAttachmentFileMeta",
+			"cardRemove": "AxLS7q_cardRemove",
+			"draftAttachmentImage": "AxLS7q_draftAttachmentImage",
+			"canvasConnecting": "AxLS7q_canvasConnecting",
+			"mapFallbackText": "AxLS7q_mapFallbackText",
+			"headerBadge": "AxLS7q_headerBadge",
+			"spawnTextarea": "AxLS7q_spawnTextarea",
+			"forkPanel": "AxLS7q_forkPanel",
+			"cardForeign": "AxLS7q_cardForeign",
+			"chatDrawerArchived": "AxLS7q_chatDrawerArchived",
+			"header": "AxLS7q_header",
+			"chatDrawerLockActive": "AxLS7q_chatDrawerLockActive",
+			"cardTop": "AxLS7q_cardTop",
+			"chatDrawerArchivedButton": "AxLS7q_chatDrawerArchivedButton",
+			"spawnModes": "AxLS7q_spawnModes",
+			"modeMenuError": "AxLS7q_modeMenuError",
+			"interactOptions": "AxLS7q_interactOptions",
+			"modeMenuItemDesc": "AxLS7q_modeMenuItemDesc",
+			"interactTitle": "AxLS7q_interactTitle",
+			"chatDrawerLock": "AxLS7q_chatDrawerLock",
+			"cardBadgeRunning": "AxLS7q_cardBadgeRunning",
+			"cardPin": "AxLS7q_cardPin",
+			"cardWaitingButton": "AxLS7q_cardWaitingButton",
+			"draftGrow": "AxLS7q_draftGrow",
+			"draftInput": "AxLS7q_draftInput",
+			"spawnModeActive": "AxLS7q_spawnModeActive",
+			"colorSwatch": "AxLS7q_colorSwatch",
+			"menuTitle": "AxLS7q_menuTitle",
+			"wsFrameForeign": "AxLS7q_wsFrameForeign",
+			"langButton": "AxLS7q_langButton",
+			"cardHandle": "AxLS7q_cardHandle",
+			"draftPathPreview": "AxLS7q_draftPathPreview",
+			"draftCard": "AxLS7q_draftCard",
+			"cardPending": "AxLS7q_cardPending",
+			"draftTextarea": "AxLS7q_draftTextarea",
+			"menuHint": "AxLS7q_menuHint",
+			"chatDrawerNoticeActions": "AxLS7q_chatDrawerNoticeActions",
+			"interactGroup": "AxLS7q_interactGroup",
+			"forkBoxFrom": "AxLS7q_forkBoxFrom",
+			"draftAttachmentProgressBar": "AxLS7q_draftAttachmentProgressBar",
+			"menuError": "AxLS7q_menuError",
+			"wsFrameHidden": "AxLS7q_wsFrameHidden",
+			"emptyHint": "AxLS7q_emptyHint",
+			"colorToolbar": "AxLS7q_colorToolbar",
+			"interactOpen": "AxLS7q_interactOpen",
+			"cardBadgeDone": "AxLS7q_cardBadgeDone",
+			"cardForeignChip": "AxLS7q_cardForeignChip",
+			"spawnFrom": "AxLS7q_spawnFrom",
+			"forkBox": "AxLS7q_forkBox",
+			"chatDrawerTitle": "AxLS7q_chatDrawerTitle",
+			"wsFrameResize": "AxLS7q_wsFrameResize",
+			"cardForeignPulse": "AxLS7q_cardForeignPulse",
+			"cardPendingHint": "AxLS7q_cardPendingHint",
+			"chatDrawerClose": "AxLS7q_chatDrawerClose",
+			"chatDrawerNotice": "AxLS7q_chatDrawerNotice",
+			"modeMenuCheck": "AxLS7q_modeMenuCheck",
+			"chatDrawerNoticeButton": "AxLS7q_chatDrawerNoticeButton",
+			"card": "AxLS7q_card",
+			"body": "AxLS7q_body",
+			"chatDrawerMode": "AxLS7q_chatDrawerMode",
+			"chatDrawerArchivedText": "AxLS7q_chatDrawerArchivedText",
+			"interactNote": "AxLS7q_interactNote",
+			"draftLabel": "AxLS7q_draftLabel",
+			"toastAction": "AxLS7q_toastAction",
+			"colorSwatchClear": "AxLS7q_colorSwatchClear",
+			"modeChipIcon": "AxLS7q_modeChipIcon",
+			"forkPanelDrop": "AxLS7q_forkPanelDrop",
+			"draftAttachmentFileName": "AxLS7q_draftAttachmentFileName",
+			"modeMenuItemActive": "AxLS7q_modeMenuItemActive",
+			"overlay": "AxLS7q_overlay",
+			"cardFooterLeft": "AxLS7q_cardFooterLeft",
+			"wsFrameCount": "AxLS7q_wsFrameCount"
 		};
 		//#endregion
 		//#region src/client/ChatPanel.tsx
@@ -1589,6 +1668,1509 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					phase: settling ? "settling" : hero ? "hero" : "active",
 					hero
 				}, { slots: { views: ChatOnlyView } })
+			});
+		}
+		//#endregion
+		//#region src/client/preset-mode.ts
+		/**
+		* Agent-preset ("mode") plumbing for the map drawer.
+		*
+		* The main view owns the canonical controls: a picker beside the workspace on
+		* the new-session screen, and a read-only label beside the session title. The
+		* drawer receives neither — the host's picker returns null outside the main
+		* view (its `AgentPresetSeat` is main-view-only), and the drawer renders the
+		* conversation body without the host's session header. So the map offers the
+		* same two affordances itself:
+		*
+		*   - `HeroModeChip` rides `conversation.hero.options` (the one extension
+		*     point inside the hero row) and stands where the workspace picker does;
+		*   - `SessionModeLabel` sits in the drawer's own title bar.
+		*
+		* Switching follows the host contract: only a blank Session — one whose first
+		* turn has not run — may take a new preset. The host refuses later with
+		* `agent-preset/locked`, because the composition decides the tool schemas and
+		* prompt sections the model already saw. Everything else here is display-only.
+		*/
+		/** Localized name of a shipped preset id; custom presets keep their own label. */
+		function presetLabel(id) {
+			const key = `preset.${id}`;
+			const label = t(key);
+			return label === key ? id : label;
+		}
+		/** The name shown for one roster row: a declared name wins over the id. */
+		function presetName(preset) {
+			if (preset === void 0) return "";
+			return preset.name !== void 0 && preset.name !== "" ? preset.name : presetLabel(preset.id);
+		}
+		/** Roster rows a picker may offer: a broken composition cannot start a Session. */
+		function selectablePresets(presets) {
+			return presets.filter((preset) => preset.broken === void 0);
+		}
+		/**
+		* Whether a roster row is gated behind the coding view preference. Mirrors the
+		* host: only the SHIPPED PTC and Minimal presets need it; a declaration that
+		* names itself (a custom override) keeps its own behaviour.
+		*/
+		function requiresCodingView(preset) {
+			if (preset.name !== void 0) return false;
+			return preset.id === "ptc" || preset.id === "minimal";
+		}
+		/**
+		* The rows the drawer's picker offers: healthy presets, with the deployment's
+		* coding-view gate applied exactly like the host's own picker. An unavailable
+		* preference (older host / service not mounted) offers everything rather than
+		* hiding modes the user may still want.
+		*/
+		function offeredPresets(presets, codingView) {
+			return selectablePresets(presets).filter((preset) => codingView !== false || !requiresCodingView(preset));
+		}
+		let configFormsProvider;
+		let uiSettingsForm;
+		/**
+		* Wire the optional `configForms` service. The lookup is lazy because the
+		* settings plugin may still be mounting when this plugin applies, and the
+		* service is optional on older hosts.
+		*/
+		function attachConfigForms(provider) {
+			configFormsProvider = provider;
+			uiSettingsForm = void 0;
+		}
+		function settingsForm() {
+			if (uiSettingsForm !== void 0) return uiSettingsForm ?? void 0;
+			try {
+				const forms = configFormsProvider?.();
+				if (forms === void 0) return void 0;
+				const form = forms.get?.("ui-settings");
+				uiSettingsForm = form ?? null;
+				return form;
+			} catch {
+				uiSettingsForm = null;
+				return;
+			}
+		}
+		/** The deployment's coding-view preference; undefined when it cannot be read. */
+		function codingViewEnabled() {
+			try {
+				const value = settingsForm()?.getSnapshot?.()?.value;
+				return typeof value?.enabled === "boolean" ? value.enabled : void 0;
+			} catch {
+				return;
+			}
+		}
+		/**
+		* The preset a Session records. The log projection is authoritative; the
+		* roster default stands in for a freshly created Session that has not
+		* recorded anything yet, which is what the host's own picker shows too.
+		*/
+		function currentPresetId(summary, presets) {
+			const projected = summary?.projectionValues?.agentPreset;
+			if (typeof projected === "string" && projected !== "") return projected;
+			const legacy = summary?.agentPreset;
+			if (typeof legacy === "string" && legacy !== "") return legacy;
+			return presets.find((preset) => preset.isDefault === true)?.id;
+		}
+		/**
+		* Why a Session cannot take a new mode right now, or undefined when it can.
+		* Mirrors the host guard: a started (or currently running) Session keeps the
+		* composition its history was produced under.
+		*/
+		function modeLockReason(summary) {
+			if (summary === void 0) return "missing";
+			if (summary.running === true) return "running";
+			if (summary.blank !== true) return "started";
+		}
+		/** The message shown when the host refuses a switch; localizes the known code. */
+		function modeSwitchFailure(error) {
+			if (error?.code === "agent-preset/locked") return t("mode.lockedError");
+			const detail = error?.details?.reason;
+			if (typeof detail === "string" && detail !== "") return detail;
+			if (error?.message !== void 0 && error.message !== "") return error.message;
+			return t("mode.failedUnknown");
+		}
+		/**
+		* The roster is page-wide static: read it once per page and share it between
+		* the hero chip and the title label. An empty answer is retried by the next
+		* mount (the Remote may still be settling during boot).
+		*/
+		let modesPromise = null;
+		function loadPresetModes() {
+			if (modesPromise !== null) return modesPromise;
+			const read = (async () => {
+				try {
+					const remote = getServices()?.remote;
+					if (remote === void 0) return [];
+					const list = await remote.agentPresets.list();
+					return list.ok ? list.value.presets : [];
+				} catch (error) {
+					console.warn("[dsh-talk-map] preset roster unavailable:", error);
+					return [];
+				}
+			})();
+			modesPromise = read;
+			read.then((presets) => {
+				if (presets.length === 0) modesPromise = null;
+			});
+			return read;
+		}
+		/** Reactive roster for a component; [] until the first read lands. */
+		function usePresetModes() {
+			const [modes, setModes] = (0, react.useState)([]);
+			(0, react.useEffect)(() => {
+				let live = true;
+				loadPresetModes().then((presets) => {
+					if (live) setModes(presets);
+				});
+				return () => {
+					live = false;
+				};
+			}, []);
+			return modes;
+		}
+		//#endregion
+		//#region src/client/ModeChip.tsx
+		/**
+		* The drawer's two mode surfaces, mirroring the main view's split:
+		*
+		*   - `HeroModeChip` — the picker that sits beside the workspace picker on a
+		*     brand-new conversation. It rides the host's `conversation.hero.options`
+		*     list slot, the only place a plugin can add a control inside the hero
+		*     row (`conversation.hero.agentPreset` is a single-seat slot the host's
+		*     own picker owns). It renders only for the conversation the map's
+		*     drawer is showing; main-view occurrences keep the host's picker.
+		*
+		*   - `SessionModeLabel` — the read-only badge beside the drawer title once
+		*     the conversation has started. The host renders the same label in its
+		*     own session header, which the drawer never mounts.
+		*
+		* Picking a mode calls `agentPresets.select` — the host accepts it only while
+		* the Session is blank and refuses started Sessions with `agent-preset/locked`.
+		*/
+		/** Preset glyph (three sliders), matching the host's agent-preset icon. */
+		function ModeIcon(props) {
+			const size = props.size ?? 14;
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
+				width: size,
+				height: size,
+				viewBox: "0 0 24 24",
+				fill: "none",
+				stroke: "currentColor",
+				strokeWidth: "1.7",
+				strokeLinecap: "round",
+				"aria-hidden": "true",
+				children: [
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M4 7h16M4 12h8M4 17h5" }),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
+						cx: "17",
+						cy: "12",
+						r: "2.2",
+						fill: "currentColor",
+						stroke: "none"
+					}),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
+						cx: "13",
+						cy: "17",
+						r: "2.2",
+						fill: "currentColor",
+						stroke: "none"
+					})
+				]
+			});
+		}
+		function ChevronIcon() {
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("svg", {
+				width: "11",
+				height: "11",
+				viewBox: "0 0 24 24",
+				fill: "none",
+				stroke: "currentColor",
+				strokeWidth: "2",
+				strokeLinecap: "round",
+				strokeLinejoin: "round",
+				"aria-hidden": "true",
+				children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M6 9l6 6 6-6" })
+			});
+		}
+		/**
+		* The picker on the drawer's new-conversation hero. It appears only while
+		* the Session is still blank — the exact window in which the host accepts a
+		* preset switch.
+		*/
+		function HeroModeChip(props) {
+			const sessionId = props.sessionId;
+			const summary = props.useSessions((state) => sessionId === void 0 ? void 0 : state.byId[sessionId]);
+			const drawerSessionId = useDrawerSessionId();
+			const mapOpen = (0, react.useSyncExternalStore)(mapUi.subscribe, () => mapUi.get().open);
+			(0, react.useSyncExternalStore)(subscribeLocale, activeLocale);
+			const roster = usePresetModes();
+			const [open, setOpen] = (0, react.useState)(false);
+			const [busy, setBusy] = (0, react.useState)(false);
+			const [error, setError] = (0, react.useState)(void 0);
+			/** The committed id shows immediately; the log projection catches up. */
+			const [optimistic, setOptimistic] = (0, react.useState)(void 0);
+			const wrapRef = (0, react.useRef)(null);
+			const options = (0, react.useMemo)(() => offeredPresets(roster, codingViewEnabled()), [roster]);
+			const recorded = summary?.projectionValues?.agentPreset;
+			(0, react.useEffect)(() => {
+				if (optimistic !== void 0 && recorded === optimistic) setOptimistic(void 0);
+			}, [recorded, optimistic]);
+			(0, react.useEffect)(() => {
+				if (!open) return;
+				const release = mapUi.claimEscape("mode-menu");
+				const onPointerDown = (event) => {
+					const wrap = wrapRef.current;
+					if (wrap !== null && event.target instanceof Node && wrap.contains(event.target)) return;
+					setOpen(false);
+				};
+				const onKeyDown = (event) => {
+					if (event.key !== "Escape") return;
+					event.preventDefault();
+					event.stopPropagation();
+					setOpen(false);
+				};
+				window.addEventListener("pointerdown", onPointerDown, true);
+				window.addEventListener("keydown", onKeyDown, true);
+				return () => {
+					window.removeEventListener("pointerdown", onPointerDown, true);
+					window.removeEventListener("keydown", onKeyDown, true);
+					release();
+				};
+			}, [open]);
+			if (sessionId === void 0 || summary === void 0) return null;
+			if (!mapOpen || drawerSessionId !== sessionId) return null;
+			if (options.length === 0) return null;
+			if (modeLockReason(summary) !== void 0) return null;
+			const currentId = optimistic ?? currentPresetId(summary, roster);
+			const label = presetName(roster.find((preset) => preset.id === currentId)) || (currentId === void 0 ? t("mode.choose") : currentId);
+			const choose = async (id) => {
+				if (busy) return;
+				if (id === currentId) {
+					setOpen(false);
+					return;
+				}
+				const remote = getServices()?.remote;
+				if (remote === void 0) {
+					setError(t("mode.failedUnknown"));
+					return;
+				}
+				setBusy(true);
+				setError(void 0);
+				try {
+					const result = await remote.agentPresets.select(sessionId, id);
+					if (result.ok) {
+						setOptimistic(result.value !== "" ? result.value : id);
+						setOpen(false);
+					} else setError(modeSwitchFailure(result.error));
+				} catch (failure) {
+					setError(failure instanceof Error && failure.message !== "" ? failure.message : t("mode.failedUnknown"));
+				} finally {
+					setBusy(false);
+				}
+			};
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+				className: talk_map_module_css_default["modeChipWrap"],
+				ref: wrapRef,
+				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
+					type: "button",
+					className: talk_map_module_css_default["modeChip"],
+					"aria-haspopup": "menu",
+					"aria-expanded": open,
+					title: t("mode.title"),
+					disabled: busy,
+					onClick: () => {
+						setError(void 0);
+						setOpen((value) => !value);
+					},
+					children: [
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+							className: talk_map_module_css_default["modeChipIcon"],
+							children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ModeIcon, {})
+						}),
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+							className: talk_map_module_css_default["modeChipLabel"],
+							children: label
+						}),
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+							className: talk_map_module_css_default["modeChipChevron"],
+							children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ChevronIcon, {})
+						})
+					]
+				}), open ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+					className: talk_map_module_css_default["modeMenu"],
+					role: "menu",
+					"aria-label": t("mode.title"),
+					children: [
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+							className: talk_map_module_css_default["modeMenuTitle"],
+							children: t("mode.title")
+						}),
+						options.map((preset) => {
+							const active = preset.id === currentId;
+							return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
+								type: "button",
+								role: "menuitemradio",
+								"aria-checked": active,
+								className: active ? `${talk_map_module_css_default["modeMenuItem"]} ${talk_map_module_css_default["modeMenuItemActive"]}` : talk_map_module_css_default["modeMenuItem"],
+								disabled: busy,
+								onClick: () => {
+									choose(preset.id);
+								},
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+									className: talk_map_module_css_default["modeMenuItemName"],
+									children: [presetName(preset), active ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+										className: talk_map_module_css_default["modeMenuCheck"],
+										children: "✓"
+									}) : null]
+								}), preset.description !== void 0 && preset.description !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+									className: talk_map_module_css_default["modeMenuItemDesc"],
+									children: preset.description
+								}) : null]
+							}, preset.id);
+						}),
+						busy ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+							className: talk_map_module_css_default["modeMenuHint"],
+							children: t("mode.switching")
+						}) : null,
+						error !== void 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+							className: talk_map_module_css_default["modeMenuError"],
+							children: error
+						}) : null
+					]
+				}) : null]
+			});
+		}
+		/**
+		* Read-only mode badge for the drawer title bar: what the conversation runs
+		* with, once it has started. Hidden while blank (the hero picker covers it).
+		*/
+		function SessionModeLabel(props) {
+			const summary = props.useSessions((state) => state.byId[props.sessionId]);
+			(0, react.useSyncExternalStore)(subscribeLocale, activeLocale);
+			const roster = usePresetModes();
+			if (summary === void 0 || summary.blank !== false) return null;
+			const projected = summary.projectionValues?.agentPreset;
+			const id = typeof projected === "string" && projected !== "" ? projected : summary.agentPreset;
+			if (id === void 0 || id === "") return null;
+			const preset = roster.find((entry) => entry.id === id);
+			const label = presetName(preset) !== "" ? presetName(preset) : id;
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+				className: talk_map_module_css_default["chatDrawerMode"],
+				title: preset?.description ?? t("mode.lockedHint"),
+				"aria-label": `${t("mode.title")} · ${label}`,
+				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+					className: talk_map_module_css_default["chatDrawerModeIcon"],
+					children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ModeIcon, { size: 12 })
+				}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+					className: talk_map_module_css_default["chatDrawerModeText"],
+					children: label
+				})]
+			});
+		}
+		//#endregion
+		//#region src/client/pending-chat.ts
+		/**
+		* The placeholder a fresh conversation leaves on the board.
+		*
+		* 右键「新对话」 (and an empty-canvas double-click) creates the Session and
+		* its placement immediately, but a blank Session is deliberately hidden from
+		* the board — an empty log is noise. That leaves the map looking empty right
+		* after the click, so this store marks the new placement as TEMPORARY: the
+		* canvas draws it as a placeholder box, and the overlay withdraws it when the
+		* user walks away without sending anything.
+		*
+		* A temporary box owns a BLANK Session only. Once the first turn lands it is
+		* an ordinary card: no archive, no marker. The marker is runtime-only on
+		* purpose — a reload drops it (the blank card stays hidden exactly as before
+		* instead of resurrecting a stale box) and can never archive a Session the
+		* user actually started.
+		*/
+		const listeners$2 = /* @__PURE__ */ new Set();
+		let pending = /* @__PURE__ */ new Set();
+		function emit$2() {
+			for (const listener of listeners$2) listener();
+		}
+		/** The new conversation is on screen but has not taken its first turn yet. */
+		function markPendingChat(sessionId) {
+			if (pending.has(sessionId)) return;
+			const next = new Set(pending);
+			next.add(sessionId);
+			pending = next;
+			emit$2();
+		}
+		/** The placeholder is gone (started, withdrawn, or unmounted). */
+		function clearPendingChat(sessionId) {
+			if (!pending.has(sessionId)) return;
+			const next = new Set(pending);
+			next.delete(sessionId);
+			pending = next;
+			emit$2();
+		}
+		/** Whether this Session is currently drawn as a temporary box. */
+		function isPendingChat(sessionId) {
+			return pending.has(sessionId);
+		}
+		function subscribe$3(listener) {
+			listeners$2.add(listener);
+			return () => {
+				listeners$2.delete(listener);
+			};
+		}
+		function snapshot() {
+			return pending;
+		}
+		/** Reactive view of the temporary boxes on the board. */
+		function usePendingChatSessions() {
+			return (0, react.useSyncExternalStore)(subscribe$3, snapshot);
+		}
+		/**
+		* A temporary box owns a blank Session. Leaving after the first turn must
+		* never archive anything, and a Session already gone from the catalog is not
+		* ours to touch either — only a confirmed blank one is withdrawn.
+		*/
+		function pendingAbandonAction(summary) {
+			if (summary === void 0) return "keep";
+			return summary.blank === true ? "archive" : "keep";
+		}
+		//#endregion
+		//#region src/client/fork-box.ts
+		/**
+		* The placeholder a fork drag leaves on the board before anything exists.
+		*
+		* Dropping a connection on empty canvas used to open a full draft card right
+		* away; now it drops a plain marker and the setup lives in the right-hand
+		* drawer. The marker owns no Session, so it cannot ride the card store — it is
+		* runtime-only state here (a reload drops it, exactly like the temporary
+		* new-conversation boxes), and the drawer's setup panel reads it back when the
+		* user starts the fork.
+		*/
+		let state = {
+			boxes: /* @__PURE__ */ new Map(),
+			activeId: void 0
+		};
+		const listeners$1 = /* @__PURE__ */ new Set();
+		function emit$1() {
+			for (const listener of listeners$1) listener();
+		}
+		function publish(next) {
+			state = next;
+			emit$1();
+		}
+		/** A fresh marker id; node ids are prefixed so the canvas can tell them apart. */
+		function newForkBoxId() {
+			return `fork-${crypto.randomUUID()}`;
+		}
+		function addForkBox(box) {
+			const boxes = new Map(state.boxes);
+			boxes.set(box.id, box);
+			publish({
+				boxes,
+				activeId: box.id
+			});
+		}
+		function removeForkBox(id) {
+			if (!state.boxes.has(id)) return;
+			const boxes = new Map(state.boxes);
+			boxes.delete(id);
+			publish({
+				boxes,
+				activeId: state.activeId === id ? void 0 : state.activeId
+			});
+		}
+		function moveForkBox(id, x, y) {
+			const box = state.boxes.get(id);
+			if (box === void 0 || box.x === x && box.y === y) return;
+			const boxes = new Map(state.boxes);
+			boxes.set(id, {
+				...box,
+				x,
+				y
+			});
+			publish({
+				boxes,
+				activeId: state.activeId
+			});
+		}
+		/** Mark one box as the one the drawer is setting up (undefined clears it). */
+		function setActiveForkBox(id) {
+			if (state.activeId === id) return;
+			if (id !== void 0 && !state.boxes.has(id)) return;
+			publish({
+				boxes: state.boxes,
+				activeId: id
+			});
+		}
+		function getForkBoxState() {
+			return state;
+		}
+		function subscribe$2(listener) {
+			listeners$1.add(listener);
+			return () => {
+				listeners$1.delete(listener);
+			};
+		}
+		function useForkBoxState() {
+			return (0, react.useSyncExternalStore)(subscribe$2, getForkBoxState);
+		}
+		//#endregion
+		//#region src/client/selection-request.ts
+		/**
+		* "Select this card on the board" — the one update the drawer cannot apply
+		* itself, because React Flow's selection state lives inside the canvas.
+		*
+		* The fork setup creates a card while the drawer holds the focus; after the
+		* drawer switches to the new conversation the card should already read as the
+		* selected card (the state a click would have left). The setup drops a request
+		* here; the canvas consumes it once the card exists.
+		*/
+		let request = null;
+		let seq = 0;
+		const listeners = /* @__PURE__ */ new Set();
+		function emit() {
+			for (const listener of listeners) listener();
+		}
+		/** Ask the board to select one card (no-op when it already is). */
+		function requestCardSelection(cardId) {
+			seq += 1;
+			request = {
+				cardId,
+				seq
+			};
+			emit();
+		}
+		/** The canvas confirms it applied the request; later requests keep the floor. */
+		function consumeCardSelectionRequest(appliedSeq) {
+			if (request === null || request.seq !== appliedSeq) return;
+			request = null;
+			emit();
+		}
+		function getCardSelectionRequest() {
+			return request;
+		}
+		function subscribe$1(listener) {
+			listeners.add(listener);
+			return () => {
+				listeners.delete(listener);
+			};
+		}
+		function useCardSelectionRequest() {
+			return (0, react.useSyncExternalStore)(subscribe$1, getCardSelectionRequest);
+		}
+		//#endregion
+		//#region src/client/new-chat.ts
+		/** Directory part of a path (both separators), lower-cased. */
+		function workspaceDirectoryName$1(path) {
+			const trimmed = path.replace(/[\\/]+$/, "");
+			const cut = Math.max(trimmed.lastIndexOf("\\"), trimmed.lastIndexOf("/"));
+			return (cut >= 0 ? trimmed.slice(cut + 1) : trimmed).toLowerCase();
+		}
+		/**
+		* The deployment's own `default-workspace`, matched by title or directory
+		* name — the same rule the sidebar and the frame layout use. Conversations
+		* born on bare canvas land there instead of silently creating yet another
+		* workspace.
+		*/
+		function defaultWorkspaceOption(options) {
+			return options.find((option) => option.title.trim().toLowerCase() === "default-workspace" || workspaceDirectoryName$1(option.path) === "default-workspace")?.id;
+		}
+		/** Parent directory new workspaces land in: alongside the existing ones. */
+		function newWorkspaceParent(options) {
+			const sample = options[0]?.path;
+			if (sample === void 0) return "~";
+			const cut = sample.lastIndexOf("/");
+			return cut > 0 ? sample.slice(0, cut) : sample;
+		}
+		/**
+		* Where a brand-new conversation goes: the workspace frame the click landed
+		* in, else the deployment default, else the first workspace the host still
+		* has. `undefined` only when the host has no workspace at all.
+		*/
+		function newConversationWorkspace(input) {
+			const insideFrame = input.frameWorkspaceId;
+			if (insideFrame !== void 0 && insideFrame !== "") return insideFrame;
+			return defaultWorkspaceOption(input.options) ?? input.options[0]?.id;
+		}
+		function snapToGrid(value) {
+			return Math.round(value / 16) * 16;
+		}
+		/**
+		* Card position for a click at (flowX, flowY): horizontally centred on the
+		* click, top edge slightly below it. This is the spot the draft box used to
+		* occupy, so an instant creation lands exactly where the user pointed.
+		*/
+		function newChatCardPosition(flowX, flowY) {
+			return {
+				x: snapToGrid(flowX - 125),
+				y: snapToGrid(flowY - 40)
+			};
+		}
+		/**
+		* Starting rect for a workspace frame that is about to receive its first
+		* card. Sizes match the draft box's historic frame; the board re-fits the
+		* frame from the real member cards on the next render.
+		*/
+		function newChatFrameRect(x, y, cardWidth = 224, cardHeight = 120) {
+			const pad = 32;
+			const labelHeight = 30;
+			return {
+				x: x - pad,
+				y: y - pad - labelHeight,
+				width: cardWidth + 64,
+				height: cardHeight + 64 + labelHeight
+			};
+		}
+		//#endregion
+		//#region src/client/edge-handles.ts
+		/** Anchor sides from the cards' relative placement. */
+		function sideHandles(from, to) {
+			const dx = to.x - from.x;
+			const dy = to.y - from.y;
+			if (Math.abs(dx) >= Math.abs(dy)) return dx >= 0 ? {
+				fromHandle: "r",
+				toHandle: "l"
+			} : {
+				fromHandle: "l",
+				toHandle: "r"
+			};
+			return dy >= 0 ? {
+				fromHandle: "b",
+				toHandle: "t"
+			} : {
+				fromHandle: "t",
+				toHandle: "b"
+			};
+		}
+		/** The handle ids a board card renders: top, right, bottom, left. */
+		function isBoardHandle(id) {
+			return id === "t" || id === "r" || id === "b" || id === "l";
+		}
+		/** The handle a gesture started from when it is one we render, else undefined. */
+		function drawnHandle(id) {
+			return isBoardHandle(id) ? id : void 0;
+		}
+		//#endregion
+		//#region src/client/map-create.ts
+		let draftCatalogPromise = null;
+		/** The model catalog / agent presets / default labels are page-wide static:
+		*  load them once, lazily, and reuse them for every draft box and every
+		*  instant creation. Never rejects — an unreachable catalog yields defaults. */
+		function loadDraftCatalog() {
+			if (draftCatalogPromise !== null) return draftCatalogPromise;
+			draftCatalogPromise = (async () => {
+				const remote = getServices()?.remote;
+				let groups = [];
+				let presets = [];
+				let defaultModel = "";
+				let defaultPreset = "";
+				try {
+					if (remote !== void 0) {
+						const catalog = await remote.session.modelCatalog().catch(() => void 0);
+						if (catalog !== void 0 && catalog.ok) groups = catalog.value.groups ?? [];
+						const list = await remote.agentPresets.list().catch(() => void 0);
+						if (list !== void 0 && list.ok) presets = list.value.presets;
+					}
+					const defaults = await talkMapApi.getDefaults().catch(() => void 0);
+					if (defaults !== void 0 && defaults.model !== null) defaultModel = defaults.model.model;
+					if (defaults !== void 0 && defaults.preset !== null) defaultPreset = defaults.preset;
+				} catch (error) {
+					console.warn("[dsh-talk-map] draft catalog unavailable:", error);
+				}
+				return {
+					groups,
+					presets,
+					defaultModel,
+					defaultPreset
+				};
+			})();
+			return draftCatalogPromise;
+		}
+		/**
+		* The agent preset map-born conversations prefer: the plain 'standard' mode,
+		* because the deployment default may be a specialized one (e.g. cordis).
+		* `undefined` when the deployment does not ship that preset — the host then
+		* applies its own default.
+		*/
+		async function preferredAgentPreset() {
+			return (await loadDraftCatalog()).presets.some((preset) => preset.id === "standard") ? "standard" : void 0;
+		}
+		/**
+		* Add the newborn card at exactly (x, y). Blank conversations are not drawn
+		* on the board yet (an empty log is noise), but the placement is recorded, so
+		* the card appears at this spot as soon as the first message lands.
+		*/
+		function addSessionCard(sessionId, x, y, wsOverride) {
+			const cardId = newCardId();
+			canvas.addCards({ [cardId]: {
+				boardId: INBOX_BOARD_ID,
+				sessionId,
+				x,
+				y,
+				...wsOverride !== void 0 && wsOverride !== "" ? { wsOverride } : {},
+				createdAt: Date.now()
+			} });
+			return cardId;
+		}
+		/**
+		* Persist the fork relationship as a map edge (digest/full/none).
+		*
+		* The gesture's start side wins; the cards' placement supplies the side the
+		* edge should enter, and the default for programmatic calls. Storing both
+		* anchors is what keeps a line dragged from a card's bottom edge from
+		* reappearing on its right edge.
+		*/
+		function addForkEdge(params) {
+			const parentCard = canvas.get().cards[params.parentCardId];
+			const childCard = canvas.get().cards[params.toCardId];
+			const geometry = parentCard !== void 0 && childCard !== void 0 ? sideHandles(parentCard, childCard) : {
+				fromHandle: "r",
+				toHandle: "l"
+			};
+			canvas.addEdges({ [`edge-${crypto.randomUUID()}`]: {
+				boardId: INBOX_BOARD_ID,
+				fromCardId: params.parentCardId,
+				toCardId: params.toCardId,
+				injection: {
+					kind: params.kind,
+					...params.injectedText !== void 0 ? { injectedText: params.injectedText } : {}
+				},
+				fromHandle: drawnHandle(params.fromHandle) ?? geometry.fromHandle,
+				toHandle: geometry.toHandle,
+				createdAt: Date.now()
+			} });
+		}
+		/**
+		* The default workspace stays unframed; any other workspace grows a frame
+		* the first time a card lands in it. An existing frame is never overwritten
+		* (the user may have resized it).
+		*/
+		function ensureWorkspaceFrame(workspaceId, options, x, y) {
+			if (workspaceId === defaultWorkspaceOption(options)) return;
+			if (canvas.get().global?.wsFrames?.[workspaceId] !== void 0) return;
+			canvas.setWsFrameRect(workspaceId, newChatFrameRect(x, y));
+		}
+		//#endregion
+		//#region src/client/draft-attachments.ts
+		const IMAGE_TYPES = [
+			"image/png",
+			"image/jpeg",
+			"image/webp",
+			"image/gif"
+		];
+		/** The Host image type for a declared MIME value, or undefined for any other file. */
+		function draftImageMediaType(value) {
+			return IMAGE_TYPES.includes(value) ? value : void 0;
+		}
+		/** Whether the draft must treat this file as an image or as a verbatim file. */
+		function classifyDraftFile(file) {
+			return draftImageMediaType(file.type) === void 0 ? "file" : "image";
+		}
+		function fileFromItem(item) {
+			if (item === null || typeof item !== "object") return void 0;
+			const candidate = item;
+			if (candidate.kind !== "file" || typeof candidate.getAsFile !== "function") return void 0;
+			return candidate.getAsFile() ?? void 0;
+		}
+		/**
+		* Files carried by a paste. Clipboard items come first (source order), then
+		* `files` entries not already seen. Text items are ignored: the textarea's
+		* default paste handles text.
+		*/
+		function collectClipboardFiles(transfer) {
+			if (transfer === null) return [];
+			const files = [];
+			const seen = /* @__PURE__ */ new Set();
+			for (const item of Array.from(transfer.items ?? [])) {
+				const file = fileFromItem(item);
+				if (file === void 0 || seen.has(file)) continue;
+				seen.add(file);
+				files.push(file);
+			}
+			for (const file of Array.from(transfer.files ?? [])) {
+				if (seen.has(file)) continue;
+				seen.add(file);
+				files.push(file);
+			}
+			return files;
+		}
+		function parseImageSource(raw) {
+			if (raw === "") return void 0;
+			try {
+				const value = JSON.parse(raw);
+				if (typeof value.src !== "string" || value.src === "") return void 0;
+				return {
+					src: value.src,
+					...typeof value.title === "string" && value.title !== "" ? { title: value.title } : {}
+				};
+			} catch {
+				return;
+			}
+		}
+		/**
+		* Read one drop. Precedence matters: the application-internal file token is
+		* the original bytes of an image dragged out of the drawer, so it wins over
+		* the map's URL payload (which would otherwise attach the same image twice).
+		*/
+		function collectDropIntake(transfer, readAppFile) {
+			const appFile = readAppFile?.(transfer);
+			if (appFile !== void 0) return {
+				files: [appFile],
+				imageSources: []
+			};
+			const source = parseImageSource(transfer.getData("application/x-talk-map-image"));
+			if (source !== void 0) return {
+				files: [],
+				imageSources: [source]
+			};
+			return {
+				files: Array.from(transfer.files ?? []),
+				imageSources: []
+			};
+		}
+		/** Whether this drag carries something the draft can attach. */
+		function hasAttachmentDrag(transfer) {
+			if (transfer === null) return false;
+			const types = Array.from(transfer.types ?? []);
+			return types.includes("Files") || types.includes("application/x-dsh-file") || types.includes("application/x-talk-map-image");
+		}
+		/** The prompt content for one send: uploaded receipts first, text last. */
+		function buildPromptContent(receiptIds, text) {
+			const content = receiptIds.map((receiptId) => ({
+				type: "file",
+				receiptId
+			}));
+			if (text !== "") content.push({
+				type: "text",
+				text
+			});
+			return content;
+		}
+		/** A draft can be sent with attachments alone. */
+		function draftSendable(text, attachmentCount) {
+			return text.trim() !== "" || attachmentCount > 0;
+		}
+		/**
+		* Whether 发送 / 开新对话 is disabled. Fork drafts in 完整对话 mode may send an
+		* empty first message: the source history is already carried, and the prompt
+		* is skipped when there is neither text nor an attachment.
+		*/
+		function draftSendDisabled(state) {
+			if (state.busy || state.needsNewWorkspaceName) return true;
+			if (state.isFork && state.mode === "digest" && (state.generatingSummary || state.summaryEmpty)) return true;
+			if (state.isFork && state.mode === "full") return false;
+			return !draftSendable(state.text, state.attachmentCount);
+		}
+		/** Compact byte size for the generic-file card. */
+		function formatAttachmentBytes(bytes) {
+			if (bytes < 1024) return `${bytes} B`;
+			if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
+			return `${(bytes / 1048576).toFixed(1)} MB`;
+		}
+		//#endregion
+		//#region src/client/draft-io.ts
+		/** Upload every pending attachment into `sessionId` and return the receipts. */
+		async function uploadDraftAttachments(options) {
+			const services = getServices();
+			if (services === void 0) throw new Error(t("draft.createNotReady"));
+			const { sessionId, attachments, signal } = options;
+			if (attachments.length === 0) return [];
+			const receiptIds = [];
+			try {
+				for (const [index, attachment] of attachments.entries()) {
+					options.onNote?.(t("draft.uploading", {
+						done: String(index + 1),
+						total: String(attachments.length)
+					}));
+					const onProgress = (progress) => {
+						const ratio = progress.total !== void 0 && progress.total > 0 ? Math.min(1, progress.loaded / progress.total) : 0;
+						options.onProgress?.({ [attachment.id]: ratio });
+					};
+					const value = unwrapRemote(attachment.kind === "image" && attachment.mediaType !== void 0 ? await services.fileUpload.uploadImage(sessionId, attachment.file, attachment.mediaType, attachment.file.name, signal, onProgress) : await services.fileUpload.upload(sessionId, attachment.file, attachment.file.name, signal, onProgress), "fileUpload");
+					receiptIds.push(value.receiptId);
+				}
+			} catch (uploadError) {
+				if (signal.aborted) throw uploadError;
+				throw new Error(`${t("draft.uploadFailed")}${uploadError instanceof Error ? uploadError.message : String(uploadError)}`);
+			} finally {
+				options.onNote?.(void 0);
+				options.onProgress?.({});
+			}
+			return receiptIds;
+		}
+		/** Queue the opening prompt. Attachments alone are a valid message. */
+		async function sendDraftPrompt(remote, sessionId, promptText, receiptIds) {
+			const content = buildPromptContent(receiptIds, promptText);
+			if (content.length === 0) return;
+			unwrapRemote(await remote.session.prompt({
+				requestId: crypto.randomUUID(),
+				sessionId,
+				mode: "queue",
+				content,
+				clientTimeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+			}), "session.prompt");
+		}
+		//#endregion
+		//#region src/client/digest-text.ts
+		function digestBody(digest) {
+			const parts = [];
+			if (digest.summary !== "") parts.push(`${t("inject.summary")}${digest.summary}`);
+			if (digest.keyFindings.length > 0) {
+				parts.push(t("inject.findings"));
+				for (const finding of digest.keyFindings) parts.push(`- ${finding}`);
+			}
+			return parts;
+		}
+		function digestIsEmpty(digest) {
+			return digest === void 0 || digestBody(digest).length === 0;
+		}
+		function buildInjectionText(title, digest) {
+			const header = `${t("inject.header")}「${title}」`;
+			if (digest === void 0 || digestIsEmpty(digest)) return `${header}\n${t("spawn.noDigest")}`;
+			return [header, ...digestBody(digest)].join("\n");
+		}
+		/** The pipe push: latest digest of the source, stamped with origin + time. */
+		function buildPushText(title, digest) {
+			const now = /* @__PURE__ */ new Date();
+			return [t("push.header", {
+				from: title,
+				time: `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`
+			}), ...digestBody(digest)].join("\n");
+		}
+		//#endregion
+		//#region src/client/ForkSetupPanel.tsx
+		/**
+		* The fork setup panel: the drawer body for a marker dropped by a connection
+		* drag. It is the old map draft box, moved into the sidebar — inheritance
+		* mode, the (editable) digest, workspace/model/preset, attachments and the
+		* first message — with one difference: nothing is created until 开新对话 is
+		* pressed, and the marker on the board is what becomes the card.
+		*/
+		const NEW_WORKSPACE$1 = "__new__";
+		function ForkSetupPanel(props) {
+			const { box, workspaceOptions } = props;
+			const [mode, setMode] = (0, react.useState)("full");
+			const [generatingSummary, setGeneratingSummary] = (0, react.useState)(false);
+			/** The digest was generated once for this panel: later switches reuse it. */
+			const summaryRequestedRef = (0, react.useRef)(false);
+			const [summary, setSummary] = (0, react.useState)(() => buildInjectionText(box.parentTitle, canvas.get().digests[box.parentSessionId]));
+			const [workspaceId, setWorkspaceId] = (0, react.useState)(box.parentWorkspaceId ?? defaultWorkspaceOption(workspaceOptions) ?? workspaceOptions[0]?.id ?? NEW_WORKSPACE$1);
+			const workspacePicked = (0, react.useRef)(false);
+			const [newWsName, setNewWsName] = (0, react.useState)("");
+			const [modelKey, setModelKey] = (0, react.useState)("");
+			const [presetId, setPresetId] = (0, react.useState)("");
+			const [groups, setGroups] = (0, react.useState)([]);
+			const [presets, setPresets] = (0, react.useState)([]);
+			const [defaultModelLabel, setDefaultModelLabel] = (0, react.useState)("");
+			const [defaultPresetLabel, setDefaultPresetLabel] = (0, react.useState)("");
+			const [text, setText] = (0, react.useState)("");
+			const [busy, setBusy] = (0, react.useState)(false);
+			const [error, setError] = (0, react.useState)(void 0);
+			const textareaRef = (0, react.useRef)(null);
+			const abortRef = (0, react.useRef)(null);
+			const [attachments, setAttachments] = (0, react.useState)([]);
+			const [dragActive, setDragActive] = (0, react.useState)(false);
+			const [uploadNote, setUploadNote] = (0, react.useState)(void 0);
+			const [uploadProgress, setUploadProgress] = (0, react.useState)({});
+			const attachmentsRef = (0, react.useRef)([]);
+			(0, react.useEffect)(() => {
+				attachmentsRef.current = attachments;
+			}, [attachments]);
+			(0, react.useEffect)(() => () => {
+				abortRef.current?.abort();
+				abortRef.current = null;
+				for (const attachment of attachmentsRef.current) if (attachment.previewUrl !== void 0) URL.revokeObjectURL(attachment.previewUrl);
+				attachmentsRef.current = [];
+			}, []);
+			(0, react.useEffect)(() => {
+				textareaRef.current?.focus();
+			}, []);
+			(0, react.useEffect)(() => {
+				if (workspacePicked.current) return;
+				const fallback = box.parentWorkspaceId ?? defaultWorkspaceOption(workspaceOptions) ?? workspaceOptions[0]?.id;
+				if (fallback === void 0) return;
+				setWorkspaceId((previous) => previous === NEW_WORKSPACE$1 ? fallback : previous);
+			}, [box.parentWorkspaceId, workspaceOptions]);
+			(0, react.useEffect)(() => {
+				let cancelled = false;
+				loadDraftCatalog().then((catalog) => {
+					if (cancelled) return;
+					setGroups(catalog.groups);
+					setPresets(catalog.presets);
+					setDefaultModelLabel(catalog.defaultModel);
+					setDefaultPresetLabel(catalog.defaultPreset);
+					if (catalog.presets.some((preset) => preset.id === "standard")) setPresetId((previous) => previous === "" ? "standard" : previous);
+				});
+				return () => {
+					cancelled = true;
+				};
+			}, []);
+			const creatingWorkspace = workspaceId === NEW_WORKSPACE$1;
+			const newWsPath = `${newWorkspaceParent(workspaceOptions)}/${newWsName.trim()}`;
+			const showConfig = mode !== "full";
+			const sendDisabled = draftSendDisabled({
+				busy,
+				needsNewWorkspaceName: showConfig && creatingWorkspace && newWsName.trim() === "",
+				isFork: true,
+				mode,
+				generatingSummary,
+				summaryEmpty: summary.trim() === "",
+				text,
+				attachmentCount: attachments.length
+			});
+			const addFiles = (files) => {
+				if (files.length === 0 || busy) return;
+				const created = files.map((file) => {
+					const kind = classifyDraftFile(file);
+					const mediaType = kind === "image" ? draftImageMediaType(file.type) : void 0;
+					return {
+						id: crypto.randomUUID(),
+						kind,
+						file,
+						...kind === "image" ? { previewUrl: URL.createObjectURL(file) } : {},
+						...mediaType !== void 0 ? { mediaType } : {}
+					};
+				});
+				setAttachments((previous) => [...previous, ...created]);
+				setError(void 0);
+			};
+			const removeAttachment = (id) => {
+				if (busy) return;
+				const target = attachments.find((attachment) => attachment.id === id);
+				if (target?.previewUrl !== void 0) URL.revokeObjectURL(target.previewUrl);
+				setAttachments((previous) => previous.filter((attachment) => attachment.id !== id));
+			};
+			/** A dragged map image is a URL, not a File: fetch its bytes first. */
+			const addImageSource = async (source) => {
+				try {
+					const response = await fetch(source.src);
+					if (!response.ok) throw new Error(`fetch ${response.status}`);
+					const blob = await response.blob();
+					const fromUrl = source.src.split("/").pop() ?? "";
+					const name = source.title !== void 0 && source.title.trim() !== "" ? source.title.trim() : fromUrl === "" ? "image" : decodeURIComponent(fromUrl);
+					addFiles([new File([blob], name, { type: blob.type })]);
+				} catch (attachError) {
+					setError(`${t("draft.attachFailed")}${String(attachError)}`);
+				}
+			};
+			const onPaste = (event) => {
+				if (busy) return;
+				const files = collectClipboardFiles(event.clipboardData);
+				if (files.length === 0) return;
+				if (event.clipboardData?.getData("text/plain") === "") event.preventDefault();
+				addFiles(files);
+			};
+			const onAttachmentDragEnter = (event) => {
+				if (busy || !hasAttachmentDrag(event.dataTransfer)) return;
+				event.preventDefault();
+				setDragActive(true);
+			};
+			const onAttachmentDragOver = (event) => {
+				if (!hasAttachmentDrag(event.dataTransfer)) return;
+				event.preventDefault();
+				event.dataTransfer.dropEffect = busy ? "none" : "copy";
+				if (!busy) setDragActive(true);
+			};
+			const onAttachmentDragLeave = (event) => {
+				if (event.currentTarget.contains(event.relatedTarget)) return;
+				setDragActive(false);
+			};
+			const onAttachmentDrop = (event) => {
+				if (!hasAttachmentDrag(event.dataTransfer)) return;
+				event.preventDefault();
+				event.stopPropagation();
+				setDragActive(false);
+				if (busy) return;
+				const services = getServices();
+				const readAppFile = services !== void 0 && services.fileDrag !== void 0 ? (transfer) => services.fileDrag.read(transfer) : void 0;
+				const intake = collectDropIntake(event.dataTransfer, readAppFile);
+				addFiles(intake.files);
+				for (const source of intake.imageSources) addImageSource(source);
+			};
+			/** Choosing 摘要注入 asks the model for a fresh digest of the source card. */
+			const generateSummary = async () => {
+				if (generatingSummary) return;
+				setGeneratingSummary(true);
+				setError(void 0);
+				try {
+					const result = await talkMapApi.refreshDigest(box.parentSessionId);
+					setSummary(buildInjectionText(box.parentTitle, result.digest));
+					summaryRequestedRef.current = true;
+				} catch (generateError) {
+					setError(String(generateError));
+				} finally {
+					setGeneratingSummary(false);
+				}
+			};
+			/** Resolve the destination workspace, creating the folder/workspace on demand. */
+			const resolveTargetWorkspace = async (remote) => {
+				if (workspaceId !== NEW_WORKSPACE$1) return workspaceId;
+				await talkMapApi.ensureDir(newWsPath);
+				return unwrapRemote(await remote.workspace.create({ path: newWsPath }), "workspace.create").workspace.workspaceId;
+			};
+			const create = async () => {
+				const services = getServices();
+				if (services === void 0 || sendDisabled) return;
+				const controller = new AbortController();
+				abortRef.current = controller;
+				const signal = controller.signal;
+				setBusy(true);
+				setError(void 0);
+				try {
+					const remote = services.remote;
+					const createSession = services.sessions.create;
+					if (remote === void 0 || createSession === void 0) throw new Error(t("draft.createNotReady"));
+					if (mode === "full") {
+						const childId = sessionIdOf(unwrapRemote(await services.sessions.fork({ sessionId: box.parentSessionId }), "session.fork"));
+						if (childId === void 0) throw new Error("session.fork returned no session id");
+						const receiptIds = await uploadDraftAttachments({
+							sessionId: childId,
+							attachments,
+							signal,
+							onNote: setUploadNote,
+							onProgress: (progress) => setUploadProgress((previous) => ({
+								...previous,
+								...progress
+							}))
+						});
+						if (signal.aborted) return;
+						const cardId = addSessionCard(childId, box.x, box.y, box.parentWorkspaceId);
+						addForkEdge({
+							parentCardId: box.parentCardId,
+							toCardId: cardId,
+							kind: "full",
+							...box.fromHandle !== void 0 ? { fromHandle: box.fromHandle } : {}
+						});
+						if (box.parentWorkspaceId !== void 0) ensureWorkspaceFrame(box.parentWorkspaceId, workspaceOptions, box.x, box.y);
+						if (signal.aborted) return;
+						await sendDraftPrompt(remote, childId, text, receiptIds);
+						if (signal.aborted) return;
+						props.onCreated(childId, cardId);
+						return;
+					}
+					const targetWorkspaceId = await resolveTargetWorkspace(remote);
+					const sessionId = sessionIdOf(unwrapRemote(await createSession.call(services.sessions, {
+						workspaceId: targetWorkspaceId,
+						...presetId !== "" ? { agentPreset: presetId } : {}
+					}), "session.create"));
+					if (sessionId === void 0) throw new Error("session.create returned no session id");
+					const receiptIds = await uploadDraftAttachments({
+						sessionId,
+						attachments,
+						signal,
+						onNote: setUploadNote,
+						onProgress: (progress) => setUploadProgress((previous) => ({
+							...previous,
+							...progress
+						}))
+					});
+					if (signal.aborted) return;
+					if (mode === "digest") {
+						await talkMapApi.injectContext(sessionId, [{
+							sessionId: box.parentSessionId,
+							text: summary
+						}]);
+						if (signal.aborted) return;
+					}
+					const cardId = addSessionCard(sessionId, box.x, box.y, targetWorkspaceId);
+					addForkEdge({
+						parentCardId: box.parentCardId,
+						toCardId: cardId,
+						kind: mode === "digest" ? "digest" : "none",
+						...mode === "digest" ? { injectedText: summary } : {},
+						...box.fromHandle !== void 0 ? { fromHandle: box.fromHandle } : {}
+					});
+					ensureWorkspaceFrame(targetWorkspaceId, workspaceOptions, box.x, box.y);
+					if (modelKey !== "") {
+						const [provider, model] = modelKey.split("::");
+						unwrapRemote(await remote.session.selectModel({
+							sessionId,
+							provider,
+							model
+						}), "session.selectModel");
+					}
+					if (signal.aborted) return;
+					await sendDraftPrompt(remote, sessionId, text, receiptIds);
+					if (signal.aborted) return;
+					props.onCreated(sessionId, cardId);
+				} catch (failure) {
+					if (controller.signal.aborted) return;
+					setError(failure instanceof Error && failure.message !== "" ? failure.message : String(failure));
+				} finally {
+					if (abortRef.current === controller) abortRef.current = null;
+					setBusy(false);
+					setUploadNote(void 0);
+				}
+			};
+			const forkModes = [
+				{
+					id: "full",
+					label: t("spawn.mode.full")
+				},
+				{
+					id: "digest",
+					label: t("spawn.mode.digest")
+				},
+				{
+					id: "none",
+					label: t("spawn.mode.none")
+				}
+			];
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+				className: `${talk_map_module_css_default["forkPanel"]}${dragActive ? ` ${talk_map_module_css_default["forkPanelDrop"]}` : ""}`,
+				onDragEnter: onAttachmentDragEnter,
+				onDragOver: onAttachmentDragOver,
+				onDragLeave: onAttachmentDragLeave,
+				onDrop: onAttachmentDrop,
+				children: [
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+						className: talk_map_module_css_default["spawnFrom"],
+						children: t("fork.from", { name: box.parentTitle })
+					}),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+						className: talk_map_module_css_default["spawnModes"],
+						children: forkModes.map((entry) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+							type: "button",
+							className: `${talk_map_module_css_default["spawnModeBtn"]}${mode === entry.id ? ` ${talk_map_module_css_default["spawnModeActive"]}` : ""}`,
+							onClick: () => {
+								if (entry.id === "digest" && !summaryRequestedRef.current) generateSummary();
+								setMode(entry.id);
+							},
+							disabled: busy,
+							children: entry.label
+						}, entry.id))
+					}),
+					mode === "digest" ? generatingSummary ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+						className: talk_map_module_css_default["spawnHint"],
+						children: t("spawn.generating")
+					}) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+							className: talk_map_module_css_default["spawnHint"],
+							children: t("spawn.hint")
+						}),
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("textarea", {
+							className: talk_map_module_css_default["spawnTextarea"],
+							value: summary,
+							rows: 6,
+							onChange: (event) => {
+								setSummary(event.target.value);
+							},
+							disabled: busy
+						}),
+						digestIsEmpty(canvas.get().digests[box.parentSessionId]) ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+							className: talk_map_module_css_default["spawnHint"],
+							children: t("spawn.noDigest")
+						}) : null
+					] }) : mode === "none" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+						className: talk_map_module_css_default["spawnHint"],
+						children: t("spawn.noneHint")
+					}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+						className: talk_map_module_css_default["spawnHint"],
+						children: t("spawn.fullHint")
+					}),
+					showConfig ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [
+						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+							className: talk_map_module_css_default["draftRow"],
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("label", {
+								className: talk_map_module_css_default["draftLabel"],
+								children: t("draft.workspace")
+							}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("select", {
+								className: talk_map_module_css_default["draftSelect"],
+								value: workspaceId,
+								onChange: (event) => {
+									workspacePicked.current = true;
+									setWorkspaceId(event.target.value);
+								},
+								disabled: busy,
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("option", {
+									value: NEW_WORKSPACE$1,
+									children: t("draft.newWorkspace")
+								}), workspaceOptions.map((option) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("option", {
+									value: option.id,
+									children: option.title
+								}, option.id))]
+							})]
+						}),
+						creatingWorkspace ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+							className: talk_map_module_css_default["draftRow"],
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("label", {
+								className: talk_map_module_css_default["draftLabel"],
+								children: t("draft.wsName")
+							}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+								className: talk_map_module_css_default["draftGrow"],
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
+									className: talk_map_module_css_default["draftInput"],
+									value: newWsName,
+									placeholder: t("draft.wsNamePlaceholder"),
+									onChange: (event) => {
+										setNewWsName(event.target.value);
+									},
+									disabled: busy
+								}), newWsName.trim() !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+									className: talk_map_module_css_default["draftPathPreview"],
+									children: newWsPath
+								}) : null]
+							})]
+						}) : null,
+						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+							className: talk_map_module_css_default["draftRow"],
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("label", {
+								className: talk_map_module_css_default["draftLabel"],
+								children: t("draft.model")
+							}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("select", {
+								className: talk_map_module_css_default["draftSelect"],
+								value: modelKey,
+								onChange: (event) => {
+									setModelKey(event.target.value);
+								},
+								disabled: busy,
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("option", {
+									value: "",
+									children: defaultModelLabel !== "" ? `${defaultModelLabel}${t("draft.defaultSuffix")}` : t("draft.default")
+								}), groups.map((group) => group.models.map((model) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("option", {
+									value: `${group.id}::${model.id}`,
+									children: [
+										group.name,
+										" · ",
+										model.name
+									]
+								}, `${group.id}::${model.id}`)))]
+							})]
+						}),
+						presets.length > 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+							className: talk_map_module_css_default["draftRow"],
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("label", {
+								className: talk_map_module_css_default["draftLabel"],
+								children: t("draft.preset")
+							}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("select", {
+								className: talk_map_module_css_default["draftSelect"],
+								value: presetId,
+								onChange: (event) => {
+									setPresetId(event.target.value);
+								},
+								disabled: busy,
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("option", {
+									value: "",
+									children: defaultPresetLabel !== "" ? `${defaultPresetLabel}${t("draft.defaultSuffix")}` : t("draft.default")
+								}), presets.map((preset) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("option", {
+									value: preset.id,
+									children: preset.name ?? preset.id
+								}, preset.id))]
+							})]
+						}) : null
+					] }) : null,
+					mode === "full" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+						className: talk_map_module_css_default["spawnHint"],
+						children: t("spawn.fullOptional")
+					}) : null,
+					dragActive ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+						className: talk_map_module_css_default["draftDropHint"],
+						children: t("draft.dropHint")
+					}) : null,
+					attachments.length > 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+						className: talk_map_module_css_default["draftAttachments"],
+						children: attachments.map((attachment) => attachment.kind === "image" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+							className: talk_map_module_css_default["draftAttachmentImage"],
+							children: [
+								attachment.previewUrl !== void 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("img", {
+									src: attachment.previewUrl,
+									alt: attachment.file.name
+								}) : null,
+								uploadProgress[attachment.id] !== void 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+									className: talk_map_module_css_default["draftAttachmentProgress"],
+									"aria-hidden": "true",
+									children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+										className: talk_map_module_css_default["draftAttachmentProgressBar"],
+										style: { width: `${Math.round((uploadProgress[attachment.id] ?? 0) * 100)}%` }
+									})
+								}) : null,
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+									type: "button",
+									className: talk_map_module_css_default["draftAttachmentRemove"],
+									title: t("draft.removeAttachment"),
+									"aria-label": t("draft.removeAttachment"),
+									disabled: busy,
+									onClick: () => {
+										removeAttachment(attachment.id);
+									},
+									children: "×"
+								})
+							]
+						}, attachment.id) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+							className: talk_map_module_css_default["draftAttachmentFile"],
+							children: [
+								/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
+									className: talk_map_module_css_default["draftAttachmentFileIcon"],
+									viewBox: "0 0 24 24",
+									fill: "none",
+									stroke: "currentColor",
+									strokeWidth: "1.6",
+									strokeLinecap: "round",
+									strokeLinejoin: "round",
+									"aria-hidden": "true",
+									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M14 3v5h5" })]
+								}),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+									className: talk_map_module_css_default["draftAttachmentFileText"],
+									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+										className: talk_map_module_css_default["draftAttachmentFileName"],
+										children: attachment.file.name !== "" ? attachment.file.name : t("draft.untitledFile")
+									}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+										className: talk_map_module_css_default["draftAttachmentFileMeta"],
+										children: formatAttachmentBytes(attachment.file.size)
+									})]
+								}),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+									type: "button",
+									className: talk_map_module_css_default["draftAttachmentRemove"],
+									title: t("draft.removeAttachment"),
+									"aria-label": t("draft.removeAttachment"),
+									disabled: busy,
+									onClick: () => {
+										removeAttachment(attachment.id);
+									},
+									children: "×"
+								})
+							]
+						}, attachment.id))
+					}) : null,
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("textarea", {
+						ref: textareaRef,
+						className: talk_map_module_css_default["draftTextarea"],
+						placeholder: t("draft.placeholder"),
+						value: text,
+						rows: 4,
+						onChange: (event) => {
+							setText(event.target.value);
+						},
+						onPaste,
+						onKeyDown: (event) => {
+							if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+								event.preventDefault();
+								create();
+							}
+						},
+						disabled: busy
+					}),
+					error !== void 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+						className: talk_map_module_css_default["spawnError"],
+						children: error
+					}) : null,
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+						className: talk_map_module_css_default["spawnActions"],
+						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+							type: "button",
+							className: talk_map_module_css_default["spawnBtnGhost"],
+							onClick: props.onClose,
+							disabled: busy,
+							children: t("spawn.cancel")
+						}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+							type: "button",
+							className: talk_map_module_css_default["spawnBtnPrimary"],
+							onClick: () => {
+								create();
+							},
+							disabled: sendDisabled,
+							children: busy ? uploadNote ?? t("spawn.busy") : t("spawn.confirm")
+						})]
+					})
+				]
 			});
 		}
 		//#endregion
@@ -12324,160 +13906,46 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			return byId.get(tagId);
 		}
 		//#endregion
-		//#region src/client/digest-text.ts
-		function digestBody(digest) {
-			const parts = [];
-			if (digest.summary !== "") parts.push(`${t("inject.summary")}${digest.summary}`);
-			if (digest.keyFindings.length > 0) {
-				parts.push(t("inject.findings"));
-				for (const finding of digest.keyFindings) parts.push(`- ${finding}`);
-			}
-			return parts;
-		}
-		function digestIsEmpty(digest) {
-			return digest === void 0 || digestBody(digest).length === 0;
-		}
-		function buildInjectionText(title, digest) {
-			const header = `${t("inject.header")}「${title}」`;
-			if (digest === void 0 || digestIsEmpty(digest)) return `${header}\n${t("spawn.noDigest")}`;
-			return [header, ...digestBody(digest)].join("\n");
-		}
-		/** The pipe push: latest digest of the source, stamped with origin + time. */
-		function buildPushText(title, digest) {
-			const now = /* @__PURE__ */ new Date();
-			return [t("push.header", {
-				from: title,
-				time: `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`
-			}), ...digestBody(digest)].join("\n");
-		}
-		//#endregion
-		//#region src/client/new-chat.ts
-		/** Directory part of a path (both separators), lower-cased. */
-		function workspaceDirectoryName$1(path) {
-			const trimmed = path.replace(/[\\/]+$/, "");
-			const cut = Math.max(trimmed.lastIndexOf("\\"), trimmed.lastIndexOf("/"));
-			return (cut >= 0 ? trimmed.slice(cut + 1) : trimmed).toLowerCase();
-		}
+		//#region src/client/ForkBoxNode.tsx
 		/**
-		* The deployment's own `default-workspace`, matched by title or directory
-		* name — the same rule the sidebar and the frame layout use. Conversations
-		* born on bare canvas land there instead of silently creating yet another
-		* workspace.
+		* The fork marker on the board: a dashed box dropped by a connection drag.
+		* Nothing exists behind it yet — no Session, no card — so it deliberately
+		* offers none of the card affordances (context menu, pin, edge handles). A
+		* click opens the setup panel in the drawer; the × removes the marker.
 		*/
-		function defaultWorkspaceOption(options) {
-			return options.find((option) => option.title.trim().toLowerCase() === "default-workspace" || workspaceDirectoryName$1(option.path) === "default-workspace")?.id;
+		function ForkBox(props) {
+			const { data } = props;
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+				className: data.active ? `${talk_map_module_css_default["forkBox"]} ${talk_map_module_css_default["forkBoxActive"]}` : talk_map_module_css_default["forkBox"],
+				"data-talk-map-fork-box": "",
+				children: [
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+						type: "button",
+						className: `nodrag ${talk_map_module_css_default["forkBoxRemove"]}`,
+						title: t("fork.remove"),
+						"aria-label": t("fork.remove"),
+						onClick: (event) => {
+							event.stopPropagation();
+							data.onRemove();
+						},
+						children: "×"
+					}),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+						className: talk_map_module_css_default["forkBoxTitle"],
+						children: t("fork.boxTitle")
+					}),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+						className: talk_map_module_css_default["forkBoxFrom"],
+						children: t("fork.from", { name: data.parentTitle })
+					}),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+						className: talk_map_module_css_default["forkBoxHint"],
+						children: t("fork.boxHint")
+					})
+				]
+			});
 		}
-		/**
-		* Where a brand-new conversation goes: the workspace frame the click landed
-		* in, else the deployment default, else the first workspace the host still
-		* has. `undefined` only when the host has no workspace at all.
-		*/
-		function newConversationWorkspace(input) {
-			const insideFrame = input.frameWorkspaceId;
-			if (insideFrame !== void 0 && insideFrame !== "") return insideFrame;
-			return defaultWorkspaceOption(input.options) ?? input.options[0]?.id;
-		}
-		function snapToGrid(value) {
-			return Math.round(value / 16) * 16;
-		}
-		/**
-		* Card position for a click at (flowX, flowY): horizontally centred on the
-		* click, top edge slightly below it. This is the spot the draft box used to
-		* occupy, so an instant creation lands exactly where the user pointed.
-		*/
-		function newChatCardPosition(flowX, flowY) {
-			return {
-				x: snapToGrid(flowX - 125),
-				y: snapToGrid(flowY - 40)
-			};
-		}
-		/**
-		* Starting rect for a workspace frame that is about to receive its first
-		* card. Sizes match the draft box's historic frame; the board re-fits the
-		* frame from the real member cards on the next render.
-		*/
-		function newChatFrameRect(x, y, cardWidth = 224, cardHeight = 120) {
-			const pad = 32;
-			const labelHeight = 30;
-			return {
-				x: x - pad,
-				y: y - pad - labelHeight,
-				width: cardWidth + 64,
-				height: cardHeight + 64 + labelHeight
-			};
-		}
-		//#endregion
-		//#region src/client/map-create.ts
-		let draftCatalogPromise = null;
-		/** The model catalog / agent presets / default labels are page-wide static:
-		*  load them once, lazily, and reuse them for every draft box and every
-		*  instant creation. Never rejects — an unreachable catalog yields defaults. */
-		function loadDraftCatalog() {
-			if (draftCatalogPromise !== null) return draftCatalogPromise;
-			draftCatalogPromise = (async () => {
-				const remote = getServices()?.remote;
-				let groups = [];
-				let presets = [];
-				let defaultModel = "";
-				let defaultPreset = "";
-				try {
-					if (remote !== void 0) {
-						const catalog = await remote.session.modelCatalog().catch(() => void 0);
-						if (catalog !== void 0 && catalog.ok) groups = catalog.value.groups ?? [];
-						const list = await remote.agentPresets.list().catch(() => void 0);
-						if (list !== void 0 && list.ok) presets = list.value.presets;
-					}
-					const defaults = await talkMapApi.getDefaults().catch(() => void 0);
-					if (defaults !== void 0 && defaults.model !== null) defaultModel = defaults.model.model;
-					if (defaults !== void 0 && defaults.preset !== null) defaultPreset = defaults.preset;
-				} catch (error) {
-					console.warn("[dsh-talk-map] draft catalog unavailable:", error);
-				}
-				return {
-					groups,
-					presets,
-					defaultModel,
-					defaultPreset
-				};
-			})();
-			return draftCatalogPromise;
-		}
-		/**
-		* The agent preset map-born conversations prefer: the plain 'standard' mode,
-		* because the deployment default may be a specialized one (e.g. cordis).
-		* `undefined` when the deployment does not ship that preset — the host then
-		* applies its own default.
-		*/
-		async function preferredAgentPreset() {
-			return (await loadDraftCatalog()).presets.some((preset) => preset.id === "standard") ? "standard" : void 0;
-		}
-		/**
-		* Add the newborn card at exactly (x, y). Blank conversations are not drawn
-		* on the board yet (an empty log is noise), but the placement is recorded, so
-		* the card appears at this spot as soon as the first message lands.
-		*/
-		function addSessionCard(sessionId, x, y, wsOverride) {
-			const cardId = newCardId();
-			canvas.addCards({ [cardId]: {
-				boardId: INBOX_BOARD_ID,
-				sessionId,
-				x,
-				y,
-				...wsOverride !== void 0 && wsOverride !== "" ? { wsOverride } : {},
-				createdAt: Date.now()
-			} });
-			return cardId;
-		}
-		/**
-		* The default workspace stays unframed; any other workspace grows a frame
-		* the first time a card lands in it. An existing frame is never overwritten
-		* (the user may have resized it).
-		*/
-		function ensureWorkspaceFrame(workspaceId, options, x, y) {
-			if (workspaceId === defaultWorkspaceOption(options)) return;
-			if (canvas.get().global?.wsFrames?.[workspaceId] !== void 0) return;
-			canvas.setWsFrameRect(workspaceId, newChatFrameRect(x, y));
-		}
+		const ForkBoxNode = (0, react.memo)(ForkBox);
 		//#endregion
 		//#region src/client/ContextMenu.tsx
 		/**
@@ -12489,7 +13957,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 		*/
 		function ContextMenu(props) {
 			const { menu } = props;
-			const [query, setQuery] = (0, react.useState)("");
+			const [query, setQuery] = (0, react.useState)(menu.prompt?.initialValue ?? "");
 			const [busy, setBusy] = (0, react.useState)(false);
 			const [error, setError] = (0, react.useState)(void 0);
 			const inputRef = (0, react.useRef)(null);
@@ -12832,123 +14300,6 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			] });
 		}
 		//#endregion
-		//#region src/client/draft-attachments.ts
-		const IMAGE_TYPES = [
-			"image/png",
-			"image/jpeg",
-			"image/webp",
-			"image/gif"
-		];
-		/** The Host image type for a declared MIME value, or undefined for any other file. */
-		function draftImageMediaType(value) {
-			return IMAGE_TYPES.includes(value) ? value : void 0;
-		}
-		/** Whether the draft must treat this file as an image or as a verbatim file. */
-		function classifyDraftFile(file) {
-			return draftImageMediaType(file.type) === void 0 ? "file" : "image";
-		}
-		function fileFromItem(item) {
-			if (item === null || typeof item !== "object") return void 0;
-			const candidate = item;
-			if (candidate.kind !== "file" || typeof candidate.getAsFile !== "function") return void 0;
-			return candidate.getAsFile() ?? void 0;
-		}
-		/**
-		* Files carried by a paste. Clipboard items come first (source order), then
-		* `files` entries not already seen. Text items are ignored: the textarea's
-		* default paste handles text.
-		*/
-		function collectClipboardFiles(transfer) {
-			if (transfer === null) return [];
-			const files = [];
-			const seen = /* @__PURE__ */ new Set();
-			for (const item of Array.from(transfer.items ?? [])) {
-				const file = fileFromItem(item);
-				if (file === void 0 || seen.has(file)) continue;
-				seen.add(file);
-				files.push(file);
-			}
-			for (const file of Array.from(transfer.files ?? [])) {
-				if (seen.has(file)) continue;
-				seen.add(file);
-				files.push(file);
-			}
-			return files;
-		}
-		function parseImageSource(raw) {
-			if (raw === "") return void 0;
-			try {
-				const value = JSON.parse(raw);
-				if (typeof value.src !== "string" || value.src === "") return void 0;
-				return {
-					src: value.src,
-					...typeof value.title === "string" && value.title !== "" ? { title: value.title } : {}
-				};
-			} catch {
-				return;
-			}
-		}
-		/**
-		* Read one drop. Precedence matters: the application-internal file token is
-		* the original bytes of an image dragged out of the drawer, so it wins over
-		* the map's URL payload (which would otherwise attach the same image twice).
-		*/
-		function collectDropIntake(transfer, readAppFile) {
-			const appFile = readAppFile?.(transfer);
-			if (appFile !== void 0) return {
-				files: [appFile],
-				imageSources: []
-			};
-			const source = parseImageSource(transfer.getData("application/x-talk-map-image"));
-			if (source !== void 0) return {
-				files: [],
-				imageSources: [source]
-			};
-			return {
-				files: Array.from(transfer.files ?? []),
-				imageSources: []
-			};
-		}
-		/** Whether this drag carries something the draft can attach. */
-		function hasAttachmentDrag(transfer) {
-			if (transfer === null) return false;
-			const types = Array.from(transfer.types ?? []);
-			return types.includes("Files") || types.includes("application/x-dsh-file") || types.includes("application/x-talk-map-image");
-		}
-		/** The prompt content for one send: uploaded receipts first, text last. */
-		function buildPromptContent(receiptIds, text) {
-			const content = receiptIds.map((receiptId) => ({
-				type: "file",
-				receiptId
-			}));
-			if (text !== "") content.push({
-				type: "text",
-				text
-			});
-			return content;
-		}
-		/** A draft can be sent with attachments alone. */
-		function draftSendable(text, attachmentCount) {
-			return text.trim() !== "" || attachmentCount > 0;
-		}
-		/**
-		* Whether 发送 / 开新对话 is disabled. Fork drafts in 完整对话 mode may send an
-		* empty first message: the source history is already carried, and the prompt
-		* is skipped when there is neither text nor an attachment.
-		*/
-		function draftSendDisabled(state) {
-			if (state.busy || state.needsNewWorkspaceName) return true;
-			if (state.isFork && state.mode === "digest" && (state.generatingSummary || state.summaryEmpty)) return true;
-			if (state.isFork && state.mode === "full") return false;
-			return !draftSendable(state.text, state.attachmentCount);
-		}
-		/** Compact byte size for the generic-file card. */
-		function formatAttachmentBytes(bytes) {
-			if (bytes < 1024) return `${bytes} B`;
-			if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
-			return `${(bytes / 1048576).toFixed(1)} MB`;
-		}
-		//#endregion
 		//#region src/client/DraftCard.tsx
 		/**
 		* The draft card: double-clicking empty canvas opens this in-place composer
@@ -12977,13 +14328,6 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			const key = `preset.${id}`;
 			const label = t(key);
 			return label === key ? id : label;
-		}
-		/** Parent directory new workspaces land in: alongside the existing ones. */
-		function newWorkspaceParent(options) {
-			const sample = options[0]?.path;
-			if (sample === void 0) return "~";
-			const cut = sample.lastIndexOf("/");
-			return cut > 0 ? sample.slice(0, cut) : sample;
 		}
 		function DraftCard(props) {
 			const { data } = props;
@@ -13160,65 +14504,6 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			const addDraftCard = (sessionId, wsOverride) => {
 				return addSessionCard(sessionId, snap$1(props.positionAbsoluteX), snap$1(props.positionAbsoluteY), wsOverride);
 			};
-			/** Persist the fork relationship as a map edge (digest/full/none). */
-			const addForkEdge = (parentCardId, toCardId, kind, injectedText) => {
-				canvas.addEdges({ [`edge-${crypto.randomUUID()}`]: {
-					boardId: INBOX_BOARD_ID,
-					fromCardId: parentCardId,
-					toCardId,
-					injection: {
-						kind,
-						...injectedText !== void 0 ? { injectedText } : {}
-					},
-					createdAt: Date.now()
-				} });
-			};
-			/**
-			* Upload every pending attachment into the newborn Session and return the
-			* receipts a prompt cites, in the user's add order. This is the only point
-			* at which bytes leave the browser: the draft creates nothing until 发送.
-			*/
-			const uploadAttachments = async (remote, sessionId, signal) => {
-				const services = getServices();
-				if (services === void 0) throw new Error("dsh connection is not ready");
-				if (attachments.length === 0) return [];
-				const receiptIds = [];
-				try {
-					for (const [index, attachment] of attachments.entries()) {
-						setUploadNote(t("draft.uploading", {
-							done: String(index + 1),
-							total: String(attachments.length)
-						}));
-						const onProgress = (progress) => {
-							const ratio = progress.total !== void 0 && progress.total > 0 ? Math.min(1, progress.loaded / progress.total) : 0;
-							setUploadProgress((previous) => ({
-								...previous,
-								[attachment.id]: ratio
-							}));
-						};
-						const value = unwrapRemote(attachment.kind === "image" && attachment.mediaType !== void 0 ? await services.fileUpload.uploadImage(sessionId, attachment.file, attachment.mediaType, attachment.file.name, signal, onProgress) : await services.fileUpload.upload(sessionId, attachment.file, attachment.file.name, signal, onProgress), "fileUpload");
-						receiptIds.push(value.receiptId);
-					}
-				} catch (uploadError) {
-					if (signal.aborted) throw uploadError;
-					throw new Error(`${t("draft.uploadFailed")}${uploadError instanceof Error ? uploadError.message : String(uploadError)}`);
-				} finally {
-					setUploadNote(void 0);
-					setUploadProgress({});
-				}
-				return receiptIds;
-			};
-			const sendPrompt = async (remote, sessionId, promptText, receiptIds) => {
-				const content = buildPromptContent(receiptIds, promptText);
-				if (content.length === 0) return;
-				unwrapRemote(await remote.session.prompt({
-					requestId: crypto.randomUUID(),
-					sessionId,
-					mode: "queue",
-					content,
-					clientTimeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-				}), "session.prompt");
-			};
 			const finish = (sessionId) => {
 				data.onClose();
 				if (data.onOpenChat !== void 0) data.onOpenChat(sessionId);
@@ -13251,13 +14536,27 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 						if (mode === "full") {
 							const childId = sessionIdOf(unwrapRemote(await services.sessions.fork({ sessionId: parent.sessionId }), "session.fork"));
 							if (childId === void 0) throw new Error("session.fork returned no session id");
-							const receiptIds = await uploadAttachments(remote, childId, signal);
+							const receiptIds = await uploadDraftAttachments({
+								sessionId: childId,
+								attachments,
+								signal,
+								onNote: setUploadNote,
+								onProgress: (progress) => setUploadProgress((previous) => ({
+									...previous,
+									...progress
+								}))
+							});
 							if (stopped()) return;
 							const forkCardId = addDraftCard(childId, parent.workspaceId);
-							addForkEdge(parent.cardId, forkCardId, "full", void 0);
+							addForkEdge({
+								parentCardId: parent.cardId,
+								toCardId: forkCardId,
+								kind: "full",
+								...parent.fromHandle !== void 0 ? { fromHandle: parent.fromHandle } : {}
+							});
 							if (parent.workspaceId !== void 0) ensureFrame(parent.workspaceId, cardX, cardY);
 							if (stopped()) return;
-							await sendPrompt(remote, childId, text, receiptIds);
+							await sendDraftPrompt(remote, childId, text, receiptIds);
 							if (stopped()) return;
 							finish(childId);
 							return;
@@ -13268,7 +14567,16 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 							...presetId !== "" ? { agentPreset: presetId } : {}
 						}), "session.create"));
 						if (sessionId === void 0) throw new Error("session.create returned no session id");
-						const receiptIds = await uploadAttachments(remote, sessionId, signal);
+						const receiptIds = await uploadDraftAttachments({
+							sessionId,
+							attachments,
+							signal,
+							onNote: setUploadNote,
+							onProgress: (progress) => setUploadProgress((previous) => ({
+								...previous,
+								...progress
+							}))
+						});
 						if (stopped()) return;
 						if (mode === "digest") {
 							await talkMapApi.injectContext(sessionId, [{
@@ -13278,7 +14586,13 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 							if (stopped()) return;
 						}
 						const cardId = addDraftCard(sessionId, targetWorkspaceId);
-						addForkEdge(parent.cardId, cardId, mode === "digest" ? "digest" : "none", mode === "digest" ? summary : void 0);
+						addForkEdge({
+							parentCardId: parent.cardId,
+							toCardId: cardId,
+							kind: mode === "digest" ? "digest" : "none",
+							...mode === "digest" ? { injectedText: summary } : {},
+							...parent.fromHandle !== void 0 ? { fromHandle: parent.fromHandle } : {}
+						});
 						ensureFrame(targetWorkspaceId, cardX, cardY);
 						if (modelKey !== "") {
 							const [provider, model] = modelKey.split("::");
@@ -13289,7 +14603,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 							}), "session.selectModel");
 						}
 						if (stopped()) return;
-						await sendPrompt(remote, sessionId, text, receiptIds);
+						await sendDraftPrompt(remote, sessionId, text, receiptIds);
 						if (stopped()) return;
 						finish(sessionId);
 						return;
@@ -13300,7 +14614,16 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 						...presetId !== "" ? { agentPreset: presetId } : {}
 					}), "session.create"));
 					if (sessionId === void 0) throw new Error("session.create returned no session id");
-					const receiptIds = await uploadAttachments(remote, sessionId, signal);
+					const receiptIds = await uploadDraftAttachments({
+						sessionId,
+						attachments,
+						signal,
+						onNote: setUploadNote,
+						onProgress: (progress) => setUploadProgress((previous) => ({
+							...previous,
+							...progress
+						}))
+					});
 					if (stopped()) return;
 					const cardX = snap$1(props.positionAbsoluteX);
 					const cardY = snap$1(props.positionAbsoluteY);
@@ -13315,7 +14638,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 						}), "session.selectModel");
 					}
 					if (stopped()) return;
-					await sendPrompt(remote, sessionId, text, receiptIds);
+					await sendDraftPrompt(remote, sessionId, text, receiptIds);
 					if (stopped()) return;
 					finish(sessionId);
 				} catch (sendError) {
@@ -13722,6 +15045,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			const classNames = [talk_map_module_css_default["card"]];
 			if (data.ghost) classNames.push(talk_map_module_css_default["cardGhost"]);
 			if (selected === true) classNames.push(talk_map_module_css_default["cardSelected"]);
+			if (data.pending === true) classNames.push(talk_map_module_css_default["cardPending"]);
 			if (data.foreignLabel !== void 0) classNames.push(talk_map_module_css_default["cardForeign"]);
 			if (data.foreignTouch === true) classNames.push(talk_map_module_css_default["cardForeignTouch"]);
 			const color = colorOf(data.colorTag);
@@ -13732,13 +15056,13 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					backgroundImage: `linear-gradient(${color.fill}, ${color.fill})`
 				} : {},
 				children: [
-					/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Handle, {
+					data.pending === true ? null : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Handle, {
 						id: "t",
 						type: "source",
 						position: Position.Top,
 						className: talk_map_module_css_default["cardHandle"] ?? ""
 					}),
-					/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Handle, {
+					data.pending === true ? null : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Handle, {
 						id: "l",
 						type: "source",
 						position: Position.Left,
@@ -13756,7 +15080,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 								className: talk_map_module_css_default["cardTitle"],
 								children: data.ghost ? t("card.ghostTitle") : data.title
 							}),
-							data.ghost !== true && !archived ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+							data.ghost !== true && !archived && data.pending !== true ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 								type: "button",
 								className: pinned ? `nodrag ${talk_map_module_css_default["cardPin"] ?? ""} ${talk_map_module_css_default["cardPinActive"] ?? ""}` : `nodrag ${talk_map_module_css_default["cardPin"] ?? ""}`,
 								title: pinned ? t("card.unpin") : t("card.pin"),
@@ -13783,9 +15107,13 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					}) : null,
 					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 						className: talk_map_module_css_default["cardFooter"],
-						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 							className: talk_map_module_css_default["cardFooterLeft"],
-							children: [data.foreignLabel !== void 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+							children: data.pending === true ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+								className: talk_map_module_css_default["cardPendingHint"],
+								title: t("card.pendingHintLong"),
+								children: t("card.pendingHint")
+							}) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [data.foreignLabel !== void 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 								className: talk_map_module_css_default["cardForeignChip"],
 								title: t("card.foreignHint", { name: data.foreignLabel }),
 								children: [
@@ -13796,7 +15124,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 							}) : null, /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 								className: talk_map_module_css_default["cardTime"],
 								children: data.timeLabel ?? ""
-							})]
+							})] })
 						}), data.waiting === true ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 							type: "button",
 							className: `nodrag ${talk_map_module_css_default["cardWaitingButton"] ?? ""}`,
@@ -13819,13 +15147,13 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { className: talk_map_module_css_default["runningDot"] }), t("card.running")]
 						}) : null]
 					}),
-					/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Handle, {
+					data.pending === true ? null : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Handle, {
 						id: "r",
 						type: "source",
 						position: Position.Right,
 						className: talk_map_module_css_default["cardHandle"] ?? ""
 					}),
-					/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Handle, {
+					data.pending === true ? null : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Handle, {
 						id: "b",
 						type: "source",
 						position: Position.Bottom,
@@ -13976,7 +15304,8 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			sessionCard: SessionCardNode,
 			wsFrame: WsFrameNode,
 			draftCard: DraftCardNode,
-			imageNode: ImageNodeView
+			imageNode: ImageNodeView,
+			forkBox: ForkBoxNode
 		};
 		const GRID = 16;
 		const CARD_W = 250;
@@ -13997,7 +15326,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 		/** Shallow compare of the fields a SessionCard renders — the node cache reuses
 		*  the previous node object (and thus skips the card's render) while equal. */
 		function sameSessionCardData(left, right) {
-			return left.cardId === right.cardId && left.sessionId === right.sessionId && left.title === right.title && left.running === right.running && left.ghost === right.ghost && left.updatedAt === right.updatedAt && left.colorTag === right.colorTag && left.timeLabel === right.timeLabel && left.waiting === right.waiting && left.done === right.done && left.foreignLabel === right.foreignLabel && left.foreignTouch === right.foreignTouch;
+			return left.cardId === right.cardId && left.sessionId === right.sessionId && left.title === right.title && left.running === right.running && left.ghost === right.ghost && left.updatedAt === right.updatedAt && left.colorTag === right.colorTag && left.timeLabel === right.timeLabel && left.waiting === right.waiting && left.done === right.done && left.pending === right.pending && left.foreignLabel === right.foreignLabel && left.foreignTouch === right.foreignTouch;
 		}
 		/** Same idea for frames: geometry/counts/colors are the whole render input. */
 		function sameWsFrameData(left, right) {
@@ -14061,6 +15390,8 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			const dark = useDsDarkTheme();
 			const canvasState = (0, react.useSyncExternalStore)(canvas.subscribe, canvas.get);
 			const sessions = props.useSessions((state) => state);
+			const pendingChats = usePendingChatSessions();
+			const forkBoxes = useForkBoxState();
 			const workspaces = props.useWorkspaces((state) => state);
 			const archivedIds = useArchivedSessionIds();
 			const pendingInteractions = (0, react.useSyncExternalStore)(interactions.subscribe, interactions.getSnapshot);
@@ -14069,6 +15400,13 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			const { screenToFlowPosition, zoomTo } = useReactFlow();
 			const [selectedIds, setSelectedIds] = (0, react.useState)(/* @__PURE__ */ new Set());
 			const [selectedEdgeIds, setSelectedEdgeIds] = (0, react.useState)(/* @__PURE__ */ new Set());
+			const cardSelectionRequest = useCardSelectionRequest();
+			(0, react.useEffect)(() => {
+				if (cardSelectionRequest === null) return;
+				setSelectedIds(/* @__PURE__ */ new Set([cardSelectionRequest.cardId]));
+				setSelectedEdgeIds(/* @__PURE__ */ new Set());
+				consumeCardSelectionRequest(cardSelectionRequest.seq);
+			}, [cardSelectionRequest]);
 			const [connecting, setConnecting] = (0, react.useState)(false);
 			const connectCancelledRef = (0, react.useRef)(false);
 			const [toast, setToast] = (0, react.useState)(null);
@@ -14139,6 +15477,11 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				if (cardNode !== null) {
 					const cardId = cardNode.getAttribute("data-id");
 					if (cardId === null || cardId === "") return null;
+					const sessionId = canvas.get().cards[cardId]?.sessionId;
+					if (sessionId !== void 0 && isPendingChat(sessionId)) {
+						const summary = sessions.byId[sessionId];
+						if (summary === void 0 || summary.blank === true) return null;
+					}
 					return {
 						...geometry(),
 						kind: "card",
@@ -14326,7 +15669,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			const visibleCards = (0, react.useMemo)(() => {
 				const out = {};
 				for (const [cardId, card] of Object.entries(canvasState.cards)) {
-					if (blankSessions.has(card.sessionId)) continue;
+					if (blankSessions.has(card.sessionId) && !pendingChats.has(card.sessionId)) continue;
 					if (archivedIds.has(card.sessionId)) continue;
 					out[cardId] = card;
 				}
@@ -14334,8 +15677,15 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			}, [
 				canvasState.cards,
 				blankSessions,
+				pendingChats,
 				archivedIds
 			]);
+			(0, react.useEffect)(() => {
+				for (const sessionId of pendingChats) {
+					const summary = sessions.byId[sessionId];
+					if (summary !== void 0 && summary.blank === false) clearPendingChat(sessionId);
+				}
+			}, [pendingChats, sessions]);
 			const cardIdsKey = (0, react.useMemo)(() => Object.keys(visibleCards).sort().join("|"), [visibleCards]);
 			(0, react.useEffect)(() => {
 				if (canvasState.global === null) return;
@@ -14620,18 +15970,20 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				const cardNodes = Object.entries(visibleCards).filter(([, card]) => card.boardId === INBOX_BOARD_ID).map(([cardId, card]) => {
 					const summary = sessions.byId[card.sessionId];
 					const selected = liveSelectedIds.has(cardId);
+					const temporary = pendingChats.has(card.sessionId) && (summary === void 0 || summary.blank === true);
 					const data = {
 						cardId,
 						sessionId: card.sessionId,
-						title: card.title ?? summary?.displayTitle ?? card.sessionId,
-						running: summary?.running ?? false,
-						ghost: summary === void 0,
+						title: temporary ? t("card.pendingTitle") : card.title ?? summary?.displayTitle ?? card.sessionId,
+						running: temporary ? false : summary?.running ?? false,
+						ghost: !temporary && summary === void 0,
 						updatedAt: summary?.updatedAt,
-						waiting: pendingInteractions.has(card.sessionId) || summary?.pendingInteraction !== void 0,
-						done: completedIds.has(card.sessionId) && card.sessionId !== props.activeChatSessionId,
+						waiting: temporary ? false : pendingInteractions.has(card.sessionId) || summary?.pendingInteraction !== void 0,
+						done: temporary ? false : completedIds.has(card.sessionId) && card.sessionId !== props.activeChatSessionId,
 						...card.colorTag !== void 0 ? { colorTag: card.colorTag } : {},
 						...foreign.labels.has(cardId) ? { foreignLabel: foreign.labels.get(cardId) } : {},
 						...foreign.touching.has(cardId) ? { foreignTouch: true } : {},
+						...temporary ? { pending: true } : {},
 						timeLabel: relativeTime(summary?.updatedAt)
 					};
 					const cached = previousNodes.get(cardId);
@@ -14679,11 +16031,30 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 						onResize: handleImageResize
 					}
 				}));
+				const forkNodes = [...forkBoxes.boxes.values()].map((box) => ({
+					id: box.id,
+					type: "forkBox",
+					position: {
+						x: box.x,
+						y: box.y
+					},
+					selectable: false,
+					focusable: false,
+					zIndex: 5,
+					data: {
+						parentTitle: box.parentTitle,
+						active: forkBoxes.activeId === box.id,
+						onRemove: () => {
+							removeForkBox(box.id);
+						}
+					}
+				}));
 				nodeCacheRef.current = nextCache;
 				return [
 					...frameNodes,
 					...imageNodes,
 					...cardNodes,
+					...forkNodes,
 					...draftNodes
 				];
 			}, [
@@ -14707,7 +16078,9 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				props.onOpenChat,
 				props.activeChatSessionId,
 				canvasState.images,
-				handleImageResize
+				handleImageResize,
+				pendingChats,
+				forkBoxes
 			]);
 			const sessionIdToCardId = (0, react.useMemo)(() => {
 				const index = /* @__PURE__ */ new Map();
@@ -14731,12 +16104,18 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					explicitPairs.add(`${edge.toCardId}->${edge.fromCardId}`);
 					if (!present.has(edge.fromCardId) || !present.has(edge.toCardId)) continue;
 					const kind = edge.injection.kind;
+					const fromCard = canvasState.cards[edge.fromCardId];
+					const toCard = canvasState.cards[edge.toCardId];
+					const geometry = fromCard !== void 0 && toCard !== void 0 ? sideHandles(fromCard, toCard) : {
+						fromHandle: "r",
+						toHandle: "l"
+					};
 					out.push({
 						id: edgeId,
 						source: edge.fromCardId,
 						target: edge.toCardId,
-						sourceHandle: edge.fromHandle ?? "r",
-						targetHandle: edge.toHandle ?? "l",
+						sourceHandle: edge.fromHandle ?? geometry.fromHandle,
+						targetHandle: edge.toHandle ?? geometry.toHandle,
 						type: "smoothstep",
 						selected: liveSelectedEdgeIds.has(edgeId),
 						data: {
@@ -14835,6 +16214,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 						x: change.position.x,
 						y: change.position.y
 					};
+					else if (change.id.startsWith("fork-")) moveForkBox(change.id, change.position.x, change.position.y);
 					else positionUpdates[change.id] = {
 						x: change.position.x,
 						y: change.position.y
@@ -14843,14 +16223,17 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					width: change.dimensions.width,
 					height: change.dimensions.height
 				});
-				else if (change.type === "select") setSelectedIds((previous) => {
-					const next = new Set(previous);
-					if (change.selected) next.add(change.id);
-					else next.delete(change.id);
-					return next;
-				});
-				else if (change.type === "remove") {
+				else if (change.type === "select") {
+					if (change.id.startsWith("fork-")) continue;
+					setSelectedIds((previous) => {
+						const next = new Set(previous);
+						if (change.selected) next.add(change.id);
+						else next.delete(change.id);
+						return next;
+					});
+				} else if (change.type === "remove") {
 					if (change.id.startsWith("frame-")) removeGroup(change.id.slice(6));
+					else if (change.id.startsWith("fork-")) removeForkBox(change.id);
 					else if (change.id !== "draft") canvas.removeCard(change.id);
 					setSelectedIds((previous) => {
 						const next = new Set(previous);
@@ -14931,25 +16314,6 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					setToast(null);
 				}, durationMs);
 			};
-			/** Pick edge anchor sides from the cards' relative placement. */
-			const sideHandles = (from, to) => {
-				const dx = to.x - from.x;
-				const dy = to.y - from.y;
-				if (Math.abs(dx) >= Math.abs(dy)) return dx >= 0 ? {
-					fromHandle: "r",
-					toHandle: "l"
-				} : {
-					fromHandle: "l",
-					toHandle: "r"
-				};
-				return dy >= 0 ? {
-					fromHandle: "b",
-					toHandle: "t"
-				} : {
-					fromHandle: "t",
-					toHandle: "b"
-				};
-			};
 			/** A plain association between two existing cards. One edge per pair —
 			* a second draw over an already-connected pair is silently a no-op. */
 			const createLinkEdge = (fromCardId, toCardId, handles) => {
@@ -14975,8 +16339,8 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			const onConnect = (connection) => {
 				if (connectCancelledRef.current) return;
 				createLinkEdge(connection.source, connection.target, {
-					fromHandle: connection.sourceHandle,
-					toHandle: connection.targetHandle
+					fromHandle: drawnHandle(connection.sourceHandle),
+					toHandle: drawnHandle(connection.targetHandle)
 				});
 			};
 			/** The pipe: push the source's latest digest into the target's inbox. */
@@ -15010,6 +16374,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				if (fromNodeId === void 0) return;
 				const card = canvasState.cards[fromNodeId];
 				if (card === void 0) return;
+				const fromHandle = drawnHandle(connectionState.fromHandle?.id);
 				const client = "clientX" in event ? {
 					x: event.clientX,
 					y: event.clientY
@@ -15021,18 +16386,25 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				const position = screenToFlowPosition(client);
 				const hitId = document.elementsFromPoint(client.x, client.y).map((el) => el.closest(".react-flow__node[data-id^=\"card-\"]")).find((el) => el !== null)?.getAttribute("data-id") ?? void 0;
 				if (hitId !== void 0 && visibleCards[hitId] !== void 0) {
-					if (hitId !== fromNodeId) createLinkEdge(fromNodeId, hitId);
+					if (hitId !== fromNodeId) createLinkEdge(fromNodeId, hitId, { fromHandle });
 					return;
 				}
 				const summary = sessions.byId[card.sessionId];
 				if (summary === void 0) return;
 				const parentWorkspaceId = sessionWs.get(card.sessionId);
-				openDraftAt(position.x, position.y, {
-					cardId: fromNodeId,
-					sessionId: card.sessionId,
-					title: summary.displayTitle,
-					...parentWorkspaceId !== void 0 ? { workspaceId: parentWorkspaceId } : {}
-				}, true);
+				const box = {
+					id: newForkBoxId(),
+					parentCardId: fromNodeId,
+					parentSessionId: card.sessionId,
+					parentTitle: summary.displayTitle,
+					...parentWorkspaceId !== void 0 ? { parentWorkspaceId } : {},
+					...fromHandle !== void 0 ? { fromHandle } : {},
+					x: snap(position.x),
+					y: snap(position.y - 40)
+				};
+				addForkBox(box);
+				setSelectedIds(/* @__PURE__ */ new Set());
+				props.onOpenForkSetup?.(box.id);
 			};
 			const openSession = (sessionId) => {
 				if (getServices() === void 0) return;
@@ -15106,8 +16478,10 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					const position = newChatCardPosition(flowX, flowY);
 					addSessionCard(sessionId, position.x, position.y, targetWorkspaceId);
 					ensureWorkspaceFrame(targetWorkspaceId, draftWorkspaceOptions, position.x, position.y);
+					markPendingChat(sessionId);
 					if (props.onOpenChat !== void 0) props.onOpenChat(sessionId);
 					else {
+						clearPendingChat(sessionId);
 						mapUi.setOpen(false);
 						openSessionInMain(sessionId);
 					}
@@ -15256,14 +16630,14 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					if (cardId === void 0) return null;
 					const card = canvasState.cards[cardId];
 					if (card === void 0) return null;
-					const summary = sessions.byId[card.sessionId];
-					const current = card.title ?? summary?.displayTitle ?? card.sessionId;
+					const displayTitle = sessions.byId[card.sessionId]?.displayTitle ?? card.sessionId;
 					return {
 						left: menu.left,
 						top: menu.top,
 						title: t("menu.editTitle"),
 						prompt: {
-							placeholder: current,
+							placeholder: displayTitle,
+							...card.title !== void 0 ? { initialValue: card.title } : {},
 							submitLabel: t("menu.saveTitle"),
 							onSubmit: async (value) => {
 								canvas.setCardTitle(cardId, value);
@@ -15422,12 +16796,18 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 							onPick: () => {
 								close();
 								const parentWorkspaceId = sessionWs.get(card.sessionId);
-								openDraftAt(card.x + CARD_W + GAP_X + CARD_W / 2, card.y + CARD_H / 2 + 40, {
-									cardId,
-									sessionId: card.sessionId,
-									title: summary.displayTitle,
-									...parentWorkspaceId !== void 0 ? { workspaceId: parentWorkspaceId } : {}
-								});
+								const box = {
+									id: newForkBoxId(),
+									parentCardId: cardId,
+									parentSessionId: card.sessionId,
+									parentTitle: summary.displayTitle,
+									...parentWorkspaceId !== void 0 ? { parentWorkspaceId } : {},
+									x: snap(card.x + CARD_W + GAP_X),
+									y: snap(card.y)
+								};
+								addForkBox(box);
+								setSelectedIds(/* @__PURE__ */ new Set());
+								props.onOpenForkSetup?.(box.id);
 							}
 						});
 					}
@@ -15633,6 +17013,11 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 							props.onSelectionChange?.(card ? card.data.sessionId : void 0);
 						},
 						onNodeClick: (event, node) => {
+							if (node.type === "forkBox") {
+								cancelChatSoon();
+								props.onOpenForkSetup?.(node.id);
+								return;
+							}
 							if (node.type === "sessionCard" && !node.data.ghost) {
 								cancelChatSoon();
 								if (event.detail <= 1) openChatSoon(node.data.sessionId);
@@ -15963,8 +17348,16 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 		}
 		function OpenMapOverlay(props) {
 			const sessionCount = props.useSessions((state) => state.ids.length);
+			const workspaces = props.useWorkspaces((state) => state);
 			const [chat, setChat] = (0, react.useState)(null);
 			const [notice, setNotice] = (0, react.useState)(null);
+			const forkBoxes = useForkBoxState();
+			const activeForkBox = forkBoxes.activeId === void 0 ? void 0 : forkBoxes.boxes.get(forkBoxes.activeId);
+			const workspaceOptions = (0, react.useMemo)(() => workspaces.items.map((item) => ({
+				id: item.workspaceId,
+				title: item.title,
+				path: item.path
+			})), [workspaces.items]);
 			const storedDrawerWidth = (0, react.useSyncExternalStore)(canvas.subscribe, () => canvas.get().global?.drawerWidth ?? 0);
 			const [resizingDrawer, setResizingDrawer] = (0, react.useState)(false);
 			const drawerRef = (0, react.useRef)(null);
@@ -16206,12 +17599,43 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					openSessionInMain(swap.original);
 				}, 0);
 			};
+			/**
+			* Walking away from a fresh conversation before its first turn withdraws
+			* the temporary box and archives the blank Session: neither the board nor
+			* the sidebar should keep a conversation that never started. A Session that
+			* already ran is a real card and is never touched here.
+			*
+			* The decision waits one beat: a first prompt and the drawer's close can
+			* land in the same instant, and the catalog's `blank` flag flips with the
+			* Host event that follows. Re-reading it after the delay keeps a just-
+			* started conversation out of the archive.
+			*/
+			const abandonPendingChat = (0, react.useCallback)((sessionId) => {
+				if (!isPendingChat(sessionId)) return;
+				window.setTimeout(() => {
+					if (chatRef.current?.sessionId === sessionId || chatWantedRef.current === sessionId || swapPendingRef.current === sessionId) return;
+					const summary = getServices()?.sessions.list.getSnapshot().byId[sessionId];
+					if (pendingAbandonAction(summary) !== "archive") {
+						clearPendingChat(sessionId);
+						return;
+					}
+					clearPendingChat(sessionId);
+					for (const [cardId, card] of Object.entries(canvas.get().cards)) if (card.sessionId === sessionId) canvas.removeCard(cardId);
+					talkMapApi.archiveSession(sessionId).catch((error) => {
+						const detail = error instanceof Error ? error.message : String(error);
+						showMapNotice(`${t("toast.archiveFailed")}${detail}`);
+					});
+				}, 400);
+			}, []);
 			const closeChat = () => {
 				const sessionId = chatRef.current?.sessionId;
 				closeChatNow();
 				persistDrawer(void 0);
 				restoreSwap();
-				if (sessionId !== void 0) clearUnreadAfterDrawer(sessionId);
+				if (sessionId !== void 0) {
+					abandonPendingChat(sessionId);
+					clearUnreadAfterDrawer(sessionId);
+				}
 			};
 			/**
 			* Put the drawer away for a map action that takes over the screen: an
@@ -16254,7 +17678,10 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 						reference
 					});
 					persistDrawer(sessionId);
-					if (previous !== void 0 && previous !== sessionId) clearUnreadAfterDrawer(previous);
+					if (previous !== void 0 && previous !== sessionId) {
+						abandonPendingChat(previous);
+						clearUnreadAfterDrawer(previous);
+					}
 					return true;
 				};
 				if (show()) return;
@@ -16274,11 +17701,12 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				};
 				stop = services.sessions.list.subscribe(check);
 				check();
-			}, [clearUnreadAfterDrawer]);
+			}, [abandonPendingChat, clearUnreadAfterDrawer]);
 			const handleFullOpen = (0, react.useCallback)((sessionId) => {
 				swapPendingRef.current = void 0;
 				swapRef.current = null;
 				clearedSessionRef.current = void 0;
+				for (const candidate of [chatRef.current?.sessionId, sessionId]) if (candidate !== void 0 && isPendingChat(candidate)) clearPendingChat(candidate);
 				closeChatNow();
 				persistDrawer(void 0);
 				setNotice(null);
@@ -16292,7 +17720,9 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			* drawer. Shared by the automatic open path and the notice's manual retry.
 			*/
 			const parkAndShow = (0, react.useCallback)(async (sessionId, candidates) => {
+				const leaving = chatRef.current?.sessionId;
 				closeChatNow();
+				if (leaving !== void 0) abandonPendingChat(leaving);
 				setNotice(null);
 				swapPendingRef.current = sessionId;
 				for (const parking of candidates) {
@@ -16318,7 +17748,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				if (!mountedRef.current) return;
 				openSessionInMain(sessionId);
 				setNotice({ sessionId });
-			}, [retainAndShow]);
+			}, [abandonPendingChat, retainAndShow]);
 			/**
 			* A card's drawer. The host owns ONE editable composer root per Session
 			* (ui-conversation: "does not support simultaneous editable roots for one
@@ -16327,6 +17757,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			*/
 			const openChat = (0, react.useCallback)((sessionId) => {
 				if (drawerLockedRef.current && chatRef.current !== null) return;
+				if (getForkBoxState().activeId !== void 0) setActiveForkBox(void 0);
 				const services = getServices();
 				const retain = services?.sessions.retain;
 				if (services === void 0) return;
@@ -16344,7 +17775,9 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				if (chatRef.current?.sessionId === sessionId) return;
 				const swap = swapRef.current;
 				if (swap !== null && sessionId === swap.parking) {
+					const leaving = chatRef.current?.sessionId;
 					closeChatNow();
+					if (leaving !== void 0) abandonPendingChat(leaving);
 					setNotice({ sessionId });
 					return;
 				}
@@ -16356,12 +17789,40 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				const candidates = findParkingSessions(sessionId);
 				if (candidates.length === 0) {
 					console.warn("[dsh-talk-map] no Session available to park the main column", { sessionId });
+					const leaving = chatRef.current?.sessionId;
 					closeChatNow();
+					if (leaving !== void 0) abandonPendingChat(leaving);
 					setNotice({ sessionId });
 					return;
 				}
 				parkAndShow(sessionId, candidates);
-			}, [parkAndShow, retainAndShow]);
+			}, [
+				abandonPendingChat,
+				parkAndShow,
+				retainAndShow
+			]);
+			/**
+			* Open one fork marker's setup in the drawer. The setup is a drawer surface
+			* of its own: whatever conversation was showing is left exactly like a
+			* drawer close (a temporary new conversation is withdrawn with it), and the
+			* marker becomes the active one.
+			*/
+			const openForkSetup = (boxId) => {
+				if (chatRef.current !== null) closeChat();
+				else if (notice !== null) setNotice(null);
+				setActiveForkBox(boxId);
+			};
+			/**
+			* The setup created the fork: withdraw the marker, switch the drawer to the
+			* new conversation, and select the fresh card on the board (the state a
+			* click would have left — this is the card the user just asked for).
+			*/
+			const handleForkCreated = (boxId, sessionId, cardId) => {
+				removeForkBox(boxId);
+				setActiveForkBox(void 0);
+				requestCardSelection(cardId);
+				openChat(sessionId);
+			};
 			/**
 			* Drawer pin toggle. Locking keeps the current Session on screen no matter
 			* which card (or empty canvas) the map selects next. Unlocking follows the
@@ -16516,6 +17977,10 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					if (event.key !== "Escape") return;
 					if (mapUi.escapeClaimed()) return;
 					event.stopPropagation();
+					if (forkBoxes.activeId !== void 0) {
+						setActiveForkBox(void 0);
+						return;
+					}
 					if (notice !== null) {
 						setNotice(null);
 						return;
@@ -16530,7 +17995,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 				return () => {
 					window.removeEventListener("keydown", onKeyDown, { capture: true });
 				};
-			}, [notice]);
+			}, [notice, forkBoxes.activeId]);
 			(0, react.useEffect)(() => () => {
 				const drawerSession = chatRef.current?.sessionId;
 				chatRef.current = null;
@@ -16661,7 +18126,50 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 			});
 			const drawerSessionTitle = props.useSessions((state) => drawerSessionId === void 0 ? void 0 : state.byId[drawerSessionId]?.displayTitle);
 			const chatTitle = drawerCardTitle ?? drawerSessionTitle ?? "";
-			const drawer = notice !== null ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("aside", {
+			const drawer = activeForkBox !== void 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("aside", {
+				className: talk_map_module_css_default["chatDrawer"],
+				"aria-label": t("fork.title"),
+				ref: drawerRef,
+				style: drawerStyle,
+				children: [
+					resizeStrip,
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+						className: talk_map_module_css_default["chatDrawerHeader"],
+						children: [
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+								className: talk_map_module_css_default["chatDrawerTitle"],
+								title: t("fork.title"),
+								children: t("fork.title")
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { className: talk_map_module_css_default["chatDrawerSpace"] }),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+								type: "button",
+								className: talk_map_module_css_default["chatDrawerClose"],
+								title: t("fork.close"),
+								"aria-label": t("fork.close"),
+								onClick: () => {
+									setActiveForkBox(void 0);
+								},
+								children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(CloseIcon, {})
+							})
+						]
+					}),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+						className: talk_map_module_css_default["chatDrawerBody"],
+						ref: drawerBodyRef,
+						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ForkSetupPanel, {
+							box: activeForkBox,
+							workspaceOptions,
+							onClose: () => {
+								setActiveForkBox(void 0);
+							},
+							onCreated: (sessionId, cardId) => {
+								handleForkCreated(activeForkBox.id, sessionId, cardId);
+							}
+						})
+					})
+				]
+			}) : notice !== null ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("aside", {
 				className: talk_map_module_css_default["chatDrawer"],
 				"aria-label": t("map.chat"),
 				ref: drawerRef,
@@ -16730,6 +18238,10 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 								className: talk_map_module_css_default["chatDrawerTitle"],
 								title: chatTitle,
 								children: chatTitle
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)(SessionModeLabel, {
+								sessionId: chat.sessionId,
+								useSessions: props.useSessions
 							}),
 							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { className: talk_map_module_css_default["chatDrawerSpace"] }),
 							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
@@ -16819,6 +18331,7 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 						onSelectionChange: (sessionId) => {
 							selectedSessionRef.current = sessionId;
 						},
+						onOpenForkSetup: openForkSetup,
 						activeChatSessionId: chat?.sessionId
 					}), drawer] })
 				})]
@@ -17157,9 +18670,17 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					...ctx.uiWorkspace !== void 0 ? { uiWorkspace: ctx.uiWorkspace } : {}
 				});
 				interactions.attach(ctx.uiSession?.sessionStatus);
+				attachConfigForms(() => {
+					try {
+						return typeof ctx.get === "function" ? ctx.get("configForms") : void 0;
+					} catch {
+						return;
+					}
+				});
 				ctx.effect(() => () => {
 					attachServices(void 0);
 					interactions.attach(void 0);
+					attachConfigForms(void 0);
 				}, "dsh-talk-map: services");
 				ctx.effect(() => installSidebarFallbackOnClient(ctx, {
 					notify: showMapNotice,
@@ -17185,6 +18706,12 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map-local", factory: (require) => {
 					} }
 				}, MapOverlay));
 				ctx.slots.inject("talk-map.chat", () => ctx.slots.register({ name: "talk-map.chat" }, ChatPanel));
+				ctx.slots.inject("conversation.hero.options", () => ctx.slots.register({
+					name: "conversation.hero.options",
+					id: "talk-map-agent-preset",
+					order: 20,
+					inject: (...args) => ({ sessionId: typeof args[0] === "string" ? args[0] : void 0 })
+				}, HeroModeChip));
 				canvas.ensureLoaded();
 				if (persistedMapOpen()) ctx.effect(() => {
 					const openNow = () => {

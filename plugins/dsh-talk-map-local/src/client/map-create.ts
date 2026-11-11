@@ -9,8 +9,10 @@
  *     deployment defaults and opens the conversation straight away.
  */
 import type { AgentPresetEntry, ModelProviderGroup } from './dsh.ts'
+import type { EdgeInjection } from '../shared/model.ts'
 import { talkMapApi } from './api.ts'
 import { canvas, INBOX_BOARD_ID, newCardId } from './canvas-store.ts'
+import { drawnHandle, sideHandles } from './edge-handles.ts'
 import { getServices } from './map-state.ts'
 import { defaultWorkspaceOption, newChatFrameRect, type WorkspaceOption } from './new-chat.ts'
 
@@ -82,6 +84,42 @@ export function addSessionCard(sessionId: string, x: number, y: number, wsOverri
     },
   })
   return cardId
+}
+
+/**
+ * Persist the fork relationship as a map edge (digest/full/none).
+ *
+ * The gesture's start side wins; the cards' placement supplies the side the
+ * edge should enter, and the default for programmatic calls. Storing both
+ * anchors is what keeps a line dragged from a card's bottom edge from
+ * reappearing on its right edge.
+ */
+export function addForkEdge(params: {
+  parentCardId: string
+  toCardId: string
+  kind: EdgeInjection['kind']
+  injectedText?: string
+  fromHandle?: string
+}): void {
+  const parentCard = canvas.get().cards[params.parentCardId]
+  const childCard = canvas.get().cards[params.toCardId]
+  const geometry = parentCard !== undefined && childCard !== undefined
+    ? sideHandles(parentCard, childCard)
+    : { fromHandle: 'r', toHandle: 'l' }
+  canvas.addEdges({
+    [`edge-${crypto.randomUUID()}`]: {
+      boardId: INBOX_BOARD_ID,
+      fromCardId: params.parentCardId,
+      toCardId: params.toCardId,
+      injection: {
+        kind: params.kind,
+        ...(params.injectedText !== undefined ? { injectedText: params.injectedText } : {}),
+      },
+      fromHandle: drawnHandle(params.fromHandle) ?? geometry.fromHandle,
+      toHandle: geometry.toHandle,
+      createdAt: Date.now(),
+    },
+  })
 }
 
 /**

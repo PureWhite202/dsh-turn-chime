@@ -41,6 +41,26 @@ export function persistedDrawer(): string | undefined {
   }
 }
 
+/**
+ * Drawer identity as a reactive source. Several surfaces inside the drawer
+ * need to know whether the Conversation they render is the one the drawer
+ * owns: the mode chip only belongs beside the workspace picker of THAT
+ * conversation, never in a main-view occurrence (the host renders its own
+ * picker there).
+ */
+const drawerSessionListeners = new Set<Listener>()
+let drawerSession: string | undefined
+
+function subscribeDrawerSession(listener: Listener): () => void {
+  drawerSessionListeners.add(listener)
+  return () => { drawerSessionListeners.delete(listener) }
+}
+
+/** The Session the drawer currently shows (undefined while it is closed). */
+export function useDrawerSessionId(): string | undefined {
+  return useSyncExternalStore(subscribeDrawerSession, () => drawerSession)
+}
+
 export function persistDrawer(sessionId: string | undefined): void {
   try {
     if (sessionId === undefined) window.localStorage.removeItem(DRAWER_KEY)
@@ -48,6 +68,9 @@ export function persistDrawer(sessionId: string | undefined): void {
   } catch {
     /* private mode / storage disabled — the drawer still works for this run */
   }
+  if (drawerSession === sessionId) return
+  drawerSession = sessionId
+  for (const listener of drawerSessionListeners) listener()
 }
 
 function persistMapOpen(open: boolean): void {

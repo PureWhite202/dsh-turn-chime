@@ -142,7 +142,7 @@ profile 里按普通 bundle 安装（`link:` 指向本目录），宿主会读 `
 #   在 DSH 里执行 plugin_manager install_bundle target=link:<本目录绝对路径>
 
 # 方式二：写进 profile 依赖后装
-#   "dsh-purewhite-toolkit": "link:D:/Document/deepseek-harness/default-workspace/dsh-turn-chime/plugins/dsh-purewhite-toolkit"
+#   "dsh-purewhite-toolkit": "link:D:/Document/deepseek-harness/default-workspace/my-dsh/plugins/dsh-purewhite-toolkit"
 #   pnpm install
 ```
 

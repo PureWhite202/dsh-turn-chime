@@ -20,7 +20,7 @@ description: "对比本机 DSH 实装环境与云端仓库 PureWhite202/my-dsh �
 | 平台 | 常见位置 |
 |---|---|
 | macOS | `~/.dsh/my-dsh` |
-| Windows | 不一定在 `~/.dsh` 下。常见于 `D:\Document\deepseek-harness\default-workspace\<工作区>\`，`plugins/dsh-purewhite-toolkit` 所在的那个 git 工作树就是它 |
+| Windows | 不一定在 `~/.dsh` 下。本机在 `D:\Document\deepseek-harness\default-workspace\my-dsh`；换机时从 `plugins/dsh-purewhite-toolkit` 所在目录往上找 git 工作树 |
 
 探测命令（找到就把它记成 `$REPO`，后面所有 `git -C` 都用它）：
 

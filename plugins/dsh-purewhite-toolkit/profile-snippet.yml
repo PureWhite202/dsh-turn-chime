@@ -1,0 +1,32 @@
+# 只读模式权限预设的 profile 层存档。
+#
+# 用途：DSH profile 被重置、或换机器时，快速恢复左下角权限下拉里的「只读模式」。
+# 用法：把下面这一整行追加进 ~/.dsh/profiles/<profile>/cordis.patch.yml（顶层是
+#       YAML 数组，以 `- id:` 开头），保存后重启 DSH，或等 HMR 重新组合。
+#       如果 patch 里已经有一行 `- id: permission`，请替换它，不要两行并存。
+#
+# 为什么存整行而不是只存 preset 一项：cordis 的 patch 按 id 命中后整份替换该行的
+# config，覆盖 permission 行时必须把 4 个 preset 与 defaultPreset 都写全；只写一项
+# 会把其余三项弄丢。
+#
+# 本文件不含「只读模式」的 Agent 预设、守卫和客户端徽标——那些在本包的
+# cordis.patch.yml 与 client.js 里，随插件安装生效；这里只补 profile 层缺的权限预设。
+- id: permission
+  name: '@deepseek-ai/dsh-permission-presets'
+  config:
+    presets:
+      read-only:
+        sandbox: read-only
+        approval: ask
+      read-only-mode:
+        sandbox: read-only
+        approval: never
+        name: 只读模式
+        description: 可读取整台电脑；禁止修改、删除、移动文件，升权请求会被直接拒绝。
+      workspace-write:
+        sandbox: workspace-write
+        approval: ask
+      danger-full-access:
+        sandbox: danger-full-access
+        approval: never
+    defaultPreset: danger-full-access

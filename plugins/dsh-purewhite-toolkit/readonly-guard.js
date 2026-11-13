@@ -111,6 +111,39 @@ export function apply(ctx, config = {}) {
       )
     })
   }
+
+  // 4) 给客户端徽标用的会话投影：pinned（已钉只读）/ released（已解除只读）。
+  if (typeof ctx.inject === 'function') {
+    ctx.inject(['sessionProjections'], (scope) => {
+      const projections = scope.sessionProjections
+      if (projections === undefined || typeof projections.register !== 'function') return
+      try {
+        projections.register(READONLY_GUARD_PROJECTION)
+      } catch (error) {
+        ctx.logger?.warn?.('readonly-guard: failed to register projection: %o', error)
+      }
+    })
+  }
+}
+
+/** 客户端可见的「已解除只读」徽标状态；状态与视图都由事件折叠得出。 */
+const READONLY_GUARD_PROJECTION = {
+  key: 'readonlyGuard',
+  stateVersion: 1,
+  // 不做结构校验：状态只在本插件内部产生，检查点回放同样走 apply。
+  stateSchema: { parse: (value) => value },
+  init: () => ({ pinned: false, released: false }),
+  apply(state, event) {
+    if (event.type !== 'sandbox/mode') return state
+    if (event.data.mode === READ_ONLY) {
+      return state.pinned && !state.released ? state : { pinned: true, released: false }
+    }
+    return state.pinned && !state.released ? { pinned: true, released: true } : state
+  },
+  wire: {
+    viewSchema: { parse: (value) => value },
+    view: (state) => ({ released: state.pinned && state.released }),
+  },
 }
 
 /**

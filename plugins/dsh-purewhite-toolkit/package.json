@@ -8,12 +8,15 @@
   "exports": {
     ".": "./index.js",
     "./readonly-guard": "./readonly-guard.js",
+    "./client": "./client.js",
     "./package.json": "./package.json"
   },
   "files": [
     "index.js",
     "readonly-guard.js",
+    "client.js",
     "cordis.patch.yml",
+    "profile-snippet.yml",
     "skills",
     "native",
     "build/dshtool-capture.exe",
@@ -24,6 +27,13 @@
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
     }
   },
   "scripts": {

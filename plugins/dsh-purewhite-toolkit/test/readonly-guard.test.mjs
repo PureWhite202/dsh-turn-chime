@@ -23,6 +23,7 @@ function setup(overrides = {}) {
   const appended = []
   const tools = []
   const asked = []
+  const projections = []
   let answer = { answers: [{ id: 'switch-to-standard-mode', selected: ['允许切换到标准模式'] }] }
   let askError = null
 
@@ -37,21 +38,35 @@ function setup(overrides = {}) {
       handlers.set(name, handler)
     },
     inject: (deps, callback) => {
-      assert.deepEqual(deps, ['tools', 'userQuestions'])
-      callback({
-        tools: {
-          register(definition, options) {
-            tools.push({ definition, options })
+      const key = deps.join(',')
+      if (key === 'tools,userQuestions') {
+        callback({
+          tools: {
+            register(definition, options) {
+              tools.push({ definition, options })
+            },
           },
-        },
-        userQuestions: {
-          async ask(request) {
-            asked.push(request)
-            if (askError !== null) throw askError
-            return answer
+          userQuestions: {
+            async ask(request) {
+              asked.push(request)
+              if (askError !== null) throw askError
+              return answer
+            },
           },
-        },
-      })
+        })
+        return
+      }
+      if (key === 'sessionProjections') {
+        callback({
+          sessionProjections: {
+            register(definition) {
+              projections.push(definition)
+            },
+          },
+        })
+        return
+      }
+      throw new Error(`unexpected ctx.inject deps: ${key}`)
     },
     logger: { warn() {} },
     systemPrompt: {
@@ -74,6 +89,7 @@ function setup(overrides = {}) {
     appended,
     tools,
     asked,
+    projections,
     session,
     setAnswer(value) {
       answer = value
@@ -252,6 +268,34 @@ tests.push({
     assert.equal(result.switched, false)
     assert.ok(result.message.includes('继续只读'))
     assert.deepEqual(appended, [])
+  },
+})
+
+tests.push({
+  name: 'projection flips released only after a read-only pin',
+  async run() {
+    const { projections } = setup()
+    assert.equal(projections.length, 1, 'one projection must be registered')
+    const definition = projections[0]
+    assert.equal(definition.key, 'readonlyGuard')
+
+    let state = definition.init()
+    assert.deepEqual(definition.wire.view(state), { released: false }, 'idle sessions never show the badge')
+
+    state = definition.apply(state, { type: 'sandbox/mode', data: { mode: 'danger-full-access' } })
+    assert.deepEqual(definition.wire.view(state), { released: false }, 'writable sessions are not "switched"')
+
+    state = definition.apply(state, { type: 'sandbox/mode', data: { mode: 'read-only' } })
+    assert.deepEqual(definition.wire.view(state), { released: false }, 'pinned but not yet released')
+
+    const unchanged = definition.apply(state, { type: 'turn/start', data: {} })
+    assert.equal(unchanged, state, 'unrelated events keep the state reference')
+
+    state = definition.apply(state, { type: 'sandbox/mode', data: { mode: 'danger-full-access' } })
+    assert.deepEqual(definition.wire.view(state), { released: true }, 'leaving read-only flips the badge')
+
+    state = definition.apply(state, { type: 'sandbox/mode', data: { mode: 'read-only' } })
+    assert.deepEqual(definition.wire.view(state), { released: false }, 'returning to read-only clears it')
   },
 })
 

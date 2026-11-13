@@ -65,7 +65,9 @@ bundle 里声明了一个 `readonly` Agent 预设（模式下拉里的「只读�
 - 只在首轮钉一次，后续轮次和恢复会话都不再改写，所以手动切权限不会被覆盖；子代理默认继承预设，也会被同样钉住；
 - **受控出口**：模型可以调用 `request_standard_mode` 申请解除只读，但走 `ctx.userQuestions` 的阻塞式人工确认，只有用户选「允许切换到标准模式」才写入解除只读的事件；拒绝、跳过或确认通道不可用都保持只读。这个工具只在只读会话里出现在工具目录（`tools.register(..., { when })`）；
 - 解除只读后写入的旋钮默认是 `danger-full-access` / `never`（和这台机器 profile 的默认权限预设一致），可用下面三个配置键改；Agent 预设不能中途切换，所以顶部模式标签仍显示「只读模式」；
+- **会话头部徽标**：Host 侧注册了一个客户端可见投影 `readonlyGuard`（`{ released }`，从 `sandbox/mode` 事件折叠：钉成 read-only 后再出现非只读模式即为 released）；客户端 `client.js` 在 `conversation.session.header.actions` 上挂 `readonly-switched`（order -9），只在「Agent 预设是 readonly 且 released」时渲染「已切换」小徽标。首次新增客户端模块后需要刷新页面；
 - 左下角权限下拉里的「只读模式」（键 `read-only-mode`）来自 profile 的 `cordis.patch.yml`，不是本插件；它和 Agent 预设共用同一个名字，让权限芯片显示「只读模式」而不是 `Custom`。
+- **profile 重置恢复**：profile 层的权限预设存档在 `profile-snippet.yml`（整行 `- id: permission`，4 个 preset + defaultPreset）。profile 被重置或换机器时，把这一行替换进 `~/.dsh/profiles/<profile>/cordis.patch.yml` 即可恢复下拉项；Agent 预设、守卫和徽标在插件里，不需要这份存档。
 
 配置（`cordis.patch.yml` 里 `readonly-guard` 行的 `config`）：
 

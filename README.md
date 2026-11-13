@@ -10,14 +10,14 @@
 | --- | --- | --- |
 | [dsh-turn-chime](plugins/dsh-turn-chime/) | 一轮结束、模型反问时各响一声 | 自制 |
 | [dsh-auto-archive](plugins/dsh-auto-archive/) | 启动时归档闲置会话 | 自制 |
-| [dsh-ops](plugins/dsh-ops/SOURCE.md) | 原生文件与 Bash 工具层 | npm 0.5.2 |
-| [dsh-superpowers](plugins/dsh-superpowers/SOURCE.md) | 技能与工作流 | npm 1.0.16 |
+| [dsh-ops](plugins/dsh-ops/SOURCE.md) | 原生文件与 Bash 工具层 | npm 0.5.4 |
+| [superpowers-dsh](plugins/superpowers-dsh/SOURCE.md) | 技能与工作流：TDD、调试、计划、并行子代理、代码评审 | npm 0.5.0 |
 | [dsh-memory-evolve](plugins/dsh-memory-evolve/SOURCE.md) | 记忆、待办 | github |
 | [dsh-talk-map-local](plugins/dsh-talk-map-local/) | 会话地图，本地大改版 | 基于 github:Tasihi89/dsh-talk-map |
 | [dsh-purewhite-toolkit](plugins/dsh-purewhite-toolkit/) | 自用工具集：截图（整屏/窗口/区域，直接返回图片） | 自制 |
 | [dshmarket](plugins/dshmarket/SOURCE.md) | 插件市场：浏览、搜索、一键安装社区插件 | npm 1.73.17 |
 | [ds-harness-remote](plugins/ds-harness-remote/SOURCE.md) | P2P 端到端加密远程访问 DSH 工作区 | npm 0.6.4 |
-| [dsh-easyrewrite](plugins/dsh-easyrewrite/SOURCE.md) | 消息撤回与重新编辑 | npm 3.0.1 |
+| [dsh-easyrewrite](plugins/dsh-easyrewrite/SOURCE.md) | 消息撤回与重新编辑 | npm 3.1.0 |
 | [dsh-genui](plugins/dsh-genui/SOURCE.md) | 生成式 UI：回复里内联渲染图表、表单、看板，操作可回传模型 | npm 0.3.3 |
 
 ## 技能
